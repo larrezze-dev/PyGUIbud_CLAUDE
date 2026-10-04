@@ -1,0 +1,2882 @@
+{
+  "border.style.solid": {
+    "css": "--sape-border-style-solid",
+    "dotnet": "BorderStyleSolid",
+    "java": "BORDER_STYLE_SOLID",
+    "javascript": "borderStyleSolid",
+    "python": "BORDER_STYLE_SOLID",
+    "typescript": "border.style.solid"
+  },
+  "border.width.hairline": {
+    "css": "--sape-border-width-hairline",
+    "dotnet": "BorderWidthHairline",
+    "java": "BORDER_WIDTH_HAIRLINE",
+    "javascript": "borderWidthHairline",
+    "python": "BORDER_WIDTH_HAIRLINE",
+    "typescript": "border.width.hairline"
+  },
+  "border.width.heavy": {
+    "css": "--sape-border-width-heavy",
+    "dotnet": "BorderWidthHeavy",
+    "java": "BORDER_WIDTH_HEAVY",
+    "javascript": "borderWidthHeavy",
+    "python": "BORDER_WIDTH_HEAVY",
+    "typescript": "border.width.heavy"
+  },
+  "border.width.strong": {
+    "css": "--sape-border-width-strong",
+    "dotnet": "BorderWidthStrong",
+    "java": "BORDER_WIDTH_STRONG",
+    "javascript": "borderWidthStrong",
+    "python": "BORDER_WIDTH_STRONG",
+    "typescript": "border.width.strong"
+  },
+  "color.action.primary.active": {
+    "css": "--sape-color-action-primary-active",
+    "dotnet": "ColorActionPrimaryActive",
+    "java": "COLOR_ACTION_PRIMARY_ACTIVE",
+    "javascript": "colorActionPrimaryActive",
+    "python": "COLOR_ACTION_PRIMARY_ACTIVE",
+    "typescript": "color.action.primary.active"
+  },
+  "color.action.primary.background": {
+    "css": "--sape-color-action-primary-background",
+    "dotnet": "ColorActionPrimaryBackground",
+    "java": "COLOR_ACTION_PRIMARY_BACKGROUND",
+    "javascript": "colorActionPrimaryBackground",
+    "python": "COLOR_ACTION_PRIMARY_BACKGROUND",
+    "typescript": "color.action.primary.background"
+  },
+  "color.action.primary.disabled": {
+    "css": "--sape-color-action-primary-disabled",
+    "dotnet": "ColorActionPrimaryDisabled",
+    "java": "COLOR_ACTION_PRIMARY_DISABLED",
+    "javascript": "colorActionPrimaryDisabled",
+    "python": "COLOR_ACTION_PRIMARY_DISABLED",
+    "typescript": "color.action.primary.disabled"
+  },
+  "color.action.primary.hover": {
+    "css": "--sape-color-action-primary-hover",
+    "dotnet": "ColorActionPrimaryHover",
+    "java": "COLOR_ACTION_PRIMARY_HOVER",
+    "javascript": "colorActionPrimaryHover",
+    "python": "COLOR_ACTION_PRIMARY_HOVER",
+    "typescript": "color.action.primary.hover"
+  },
+  "color.action.primary.text": {
+    "css": "--sape-color-action-primary-text",
+    "dotnet": "ColorActionPrimaryText",
+    "java": "COLOR_ACTION_PRIMARY_TEXT",
+    "javascript": "colorActionPrimaryText",
+    "python": "COLOR_ACTION_PRIMARY_TEXT",
+    "typescript": "color.action.primary.text"
+  },
+  "color.background.base": {
+    "css": "--sape-color-background-base",
+    "dotnet": "ColorBackgroundBase",
+    "java": "COLOR_BACKGROUND_BASE",
+    "javascript": "colorBackgroundBase",
+    "python": "COLOR_BACKGROUND_BASE",
+    "typescript": "color.background.base"
+  },
+  "color.background.inverse": {
+    "css": "--sape-color-background-inverse",
+    "dotnet": "ColorBackgroundInverse",
+    "java": "COLOR_BACKGROUND_INVERSE",
+    "javascript": "colorBackgroundInverse",
+    "python": "COLOR_BACKGROUND_INVERSE",
+    "typescript": "color.background.inverse"
+  },
+  "color.background.subtle": {
+    "css": "--sape-color-background-subtle",
+    "dotnet": "ColorBackgroundSubtle",
+    "java": "COLOR_BACKGROUND_SUBTLE",
+    "javascript": "colorBackgroundSubtle",
+    "python": "COLOR_BACKGROUND_SUBTLE",
+    "typescript": "color.background.subtle"
+  },
+  "color.border.base": {
+    "css": "--sape-color-border-base",
+    "dotnet": "ColorBorderBase",
+    "java": "COLOR_BORDER_BASE",
+    "javascript": "colorBorderBase",
+    "python": "COLOR_BORDER_BASE",
+    "typescript": "color.border.base"
+  },
+  "color.border.control": {
+    "css": "--sape-color-border-control",
+    "dotnet": "ColorBorderControl",
+    "java": "COLOR_BORDER_CONTROL",
+    "javascript": "colorBorderControl",
+    "python": "COLOR_BORDER_CONTROL",
+    "typescript": "color.border.control"
+  },
+  "color.border.disabled": {
+    "css": "--sape-color-border-disabled",
+    "dotnet": "ColorBorderDisabled",
+    "java": "COLOR_BORDER_DISABLED",
+    "javascript": "colorBorderDisabled",
+    "python": "COLOR_BORDER_DISABLED",
+    "typescript": "color.border.disabled"
+  },
+  "color.border.error": {
+    "css": "--sape-color-border-error",
+    "dotnet": "ColorBorderError",
+    "java": "COLOR_BORDER_ERROR",
+    "javascript": "colorBorderError",
+    "python": "COLOR_BORDER_ERROR",
+    "typescript": "color.border.error"
+  },
+  "color.border.focus": {
+    "css": "--sape-color-border-focus",
+    "dotnet": "ColorBorderFocus",
+    "java": "COLOR_BORDER_FOCUS",
+    "javascript": "colorBorderFocus",
+    "python": "COLOR_BORDER_FOCUS",
+    "typescript": "color.border.focus"
+  },
+  "color.border.selected": {
+    "css": "--sape-color-border-selected",
+    "dotnet": "ColorBorderSelected",
+    "java": "COLOR_BORDER_SELECTED",
+    "javascript": "colorBorderSelected",
+    "python": "COLOR_BORDER_SELECTED",
+    "typescript": "color.border.selected"
+  },
+  "color.border.strong": {
+    "css": "--sape-color-border-strong",
+    "dotnet": "ColorBorderStrong",
+    "java": "COLOR_BORDER_STRONG",
+    "javascript": "colorBorderStrong",
+    "python": "COLOR_BORDER_STRONG",
+    "typescript": "color.border.strong"
+  },
+  "color.border.subtle": {
+    "css": "--sape-color-border-subtle",
+    "dotnet": "ColorBorderSubtle",
+    "java": "COLOR_BORDER_SUBTLE",
+    "javascript": "colorBorderSubtle",
+    "python": "COLOR_BORDER_SUBTLE",
+    "typescript": "color.border.subtle"
+  },
+  "color.border.success": {
+    "css": "--sape-color-border-success",
+    "dotnet": "ColorBorderSuccess",
+    "java": "COLOR_BORDER_SUCCESS",
+    "javascript": "colorBorderSuccess",
+    "python": "COLOR_BORDER_SUCCESS",
+    "typescript": "color.border.success"
+  },
+  "color.border.warning": {
+    "css": "--sape-color-border-warning",
+    "dotnet": "ColorBorderWarning",
+    "java": "COLOR_BORDER_WARNING",
+    "javascript": "colorBorderWarning",
+    "python": "COLOR_BORDER_WARNING",
+    "typescript": "color.border.warning"
+  },
+  "color.brand.accent": {
+    "css": "--sape-color-brand-accent",
+    "dotnet": "ColorBrandAccent",
+    "java": "COLOR_BRAND_ACCENT",
+    "javascript": "colorBrandAccent",
+    "python": "COLOR_BRAND_ACCENT",
+    "typescript": "color.brand.accent"
+  },
+  "color.brand.primary": {
+    "css": "--sape-color-brand-primary",
+    "dotnet": "ColorBrandPrimary",
+    "java": "COLOR_BRAND_PRIMARY",
+    "javascript": "colorBrandPrimary",
+    "python": "COLOR_BRAND_PRIMARY",
+    "typescript": "color.brand.primary"
+  },
+  "color.brand.primary_soft": {
+    "css": "--sape-color-brand-primary-soft",
+    "dotnet": "ColorBrandPrimarySoft",
+    "java": "COLOR_BRAND_PRIMARY_SOFT",
+    "javascript": "colorBrandPrimarySoft",
+    "python": "COLOR_BRAND_PRIMARY_SOFT",
+    "typescript": "color.brand.primary_soft"
+  },
+  "color.brand.primary_strong": {
+    "css": "--sape-color-brand-primary-strong",
+    "dotnet": "ColorBrandPrimaryStrong",
+    "java": "COLOR_BRAND_PRIMARY_STRONG",
+    "javascript": "colorBrandPrimaryStrong",
+    "python": "COLOR_BRAND_PRIMARY_STRONG",
+    "typescript": "color.brand.primary_strong"
+  },
+  "color.brand.secondary": {
+    "css": "--sape-color-brand-secondary",
+    "dotnet": "ColorBrandSecondary",
+    "java": "COLOR_BRAND_SECONDARY",
+    "javascript": "colorBrandSecondary",
+    "python": "COLOR_BRAND_SECONDARY",
+    "typescript": "color.brand.secondary"
+  },
+  "color.data.categorical.1": {
+    "css": "--sape-color-data-categorical-1",
+    "dotnet": "ColorDataCategorical1",
+    "java": "COLOR_DATA_CATEGORICAL_1",
+    "javascript": "colorDataCategorical1",
+    "python": "COLOR_DATA_CATEGORICAL_1",
+    "typescript": "color.data.categorical.1"
+  },
+  "color.data.categorical.2": {
+    "css": "--sape-color-data-categorical-2",
+    "dotnet": "ColorDataCategorical2",
+    "java": "COLOR_DATA_CATEGORICAL_2",
+    "javascript": "colorDataCategorical2",
+    "python": "COLOR_DATA_CATEGORICAL_2",
+    "typescript": "color.data.categorical.2"
+  },
+  "color.data.categorical.3": {
+    "css": "--sape-color-data-categorical-3",
+    "dotnet": "ColorDataCategorical3",
+    "java": "COLOR_DATA_CATEGORICAL_3",
+    "javascript": "colorDataCategorical3",
+    "python": "COLOR_DATA_CATEGORICAL_3",
+    "typescript": "color.data.categorical.3"
+  },
+  "color.data.categorical.4": {
+    "css": "--sape-color-data-categorical-4",
+    "dotnet": "ColorDataCategorical4",
+    "java": "COLOR_DATA_CATEGORICAL_4",
+    "javascript": "colorDataCategorical4",
+    "python": "COLOR_DATA_CATEGORICAL_4",
+    "typescript": "color.data.categorical.4"
+  },
+  "color.data.categorical.5": {
+    "css": "--sape-color-data-categorical-5",
+    "dotnet": "ColorDataCategorical5",
+    "java": "COLOR_DATA_CATEGORICAL_5",
+    "javascript": "colorDataCategorical5",
+    "python": "COLOR_DATA_CATEGORICAL_5",
+    "typescript": "color.data.categorical.5"
+  },
+  "color.data.categorical.6": {
+    "css": "--sape-color-data-categorical-6",
+    "dotnet": "ColorDataCategorical6",
+    "java": "COLOR_DATA_CATEGORICAL_6",
+    "javascript": "colorDataCategorical6",
+    "python": "COLOR_DATA_CATEGORICAL_6",
+    "typescript": "color.data.categorical.6"
+  },
+  "color.data.categorical.7": {
+    "css": "--sape-color-data-categorical-7",
+    "dotnet": "ColorDataCategorical7",
+    "java": "COLOR_DATA_CATEGORICAL_7",
+    "javascript": "colorDataCategorical7",
+    "python": "COLOR_DATA_CATEGORICAL_7",
+    "typescript": "color.data.categorical.7"
+  },
+  "color.data.categorical.8": {
+    "css": "--sape-color-data-categorical-8",
+    "dotnet": "ColorDataCategorical8",
+    "java": "COLOR_DATA_CATEGORICAL_8",
+    "javascript": "colorDataCategorical8",
+    "python": "COLOR_DATA_CATEGORICAL_8",
+    "typescript": "color.data.categorical.8"
+  },
+  "color.data.diverging.negative": {
+    "css": "--sape-color-data-diverging-negative",
+    "dotnet": "ColorDataDivergingNegative",
+    "java": "COLOR_DATA_DIVERGING_NEGATIVE",
+    "javascript": "colorDataDivergingNegative",
+    "python": "COLOR_DATA_DIVERGING_NEGATIVE",
+    "typescript": "color.data.diverging.negative"
+  },
+  "color.data.diverging.negative_soft": {
+    "css": "--sape-color-data-diverging-negative-soft",
+    "dotnet": "ColorDataDivergingNegativeSoft",
+    "java": "COLOR_DATA_DIVERGING_NEGATIVE_SOFT",
+    "javascript": "colorDataDivergingNegativeSoft",
+    "python": "COLOR_DATA_DIVERGING_NEGATIVE_SOFT",
+    "typescript": "color.data.diverging.negative_soft"
+  },
+  "color.data.diverging.neutral": {
+    "css": "--sape-color-data-diverging-neutral",
+    "dotnet": "ColorDataDivergingNeutral",
+    "java": "COLOR_DATA_DIVERGING_NEUTRAL",
+    "javascript": "colorDataDivergingNeutral",
+    "python": "COLOR_DATA_DIVERGING_NEUTRAL",
+    "typescript": "color.data.diverging.neutral"
+  },
+  "color.data.diverging.positive": {
+    "css": "--sape-color-data-diverging-positive",
+    "dotnet": "ColorDataDivergingPositive",
+    "java": "COLOR_DATA_DIVERGING_POSITIVE",
+    "javascript": "colorDataDivergingPositive",
+    "python": "COLOR_DATA_DIVERGING_POSITIVE",
+    "typescript": "color.data.diverging.positive"
+  },
+  "color.data.diverging.positive_soft": {
+    "css": "--sape-color-data-diverging-positive-soft",
+    "dotnet": "ColorDataDivergingPositiveSoft",
+    "java": "COLOR_DATA_DIVERGING_POSITIVE_SOFT",
+    "javascript": "colorDataDivergingPositiveSoft",
+    "python": "COLOR_DATA_DIVERGING_POSITIVE_SOFT",
+    "typescript": "color.data.diverging.positive_soft"
+  },
+  "color.data.sequential.1": {
+    "css": "--sape-color-data-sequential-1",
+    "dotnet": "ColorDataSequential1",
+    "java": "COLOR_DATA_SEQUENTIAL_1",
+    "javascript": "colorDataSequential1",
+    "python": "COLOR_DATA_SEQUENTIAL_1",
+    "typescript": "color.data.sequential.1"
+  },
+  "color.data.sequential.2": {
+    "css": "--sape-color-data-sequential-2",
+    "dotnet": "ColorDataSequential2",
+    "java": "COLOR_DATA_SEQUENTIAL_2",
+    "javascript": "colorDataSequential2",
+    "python": "COLOR_DATA_SEQUENTIAL_2",
+    "typescript": "color.data.sequential.2"
+  },
+  "color.data.sequential.3": {
+    "css": "--sape-color-data-sequential-3",
+    "dotnet": "ColorDataSequential3",
+    "java": "COLOR_DATA_SEQUENTIAL_3",
+    "javascript": "colorDataSequential3",
+    "python": "COLOR_DATA_SEQUENTIAL_3",
+    "typescript": "color.data.sequential.3"
+  },
+  "color.data.sequential.4": {
+    "css": "--sape-color-data-sequential-4",
+    "dotnet": "ColorDataSequential4",
+    "java": "COLOR_DATA_SEQUENTIAL_4",
+    "javascript": "colorDataSequential4",
+    "python": "COLOR_DATA_SEQUENTIAL_4",
+    "typescript": "color.data.sequential.4"
+  },
+  "color.data.sequential.5": {
+    "css": "--sape-color-data-sequential-5",
+    "dotnet": "ColorDataSequential5",
+    "java": "COLOR_DATA_SEQUENTIAL_5",
+    "javascript": "colorDataSequential5",
+    "python": "COLOR_DATA_SEQUENTIAL_5",
+    "typescript": "color.data.sequential.5"
+  },
+  "color.logo.exact.lm_001.hex_000000": {
+    "css": "--sape-color-logo-exact-lm-001-hex-000000",
+    "dotnet": "ColorLogoExactLm001Hex000000",
+    "java": "COLOR_LOGO_EXACT_LM_001_HEX_000000",
+    "javascript": "colorLogoExactLm001Hex000000",
+    "python": "COLOR_LOGO_EXACT_LM_001_HEX_000000",
+    "typescript": "color.logo.exact.lm_001.hex_000000"
+  },
+  "color.logo.exact.lm_001.hex_070809": {
+    "css": "--sape-color-logo-exact-lm-001-hex-070809",
+    "dotnet": "ColorLogoExactLm001Hex070809",
+    "java": "COLOR_LOGO_EXACT_LM_001_HEX_070809",
+    "javascript": "colorLogoExactLm001Hex070809",
+    "python": "COLOR_LOGO_EXACT_LM_001_HEX_070809",
+    "typescript": "color.logo.exact.lm_001.hex_070809"
+  },
+  "color.logo.exact.lm_001.hex_0d0f13": {
+    "css": "--sape-color-logo-exact-lm-001-hex-0d0f13",
+    "dotnet": "ColorLogoExactLm001Hex0d0f13",
+    "java": "COLOR_LOGO_EXACT_LM_001_HEX_0D0F13",
+    "javascript": "colorLogoExactLm001Hex0d0f13",
+    "python": "COLOR_LOGO_EXACT_LM_001_HEX_0D0F13",
+    "typescript": "color.logo.exact.lm_001.hex_0d0f13"
+  },
+  "color.logo.exact.lm_001.hex_122ad2": {
+    "css": "--sape-color-logo-exact-lm-001-hex-122ad2",
+    "dotnet": "ColorLogoExactLm001Hex122ad2",
+    "java": "COLOR_LOGO_EXACT_LM_001_HEX_122AD2",
+    "javascript": "colorLogoExactLm001Hex122ad2",
+    "python": "COLOR_LOGO_EXACT_LM_001_HEX_122AD2",
+    "typescript": "color.logo.exact.lm_001.hex_122ad2"
+  },
+  "color.logo.exact.lm_001.hex_15181d": {
+    "css": "--sape-color-logo-exact-lm-001-hex-15181d",
+    "dotnet": "ColorLogoExactLm001Hex15181d",
+    "java": "COLOR_LOGO_EXACT_LM_001_HEX_15181D",
+    "javascript": "colorLogoExactLm001Hex15181d",
+    "python": "COLOR_LOGO_EXACT_LM_001_HEX_15181D",
+    "typescript": "color.logo.exact.lm_001.hex_15181d"
+  },
+  "color.logo.exact.lm_001.hex_1c3ff0": {
+    "css": "--sape-color-logo-exact-lm-001-hex-1c3ff0",
+    "dotnet": "ColorLogoExactLm001Hex1c3ff0",
+    "java": "COLOR_LOGO_EXACT_LM_001_HEX_1C3FF0",
+    "javascript": "colorLogoExactLm001Hex1c3ff0",
+    "python": "COLOR_LOGO_EXACT_LM_001_HEX_1C3FF0",
+    "typescript": "color.logo.exact.lm_001.hex_1c3ff0"
+  },
+  "color.logo.exact.lm_001.hex_3f6dff": {
+    "css": "--sape-color-logo-exact-lm-001-hex-3f6dff",
+    "dotnet": "ColorLogoExactLm001Hex3f6dff",
+    "java": "COLOR_LOGO_EXACT_LM_001_HEX_3F6DFF",
+    "javascript": "colorLogoExactLm001Hex3f6dff",
+    "python": "COLOR_LOGO_EXACT_LM_001_HEX_3F6DFF",
+    "typescript": "color.logo.exact.lm_001.hex_3f6dff"
+  },
+  "color.logo.exact.lm_001.hex_767b83": {
+    "css": "--sape-color-logo-exact-lm-001-hex-767b83",
+    "dotnet": "ColorLogoExactLm001Hex767b83",
+    "java": "COLOR_LOGO_EXACT_LM_001_HEX_767B83",
+    "javascript": "colorLogoExactLm001Hex767b83",
+    "python": "COLOR_LOGO_EXACT_LM_001_HEX_767B83",
+    "typescript": "color.logo.exact.lm_001.hex_767b83"
+  },
+  "color.logo.exact.lm_001.hex_8d929a": {
+    "css": "--sape-color-logo-exact-lm-001-hex-8d929a",
+    "dotnet": "ColorLogoExactLm001Hex8d929a",
+    "java": "COLOR_LOGO_EXACT_LM_001_HEX_8D929A",
+    "javascript": "colorLogoExactLm001Hex8d929a",
+    "python": "COLOR_LOGO_EXACT_LM_001_HEX_8D929A",
+    "typescript": "color.logo.exact.lm_001.hex_8d929a"
+  },
+  "color.logo.exact.lm_001.hex_8fa8ff": {
+    "css": "--sape-color-logo-exact-lm-001-hex-8fa8ff",
+    "dotnet": "ColorLogoExactLm001Hex8fa8ff",
+    "java": "COLOR_LOGO_EXACT_LM_001_HEX_8FA8FF",
+    "javascript": "colorLogoExactLm001Hex8fa8ff",
+    "python": "COLOR_LOGO_EXACT_LM_001_HEX_8FA8FF",
+    "typescript": "color.logo.exact.lm_001.hex_8fa8ff"
+  },
+  "color.logo.exact.lm_001.hex_a7acb3": {
+    "css": "--sape-color-logo-exact-lm-001-hex-a7acb3",
+    "dotnet": "ColorLogoExactLm001HexA7acb3",
+    "java": "COLOR_LOGO_EXACT_LM_001_HEX_A7ACB3",
+    "javascript": "colorLogoExactLm001HexA7acb3",
+    "python": "COLOR_LOGO_EXACT_LM_001_HEX_A7ACB3",
+    "typescript": "color.logo.exact.lm_001.hex_a7acb3"
+  },
+  "color.logo.exact.lm_001.hex_b3b8bf": {
+    "css": "--sape-color-logo-exact-lm-001-hex-b3b8bf",
+    "dotnet": "ColorLogoExactLm001HexB3b8bf",
+    "java": "COLOR_LOGO_EXACT_LM_001_HEX_B3B8BF",
+    "javascript": "colorLogoExactLm001HexB3b8bf",
+    "python": "COLOR_LOGO_EXACT_LM_001_HEX_B3B8BF",
+    "typescript": "color.logo.exact.lm_001.hex_b3b8bf"
+  },
+  "color.logo.exact.lm_001.hex_cfd3d8": {
+    "css": "--sape-color-logo-exact-lm-001-hex-cfd3d8",
+    "dotnet": "ColorLogoExactLm001HexCfd3d8",
+    "java": "COLOR_LOGO_EXACT_LM_001_HEX_CFD3D8",
+    "javascript": "colorLogoExactLm001HexCfd3d8",
+    "python": "COLOR_LOGO_EXACT_LM_001_HEX_CFD3D8",
+    "typescript": "color.logo.exact.lm_001.hex_cfd3d8"
+  },
+  "color.logo.exact.lm_001.hex_d7dbe0": {
+    "css": "--sape-color-logo-exact-lm-001-hex-d7dbe0",
+    "dotnet": "ColorLogoExactLm001HexD7dbe0",
+    "java": "COLOR_LOGO_EXACT_LM_001_HEX_D7DBE0",
+    "javascript": "colorLogoExactLm001HexD7dbe0",
+    "python": "COLOR_LOGO_EXACT_LM_001_HEX_D7DBE0",
+    "typescript": "color.logo.exact.lm_001.hex_d7dbe0"
+  },
+  "color.logo.exact.lm_001.hex_f2f4f6": {
+    "css": "--sape-color-logo-exact-lm-001-hex-f2f4f6",
+    "dotnet": "ColorLogoExactLm001HexF2f4f6",
+    "java": "COLOR_LOGO_EXACT_LM_001_HEX_F2F4F6",
+    "javascript": "colorLogoExactLm001HexF2f4f6",
+    "python": "COLOR_LOGO_EXACT_LM_001_HEX_F2F4F6",
+    "typescript": "color.logo.exact.lm_001.hex_f2f4f6"
+  },
+  "color.logo.exact.lm_001.hex_ffffff": {
+    "css": "--sape-color-logo-exact-lm-001-hex-ffffff",
+    "dotnet": "ColorLogoExactLm001HexFfffff",
+    "java": "COLOR_LOGO_EXACT_LM_001_HEX_FFFFFF",
+    "javascript": "colorLogoExactLm001HexFfffff",
+    "python": "COLOR_LOGO_EXACT_LM_001_HEX_FFFFFF",
+    "typescript": "color.logo.exact.lm_001.hex_ffffff"
+  },
+  "color.logo.exact.lm_002.hex_0f5fd6": {
+    "css": "--sape-color-logo-exact-lm-002-hex-0f5fd6",
+    "dotnet": "ColorLogoExactLm002Hex0f5fd6",
+    "java": "COLOR_LOGO_EXACT_LM_002_HEX_0F5FD6",
+    "javascript": "colorLogoExactLm002Hex0f5fd6",
+    "python": "COLOR_LOGO_EXACT_LM_002_HEX_0F5FD6",
+    "typescript": "color.logo.exact.lm_002.hex_0f5fd6"
+  },
+  "color.logo.exact.lm_002.hex_1573f4": {
+    "css": "--sape-color-logo-exact-lm-002-hex-1573f4",
+    "dotnet": "ColorLogoExactLm002Hex1573f4",
+    "java": "COLOR_LOGO_EXACT_LM_002_HEX_1573F4",
+    "javascript": "colorLogoExactLm002Hex1573f4",
+    "python": "COLOR_LOGO_EXACT_LM_002_HEX_1573F4",
+    "typescript": "color.logo.exact.lm_002.hex_1573f4"
+  },
+  "color.logo.exact.lm_002.hex_212832": {
+    "css": "--sape-color-logo-exact-lm-002-hex-212832",
+    "dotnet": "ColorLogoExactLm002Hex212832",
+    "java": "COLOR_LOGO_EXACT_LM_002_HEX_212832",
+    "javascript": "colorLogoExactLm002Hex212832",
+    "python": "COLOR_LOGO_EXACT_LM_002_HEX_212832",
+    "typescript": "color.logo.exact.lm_002.hex_212832"
+  },
+  "color.logo.exact.lm_002.hex_2a323d": {
+    "css": "--sape-color-logo-exact-lm-002-hex-2a323d",
+    "dotnet": "ColorLogoExactLm002Hex2a323d",
+    "java": "COLOR_LOGO_EXACT_LM_002_HEX_2A323D",
+    "javascript": "colorLogoExactLm002Hex2a323d",
+    "python": "COLOR_LOGO_EXACT_LM_002_HEX_2A323D",
+    "typescript": "color.logo.exact.lm_002.hex_2a323d"
+  },
+  "color.logo.exact.lm_002.hex_2e86ff": {
+    "css": "--sape-color-logo-exact-lm-002-hex-2e86ff",
+    "dotnet": "ColorLogoExactLm002Hex2e86ff",
+    "java": "COLOR_LOGO_EXACT_LM_002_HEX_2E86FF",
+    "javascript": "colorLogoExactLm002Hex2e86ff",
+    "python": "COLOR_LOGO_EXACT_LM_002_HEX_2E86FF",
+    "typescript": "color.logo.exact.lm_002.hex_2e86ff"
+  },
+  "color.logo.exact.lm_002.hex_333c48": {
+    "css": "--sape-color-logo-exact-lm-002-hex-333c48",
+    "dotnet": "ColorLogoExactLm002Hex333c48",
+    "java": "COLOR_LOGO_EXACT_LM_002_HEX_333C48",
+    "javascript": "colorLogoExactLm002Hex333c48",
+    "python": "COLOR_LOGO_EXACT_LM_002_HEX_333C48",
+    "typescript": "color.logo.exact.lm_002.hex_333c48"
+  },
+  "color.logo.exact.lm_007.hex_000000": {
+    "css": "--sape-color-logo-exact-lm-007-hex-000000",
+    "dotnet": "ColorLogoExactLm007Hex000000",
+    "java": "COLOR_LOGO_EXACT_LM_007_HEX_000000",
+    "javascript": "colorLogoExactLm007Hex000000",
+    "python": "COLOR_LOGO_EXACT_LM_007_HEX_000000",
+    "typescript": "color.logo.exact.lm_007.hex_000000"
+  },
+  "color.logo.exact.lm_007.hex_050608": {
+    "css": "--sape-color-logo-exact-lm-007-hex-050608",
+    "dotnet": "ColorLogoExactLm007Hex050608",
+    "java": "COLOR_LOGO_EXACT_LM_007_HEX_050608",
+    "javascript": "colorLogoExactLm007Hex050608",
+    "python": "COLOR_LOGO_EXACT_LM_007_HEX_050608",
+    "typescript": "color.logo.exact.lm_007.hex_050608"
+  },
+  "color.logo.exact.lm_007.hex_0c0e12": {
+    "css": "--sape-color-logo-exact-lm-007-hex-0c0e12",
+    "dotnet": "ColorLogoExactLm007Hex0c0e12",
+    "java": "COLOR_LOGO_EXACT_LM_007_HEX_0C0E12",
+    "javascript": "colorLogoExactLm007Hex0c0e12",
+    "python": "COLOR_LOGO_EXACT_LM_007_HEX_0C0E12",
+    "typescript": "color.logo.exact.lm_007.hex_0c0e12"
+  },
+  "color.logo.exact.lm_007.hex_122ad2": {
+    "css": "--sape-color-logo-exact-lm-007-hex-122ad2",
+    "dotnet": "ColorLogoExactLm007Hex122ad2",
+    "java": "COLOR_LOGO_EXACT_LM_007_HEX_122AD2",
+    "javascript": "colorLogoExactLm007Hex122ad2",
+    "python": "COLOR_LOGO_EXACT_LM_007_HEX_122AD2",
+    "typescript": "color.logo.exact.lm_007.hex_122ad2"
+  },
+  "color.logo.exact.lm_007.hex_15181d": {
+    "css": "--sape-color-logo-exact-lm-007-hex-15181d",
+    "dotnet": "ColorLogoExactLm007Hex15181d",
+    "java": "COLOR_LOGO_EXACT_LM_007_HEX_15181D",
+    "javascript": "colorLogoExactLm007Hex15181d",
+    "python": "COLOR_LOGO_EXACT_LM_007_HEX_15181D",
+    "typescript": "color.logo.exact.lm_007.hex_15181d"
+  },
+  "color.logo.exact.lm_007.hex_1c3ff0": {
+    "css": "--sape-color-logo-exact-lm-007-hex-1c3ff0",
+    "dotnet": "ColorLogoExactLm007Hex1c3ff0",
+    "java": "COLOR_LOGO_EXACT_LM_007_HEX_1C3FF0",
+    "javascript": "colorLogoExactLm007Hex1c3ff0",
+    "python": "COLOR_LOGO_EXACT_LM_007_HEX_1C3FF0",
+    "typescript": "color.logo.exact.lm_007.hex_1c3ff0"
+  },
+  "color.logo.exact.lm_007.hex_3f6dff": {
+    "css": "--sape-color-logo-exact-lm-007-hex-3f6dff",
+    "dotnet": "ColorLogoExactLm007Hex3f6dff",
+    "java": "COLOR_LOGO_EXACT_LM_007_HEX_3F6DFF",
+    "javascript": "colorLogoExactLm007Hex3f6dff",
+    "python": "COLOR_LOGO_EXACT_LM_007_HEX_3F6DFF",
+    "typescript": "color.logo.exact.lm_007.hex_3f6dff"
+  },
+  "color.logo.exact.lm_007.hex_767b83": {
+    "css": "--sape-color-logo-exact-lm-007-hex-767b83",
+    "dotnet": "ColorLogoExactLm007Hex767b83",
+    "java": "COLOR_LOGO_EXACT_LM_007_HEX_767B83",
+    "javascript": "colorLogoExactLm007Hex767b83",
+    "python": "COLOR_LOGO_EXACT_LM_007_HEX_767B83",
+    "typescript": "color.logo.exact.lm_007.hex_767b83"
+  },
+  "color.logo.exact.lm_007.hex_8d929a": {
+    "css": "--sape-color-logo-exact-lm-007-hex-8d929a",
+    "dotnet": "ColorLogoExactLm007Hex8d929a",
+    "java": "COLOR_LOGO_EXACT_LM_007_HEX_8D929A",
+    "javascript": "colorLogoExactLm007Hex8d929a",
+    "python": "COLOR_LOGO_EXACT_LM_007_HEX_8D929A",
+    "typescript": "color.logo.exact.lm_007.hex_8d929a"
+  },
+  "color.logo.exact.lm_007.hex_8ea0b4": {
+    "css": "--sape-color-logo-exact-lm-007-hex-8ea0b4",
+    "dotnet": "ColorLogoExactLm007Hex8ea0b4",
+    "java": "COLOR_LOGO_EXACT_LM_007_HEX_8EA0B4",
+    "javascript": "colorLogoExactLm007Hex8ea0b4",
+    "python": "COLOR_LOGO_EXACT_LM_007_HEX_8EA0B4",
+    "typescript": "color.logo.exact.lm_007.hex_8ea0b4"
+  },
+  "color.logo.exact.lm_007.hex_8fa8ff": {
+    "css": "--sape-color-logo-exact-lm-007-hex-8fa8ff",
+    "dotnet": "ColorLogoExactLm007Hex8fa8ff",
+    "java": "COLOR_LOGO_EXACT_LM_007_HEX_8FA8FF",
+    "javascript": "colorLogoExactLm007Hex8fa8ff",
+    "python": "COLOR_LOGO_EXACT_LM_007_HEX_8FA8FF",
+    "typescript": "color.logo.exact.lm_007.hex_8fa8ff"
+  },
+  "color.logo.exact.lm_007.hex_a7acb3": {
+    "css": "--sape-color-logo-exact-lm-007-hex-a7acb3",
+    "dotnet": "ColorLogoExactLm007HexA7acb3",
+    "java": "COLOR_LOGO_EXACT_LM_007_HEX_A7ACB3",
+    "javascript": "colorLogoExactLm007HexA7acb3",
+    "python": "COLOR_LOGO_EXACT_LM_007_HEX_A7ACB3",
+    "typescript": "color.logo.exact.lm_007.hex_a7acb3"
+  },
+  "color.logo.exact.lm_007.hex_b3b8bf": {
+    "css": "--sape-color-logo-exact-lm-007-hex-b3b8bf",
+    "dotnet": "ColorLogoExactLm007HexB3b8bf",
+    "java": "COLOR_LOGO_EXACT_LM_007_HEX_B3B8BF",
+    "javascript": "colorLogoExactLm007HexB3b8bf",
+    "python": "COLOR_LOGO_EXACT_LM_007_HEX_B3B8BF",
+    "typescript": "color.logo.exact.lm_007.hex_b3b8bf"
+  },
+  "color.logo.exact.lm_007.hex_cfd3d8": {
+    "css": "--sape-color-logo-exact-lm-007-hex-cfd3d8",
+    "dotnet": "ColorLogoExactLm007HexCfd3d8",
+    "java": "COLOR_LOGO_EXACT_LM_007_HEX_CFD3D8",
+    "javascript": "colorLogoExactLm007HexCfd3d8",
+    "python": "COLOR_LOGO_EXACT_LM_007_HEX_CFD3D8",
+    "typescript": "color.logo.exact.lm_007.hex_cfd3d8"
+  },
+  "color.logo.exact.lm_007.hex_d7dbe0": {
+    "css": "--sape-color-logo-exact-lm-007-hex-d7dbe0",
+    "dotnet": "ColorLogoExactLm007HexD7dbe0",
+    "java": "COLOR_LOGO_EXACT_LM_007_HEX_D7DBE0",
+    "javascript": "colorLogoExactLm007HexD7dbe0",
+    "python": "COLOR_LOGO_EXACT_LM_007_HEX_D7DBE0",
+    "typescript": "color.logo.exact.lm_007.hex_d7dbe0"
+  },
+  "color.logo.exact.lm_007.hex_f2f4f6": {
+    "css": "--sape-color-logo-exact-lm-007-hex-f2f4f6",
+    "dotnet": "ColorLogoExactLm007HexF2f4f6",
+    "java": "COLOR_LOGO_EXACT_LM_007_HEX_F2F4F6",
+    "javascript": "colorLogoExactLm007HexF2f4f6",
+    "python": "COLOR_LOGO_EXACT_LM_007_HEX_F2F4F6",
+    "typescript": "color.logo.exact.lm_007.hex_f2f4f6"
+  },
+  "color.logo.exact.lm_007.hex_ffffff": {
+    "css": "--sape-color-logo-exact-lm-007-hex-ffffff",
+    "dotnet": "ColorLogoExactLm007HexFfffff",
+    "java": "COLOR_LOGO_EXACT_LM_007_HEX_FFFFFF",
+    "javascript": "colorLogoExactLm007HexFfffff",
+    "python": "COLOR_LOGO_EXACT_LM_007_HEX_FFFFFF",
+    "typescript": "color.logo.exact.lm_007.hex_ffffff"
+  },
+  "color.logo.exact.lm_008.hex_000000": {
+    "css": "--sape-color-logo-exact-lm-008-hex-000000",
+    "dotnet": "ColorLogoExactLm008Hex000000",
+    "java": "COLOR_LOGO_EXACT_LM_008_HEX_000000",
+    "javascript": "colorLogoExactLm008Hex000000",
+    "python": "COLOR_LOGO_EXACT_LM_008_HEX_000000",
+    "typescript": "color.logo.exact.lm_008.hex_000000"
+  },
+  "color.logo.exact.lm_008.hex_122ad2": {
+    "css": "--sape-color-logo-exact-lm-008-hex-122ad2",
+    "dotnet": "ColorLogoExactLm008Hex122ad2",
+    "java": "COLOR_LOGO_EXACT_LM_008_HEX_122AD2",
+    "javascript": "colorLogoExactLm008Hex122ad2",
+    "python": "COLOR_LOGO_EXACT_LM_008_HEX_122AD2",
+    "typescript": "color.logo.exact.lm_008.hex_122ad2"
+  },
+  "color.logo.exact.lm_008.hex_1c3ff0": {
+    "css": "--sape-color-logo-exact-lm-008-hex-1c3ff0",
+    "dotnet": "ColorLogoExactLm008Hex1c3ff0",
+    "java": "COLOR_LOGO_EXACT_LM_008_HEX_1C3FF0",
+    "javascript": "colorLogoExactLm008Hex1c3ff0",
+    "python": "COLOR_LOGO_EXACT_LM_008_HEX_1C3FF0",
+    "typescript": "color.logo.exact.lm_008.hex_1c3ff0"
+  },
+  "color.logo.exact.lm_008.hex_2b3036": {
+    "css": "--sape-color-logo-exact-lm-008-hex-2b3036",
+    "dotnet": "ColorLogoExactLm008Hex2b3036",
+    "java": "COLOR_LOGO_EXACT_LM_008_HEX_2B3036",
+    "javascript": "colorLogoExactLm008Hex2b3036",
+    "python": "COLOR_LOGO_EXACT_LM_008_HEX_2B3036",
+    "typescript": "color.logo.exact.lm_008.hex_2b3036"
+  },
+  "color.logo.exact.lm_008.hex_33383e": {
+    "css": "--sape-color-logo-exact-lm-008-hex-33383e",
+    "dotnet": "ColorLogoExactLm008Hex33383e",
+    "java": "COLOR_LOGO_EXACT_LM_008_HEX_33383E",
+    "javascript": "colorLogoExactLm008Hex33383e",
+    "python": "COLOR_LOGO_EXACT_LM_008_HEX_33383E",
+    "typescript": "color.logo.exact.lm_008.hex_33383e"
+  },
+  "color.logo.exact.lm_008.hex_3f6dff": {
+    "css": "--sape-color-logo-exact-lm-008-hex-3f6dff",
+    "dotnet": "ColorLogoExactLm008Hex3f6dff",
+    "java": "COLOR_LOGO_EXACT_LM_008_HEX_3F6DFF",
+    "javascript": "colorLogoExactLm008Hex3f6dff",
+    "python": "COLOR_LOGO_EXACT_LM_008_HEX_3F6DFF",
+    "typescript": "color.logo.exact.lm_008.hex_3f6dff"
+  },
+  "color.logo.exact.lm_008.hex_484d53": {
+    "css": "--sape-color-logo-exact-lm-008-hex-484d53",
+    "dotnet": "ColorLogoExactLm008Hex484d53",
+    "java": "COLOR_LOGO_EXACT_LM_008_HEX_484D53",
+    "javascript": "colorLogoExactLm008Hex484d53",
+    "python": "COLOR_LOGO_EXACT_LM_008_HEX_484D53",
+    "typescript": "color.logo.exact.lm_008.hex_484d53"
+  },
+  "color.logo.exact.lm_008.hex_4c5157": {
+    "css": "--sape-color-logo-exact-lm-008-hex-4c5157",
+    "dotnet": "ColorLogoExactLm008Hex4c5157",
+    "java": "COLOR_LOGO_EXACT_LM_008_HEX_4C5157",
+    "javascript": "colorLogoExactLm008Hex4c5157",
+    "python": "COLOR_LOGO_EXACT_LM_008_HEX_4C5157",
+    "typescript": "color.logo.exact.lm_008.hex_4c5157"
+  },
+  "color.logo.exact.lm_008.hex_5c636b": {
+    "css": "--sape-color-logo-exact-lm-008-hex-5c636b",
+    "dotnet": "ColorLogoExactLm008Hex5c636b",
+    "java": "COLOR_LOGO_EXACT_LM_008_HEX_5C636B",
+    "javascript": "colorLogoExactLm008Hex5c636b",
+    "python": "COLOR_LOGO_EXACT_LM_008_HEX_5C636B",
+    "typescript": "color.logo.exact.lm_008.hex_5c636b"
+  },
+  "color.logo.exact.lm_008.hex_6b7075": {
+    "css": "--sape-color-logo-exact-lm-008-hex-6b7075",
+    "dotnet": "ColorLogoExactLm008Hex6b7075",
+    "java": "COLOR_LOGO_EXACT_LM_008_HEX_6B7075",
+    "javascript": "colorLogoExactLm008Hex6b7075",
+    "python": "COLOR_LOGO_EXACT_LM_008_HEX_6B7075",
+    "typescript": "color.logo.exact.lm_008.hex_6b7075"
+  },
+  "color.logo.exact.lm_008.hex_7d8288": {
+    "css": "--sape-color-logo-exact-lm-008-hex-7d8288",
+    "dotnet": "ColorLogoExactLm008Hex7d8288",
+    "java": "COLOR_LOGO_EXACT_LM_008_HEX_7D8288",
+    "javascript": "colorLogoExactLm008Hex7d8288",
+    "python": "COLOR_LOGO_EXACT_LM_008_HEX_7D8288",
+    "typescript": "color.logo.exact.lm_008.hex_7d8288"
+  },
+  "color.logo.exact.lm_008.hex_8b9095": {
+    "css": "--sape-color-logo-exact-lm-008-hex-8b9095",
+    "dotnet": "ColorLogoExactLm008Hex8b9095",
+    "java": "COLOR_LOGO_EXACT_LM_008_HEX_8B9095",
+    "javascript": "colorLogoExactLm008Hex8b9095",
+    "python": "COLOR_LOGO_EXACT_LM_008_HEX_8B9095",
+    "typescript": "color.logo.exact.lm_008.hex_8b9095"
+  },
+  "color.logo.exact.lm_008.hex_8fa8ff": {
+    "css": "--sape-color-logo-exact-lm-008-hex-8fa8ff",
+    "dotnet": "ColorLogoExactLm008Hex8fa8ff",
+    "java": "COLOR_LOGO_EXACT_LM_008_HEX_8FA8FF",
+    "javascript": "colorLogoExactLm008Hex8fa8ff",
+    "python": "COLOR_LOGO_EXACT_LM_008_HEX_8FA8FF",
+    "typescript": "color.logo.exact.lm_008.hex_8fa8ff"
+  },
+  "color.logo.exact.lm_008.hex_aeb3b8": {
+    "css": "--sape-color-logo-exact-lm-008-hex-aeb3b8",
+    "dotnet": "ColorLogoExactLm008HexAeb3b8",
+    "java": "COLOR_LOGO_EXACT_LM_008_HEX_AEB3B8",
+    "javascript": "colorLogoExactLm008HexAeb3b8",
+    "python": "COLOR_LOGO_EXACT_LM_008_HEX_AEB3B8",
+    "typescript": "color.logo.exact.lm_008.hex_aeb3b8"
+  },
+  "color.logo.exact.lm_008.hex_ffffff": {
+    "css": "--sape-color-logo-exact-lm-008-hex-ffffff",
+    "dotnet": "ColorLogoExactLm008HexFfffff",
+    "java": "COLOR_LOGO_EXACT_LM_008_HEX_FFFFFF",
+    "javascript": "colorLogoExactLm008HexFfffff",
+    "python": "COLOR_LOGO_EXACT_LM_008_HEX_FFFFFF",
+    "typescript": "color.logo.exact.lm_008.hex_ffffff"
+  },
+  "color.neutral.0": {
+    "css": "--sape-color-neutral-0",
+    "dotnet": "ColorNeutral0",
+    "java": "COLOR_NEUTRAL_0",
+    "javascript": "colorNeutral0",
+    "python": "COLOR_NEUTRAL_0",
+    "typescript": "color.neutral.0"
+  },
+  "color.neutral.100": {
+    "css": "--sape-color-neutral-100",
+    "dotnet": "ColorNeutral100",
+    "java": "COLOR_NEUTRAL_100",
+    "javascript": "colorNeutral100",
+    "python": "COLOR_NEUTRAL_100",
+    "typescript": "color.neutral.100"
+  },
+  "color.neutral.200": {
+    "css": "--sape-color-neutral-200",
+    "dotnet": "ColorNeutral200",
+    "java": "COLOR_NEUTRAL_200",
+    "javascript": "colorNeutral200",
+    "python": "COLOR_NEUTRAL_200",
+    "typescript": "color.neutral.200"
+  },
+  "color.neutral.300": {
+    "css": "--sape-color-neutral-300",
+    "dotnet": "ColorNeutral300",
+    "java": "COLOR_NEUTRAL_300",
+    "javascript": "colorNeutral300",
+    "python": "COLOR_NEUTRAL_300",
+    "typescript": "color.neutral.300"
+  },
+  "color.neutral.400": {
+    "css": "--sape-color-neutral-400",
+    "dotnet": "ColorNeutral400",
+    "java": "COLOR_NEUTRAL_400",
+    "javascript": "colorNeutral400",
+    "python": "COLOR_NEUTRAL_400",
+    "typescript": "color.neutral.400"
+  },
+  "color.neutral.50": {
+    "css": "--sape-color-neutral-50",
+    "dotnet": "ColorNeutral50",
+    "java": "COLOR_NEUTRAL_50",
+    "javascript": "colorNeutral50",
+    "python": "COLOR_NEUTRAL_50",
+    "typescript": "color.neutral.50"
+  },
+  "color.neutral.500": {
+    "css": "--sape-color-neutral-500",
+    "dotnet": "ColorNeutral500",
+    "java": "COLOR_NEUTRAL_500",
+    "javascript": "colorNeutral500",
+    "python": "COLOR_NEUTRAL_500",
+    "typescript": "color.neutral.500"
+  },
+  "color.neutral.600": {
+    "css": "--sape-color-neutral-600",
+    "dotnet": "ColorNeutral600",
+    "java": "COLOR_NEUTRAL_600",
+    "javascript": "colorNeutral600",
+    "python": "COLOR_NEUTRAL_600",
+    "typescript": "color.neutral.600"
+  },
+  "color.neutral.700": {
+    "css": "--sape-color-neutral-700",
+    "dotnet": "ColorNeutral700",
+    "java": "COLOR_NEUTRAL_700",
+    "javascript": "colorNeutral700",
+    "python": "COLOR_NEUTRAL_700",
+    "typescript": "color.neutral.700"
+  },
+  "color.neutral.800": {
+    "css": "--sape-color-neutral-800",
+    "dotnet": "ColorNeutral800",
+    "java": "COLOR_NEUTRAL_800",
+    "javascript": "colorNeutral800",
+    "python": "COLOR_NEUTRAL_800",
+    "typescript": "color.neutral.800"
+  },
+  "color.neutral.900": {
+    "css": "--sape-color-neutral-900",
+    "dotnet": "ColorNeutral900",
+    "java": "COLOR_NEUTRAL_900",
+    "javascript": "colorNeutral900",
+    "python": "COLOR_NEUTRAL_900",
+    "typescript": "color.neutral.900"
+  },
+  "color.neutral.950": {
+    "css": "--sape-color-neutral-950",
+    "dotnet": "ColorNeutral950",
+    "java": "COLOR_NEUTRAL_950",
+    "javascript": "colorNeutral950",
+    "python": "COLOR_NEUTRAL_950",
+    "typescript": "color.neutral.950"
+  },
+  "color.overlay.scrim": {
+    "css": "--sape-color-overlay-scrim",
+    "dotnet": "ColorOverlayScrim",
+    "java": "COLOR_OVERLAY_SCRIM",
+    "javascript": "colorOverlayScrim",
+    "python": "COLOR_OVERLAY_SCRIM",
+    "typescript": "color.overlay.scrim"
+  },
+  "color.overlay.veil": {
+    "css": "--sape-color-overlay-veil",
+    "dotnet": "ColorOverlayVeil",
+    "java": "COLOR_OVERLAY_VEIL",
+    "javascript": "colorOverlayVeil",
+    "python": "COLOR_OVERLAY_VEIL",
+    "typescript": "color.overlay.veil"
+  },
+  "color.primary.100": {
+    "css": "--sape-color-primary-100",
+    "dotnet": "ColorPrimary100",
+    "java": "COLOR_PRIMARY_100",
+    "javascript": "colorPrimary100",
+    "python": "COLOR_PRIMARY_100",
+    "typescript": "color.primary.100"
+  },
+  "color.primary.200": {
+    "css": "--sape-color-primary-200",
+    "dotnet": "ColorPrimary200",
+    "java": "COLOR_PRIMARY_200",
+    "javascript": "colorPrimary200",
+    "python": "COLOR_PRIMARY_200",
+    "typescript": "color.primary.200"
+  },
+  "color.primary.300": {
+    "css": "--sape-color-primary-300",
+    "dotnet": "ColorPrimary300",
+    "java": "COLOR_PRIMARY_300",
+    "javascript": "colorPrimary300",
+    "python": "COLOR_PRIMARY_300",
+    "typescript": "color.primary.300"
+  },
+  "color.primary.400": {
+    "css": "--sape-color-primary-400",
+    "dotnet": "ColorPrimary400",
+    "java": "COLOR_PRIMARY_400",
+    "javascript": "colorPrimary400",
+    "python": "COLOR_PRIMARY_400",
+    "typescript": "color.primary.400"
+  },
+  "color.primary.50": {
+    "css": "--sape-color-primary-50",
+    "dotnet": "ColorPrimary50",
+    "java": "COLOR_PRIMARY_50",
+    "javascript": "colorPrimary50",
+    "python": "COLOR_PRIMARY_50",
+    "typescript": "color.primary.50"
+  },
+  "color.primary.500": {
+    "css": "--sape-color-primary-500",
+    "dotnet": "ColorPrimary500",
+    "java": "COLOR_PRIMARY_500",
+    "javascript": "colorPrimary500",
+    "python": "COLOR_PRIMARY_500",
+    "typescript": "color.primary.500"
+  },
+  "color.primary.600": {
+    "css": "--sape-color-primary-600",
+    "dotnet": "ColorPrimary600",
+    "java": "COLOR_PRIMARY_600",
+    "javascript": "colorPrimary600",
+    "python": "COLOR_PRIMARY_600",
+    "typescript": "color.primary.600"
+  },
+  "color.primary.700": {
+    "css": "--sape-color-primary-700",
+    "dotnet": "ColorPrimary700",
+    "java": "COLOR_PRIMARY_700",
+    "javascript": "colorPrimary700",
+    "python": "COLOR_PRIMARY_700",
+    "typescript": "color.primary.700"
+  },
+  "color.primary.800": {
+    "css": "--sape-color-primary-800",
+    "dotnet": "ColorPrimary800",
+    "java": "COLOR_PRIMARY_800",
+    "javascript": "colorPrimary800",
+    "python": "COLOR_PRIMARY_800",
+    "typescript": "color.primary.800"
+  },
+  "color.primary.900": {
+    "css": "--sape-color-primary-900",
+    "dotnet": "ColorPrimary900",
+    "java": "COLOR_PRIMARY_900",
+    "javascript": "colorPrimary900",
+    "python": "COLOR_PRIMARY_900",
+    "typescript": "color.primary.900"
+  },
+  "color.primary.950": {
+    "css": "--sape-color-primary-950",
+    "dotnet": "ColorPrimary950",
+    "java": "COLOR_PRIMARY_950",
+    "javascript": "colorPrimary950",
+    "python": "COLOR_PRIMARY_950",
+    "typescript": "color.primary.950"
+  },
+  "color.secondary.100": {
+    "css": "--sape-color-secondary-100",
+    "dotnet": "ColorSecondary100",
+    "java": "COLOR_SECONDARY_100",
+    "javascript": "colorSecondary100",
+    "python": "COLOR_SECONDARY_100",
+    "typescript": "color.secondary.100"
+  },
+  "color.secondary.200": {
+    "css": "--sape-color-secondary-200",
+    "dotnet": "ColorSecondary200",
+    "java": "COLOR_SECONDARY_200",
+    "javascript": "colorSecondary200",
+    "python": "COLOR_SECONDARY_200",
+    "typescript": "color.secondary.200"
+  },
+  "color.secondary.300": {
+    "css": "--sape-color-secondary-300",
+    "dotnet": "ColorSecondary300",
+    "java": "COLOR_SECONDARY_300",
+    "javascript": "colorSecondary300",
+    "python": "COLOR_SECONDARY_300",
+    "typescript": "color.secondary.300"
+  },
+  "color.secondary.400": {
+    "css": "--sape-color-secondary-400",
+    "dotnet": "ColorSecondary400",
+    "java": "COLOR_SECONDARY_400",
+    "javascript": "colorSecondary400",
+    "python": "COLOR_SECONDARY_400",
+    "typescript": "color.secondary.400"
+  },
+  "color.secondary.50": {
+    "css": "--sape-color-secondary-50",
+    "dotnet": "ColorSecondary50",
+    "java": "COLOR_SECONDARY_50",
+    "javascript": "colorSecondary50",
+    "python": "COLOR_SECONDARY_50",
+    "typescript": "color.secondary.50"
+  },
+  "color.secondary.500": {
+    "css": "--sape-color-secondary-500",
+    "dotnet": "ColorSecondary500",
+    "java": "COLOR_SECONDARY_500",
+    "javascript": "colorSecondary500",
+    "python": "COLOR_SECONDARY_500",
+    "typescript": "color.secondary.500"
+  },
+  "color.secondary.600": {
+    "css": "--sape-color-secondary-600",
+    "dotnet": "ColorSecondary600",
+    "java": "COLOR_SECONDARY_600",
+    "javascript": "colorSecondary600",
+    "python": "COLOR_SECONDARY_600",
+    "typescript": "color.secondary.600"
+  },
+  "color.secondary.700": {
+    "css": "--sape-color-secondary-700",
+    "dotnet": "ColorSecondary700",
+    "java": "COLOR_SECONDARY_700",
+    "javascript": "colorSecondary700",
+    "python": "COLOR_SECONDARY_700",
+    "typescript": "color.secondary.700"
+  },
+  "color.secondary.800": {
+    "css": "--sape-color-secondary-800",
+    "dotnet": "ColorSecondary800",
+    "java": "COLOR_SECONDARY_800",
+    "javascript": "colorSecondary800",
+    "python": "COLOR_SECONDARY_800",
+    "typescript": "color.secondary.800"
+  },
+  "color.secondary.900": {
+    "css": "--sape-color-secondary-900",
+    "dotnet": "ColorSecondary900",
+    "java": "COLOR_SECONDARY_900",
+    "javascript": "colorSecondary900",
+    "python": "COLOR_SECONDARY_900",
+    "typescript": "color.secondary.900"
+  },
+  "color.secondary.950": {
+    "css": "--sape-color-secondary-950",
+    "dotnet": "ColorSecondary950",
+    "java": "COLOR_SECONDARY_950",
+    "javascript": "colorSecondary950",
+    "python": "COLOR_SECONDARY_950",
+    "typescript": "color.secondary.950"
+  },
+  "color.semantic.error.active": {
+    "css": "--sape-color-semantic-error-active",
+    "dotnet": "ColorSemanticErrorActive",
+    "java": "COLOR_SEMANTIC_ERROR_ACTIVE",
+    "javascript": "colorSemanticErrorActive",
+    "python": "COLOR_SEMANTIC_ERROR_ACTIVE",
+    "typescript": "color.semantic.error.active"
+  },
+  "color.semantic.error.border": {
+    "css": "--sape-color-semantic-error-border",
+    "dotnet": "ColorSemanticErrorBorder",
+    "java": "COLOR_SEMANTIC_ERROR_BORDER",
+    "javascript": "colorSemanticErrorBorder",
+    "python": "COLOR_SEMANTIC_ERROR_BORDER",
+    "typescript": "color.semantic.error.border"
+  },
+  "color.semantic.error.disabled": {
+    "css": "--sape-color-semantic-error-disabled",
+    "dotnet": "ColorSemanticErrorDisabled",
+    "java": "COLOR_SEMANTIC_ERROR_DISABLED",
+    "javascript": "colorSemanticErrorDisabled",
+    "python": "COLOR_SEMANTIC_ERROR_DISABLED",
+    "typescript": "color.semantic.error.disabled"
+  },
+  "color.semantic.error.hover": {
+    "css": "--sape-color-semantic-error-hover",
+    "dotnet": "ColorSemanticErrorHover",
+    "java": "COLOR_SEMANTIC_ERROR_HOVER",
+    "javascript": "colorSemanticErrorHover",
+    "python": "COLOR_SEMANTIC_ERROR_HOVER",
+    "typescript": "color.semantic.error.hover"
+  },
+  "color.semantic.error.icon": {
+    "css": "--sape-color-semantic-error-icon",
+    "dotnet": "ColorSemanticErrorIcon",
+    "java": "COLOR_SEMANTIC_ERROR_ICON",
+    "javascript": "colorSemanticErrorIcon",
+    "python": "COLOR_SEMANTIC_ERROR_ICON",
+    "typescript": "color.semantic.error.icon"
+  },
+  "color.semantic.error.solid": {
+    "css": "--sape-color-semantic-error-solid",
+    "dotnet": "ColorSemanticErrorSolid",
+    "java": "COLOR_SEMANTIC_ERROR_SOLID",
+    "javascript": "colorSemanticErrorSolid",
+    "python": "COLOR_SEMANTIC_ERROR_SOLID",
+    "typescript": "color.semantic.error.solid"
+  },
+  "color.semantic.error.subtle": {
+    "css": "--sape-color-semantic-error-subtle",
+    "dotnet": "ColorSemanticErrorSubtle",
+    "java": "COLOR_SEMANTIC_ERROR_SUBTLE",
+    "javascript": "colorSemanticErrorSubtle",
+    "python": "COLOR_SEMANTIC_ERROR_SUBTLE",
+    "typescript": "color.semantic.error.subtle"
+  },
+  "color.semantic.error.text": {
+    "css": "--sape-color-semantic-error-text",
+    "dotnet": "ColorSemanticErrorText",
+    "java": "COLOR_SEMANTIC_ERROR_TEXT",
+    "javascript": "colorSemanticErrorText",
+    "python": "COLOR_SEMANTIC_ERROR_TEXT",
+    "typescript": "color.semantic.error.text"
+  },
+  "color.semantic.info.active": {
+    "css": "--sape-color-semantic-info-active",
+    "dotnet": "ColorSemanticInfoActive",
+    "java": "COLOR_SEMANTIC_INFO_ACTIVE",
+    "javascript": "colorSemanticInfoActive",
+    "python": "COLOR_SEMANTIC_INFO_ACTIVE",
+    "typescript": "color.semantic.info.active"
+  },
+  "color.semantic.info.border": {
+    "css": "--sape-color-semantic-info-border",
+    "dotnet": "ColorSemanticInfoBorder",
+    "java": "COLOR_SEMANTIC_INFO_BORDER",
+    "javascript": "colorSemanticInfoBorder",
+    "python": "COLOR_SEMANTIC_INFO_BORDER",
+    "typescript": "color.semantic.info.border"
+  },
+  "color.semantic.info.disabled": {
+    "css": "--sape-color-semantic-info-disabled",
+    "dotnet": "ColorSemanticInfoDisabled",
+    "java": "COLOR_SEMANTIC_INFO_DISABLED",
+    "javascript": "colorSemanticInfoDisabled",
+    "python": "COLOR_SEMANTIC_INFO_DISABLED",
+    "typescript": "color.semantic.info.disabled"
+  },
+  "color.semantic.info.hover": {
+    "css": "--sape-color-semantic-info-hover",
+    "dotnet": "ColorSemanticInfoHover",
+    "java": "COLOR_SEMANTIC_INFO_HOVER",
+    "javascript": "colorSemanticInfoHover",
+    "python": "COLOR_SEMANTIC_INFO_HOVER",
+    "typescript": "color.semantic.info.hover"
+  },
+  "color.semantic.info.icon": {
+    "css": "--sape-color-semantic-info-icon",
+    "dotnet": "ColorSemanticInfoIcon",
+    "java": "COLOR_SEMANTIC_INFO_ICON",
+    "javascript": "colorSemanticInfoIcon",
+    "python": "COLOR_SEMANTIC_INFO_ICON",
+    "typescript": "color.semantic.info.icon"
+  },
+  "color.semantic.info.solid": {
+    "css": "--sape-color-semantic-info-solid",
+    "dotnet": "ColorSemanticInfoSolid",
+    "java": "COLOR_SEMANTIC_INFO_SOLID",
+    "javascript": "colorSemanticInfoSolid",
+    "python": "COLOR_SEMANTIC_INFO_SOLID",
+    "typescript": "color.semantic.info.solid"
+  },
+  "color.semantic.info.subtle": {
+    "css": "--sape-color-semantic-info-subtle",
+    "dotnet": "ColorSemanticInfoSubtle",
+    "java": "COLOR_SEMANTIC_INFO_SUBTLE",
+    "javascript": "colorSemanticInfoSubtle",
+    "python": "COLOR_SEMANTIC_INFO_SUBTLE",
+    "typescript": "color.semantic.info.subtle"
+  },
+  "color.semantic.info.text": {
+    "css": "--sape-color-semantic-info-text",
+    "dotnet": "ColorSemanticInfoText",
+    "java": "COLOR_SEMANTIC_INFO_TEXT",
+    "javascript": "colorSemanticInfoText",
+    "python": "COLOR_SEMANTIC_INFO_TEXT",
+    "typescript": "color.semantic.info.text"
+  },
+  "color.semantic.neutral.active": {
+    "css": "--sape-color-semantic-neutral-active",
+    "dotnet": "ColorSemanticNeutralActive",
+    "java": "COLOR_SEMANTIC_NEUTRAL_ACTIVE",
+    "javascript": "colorSemanticNeutralActive",
+    "python": "COLOR_SEMANTIC_NEUTRAL_ACTIVE",
+    "typescript": "color.semantic.neutral.active"
+  },
+  "color.semantic.neutral.border": {
+    "css": "--sape-color-semantic-neutral-border",
+    "dotnet": "ColorSemanticNeutralBorder",
+    "java": "COLOR_SEMANTIC_NEUTRAL_BORDER",
+    "javascript": "colorSemanticNeutralBorder",
+    "python": "COLOR_SEMANTIC_NEUTRAL_BORDER",
+    "typescript": "color.semantic.neutral.border"
+  },
+  "color.semantic.neutral.disabled": {
+    "css": "--sape-color-semantic-neutral-disabled",
+    "dotnet": "ColorSemanticNeutralDisabled",
+    "java": "COLOR_SEMANTIC_NEUTRAL_DISABLED",
+    "javascript": "colorSemanticNeutralDisabled",
+    "python": "COLOR_SEMANTIC_NEUTRAL_DISABLED",
+    "typescript": "color.semantic.neutral.disabled"
+  },
+  "color.semantic.neutral.hover": {
+    "css": "--sape-color-semantic-neutral-hover",
+    "dotnet": "ColorSemanticNeutralHover",
+    "java": "COLOR_SEMANTIC_NEUTRAL_HOVER",
+    "javascript": "colorSemanticNeutralHover",
+    "python": "COLOR_SEMANTIC_NEUTRAL_HOVER",
+    "typescript": "color.semantic.neutral.hover"
+  },
+  "color.semantic.neutral.icon": {
+    "css": "--sape-color-semantic-neutral-icon",
+    "dotnet": "ColorSemanticNeutralIcon",
+    "java": "COLOR_SEMANTIC_NEUTRAL_ICON",
+    "javascript": "colorSemanticNeutralIcon",
+    "python": "COLOR_SEMANTIC_NEUTRAL_ICON",
+    "typescript": "color.semantic.neutral.icon"
+  },
+  "color.semantic.neutral.solid": {
+    "css": "--sape-color-semantic-neutral-solid",
+    "dotnet": "ColorSemanticNeutralSolid",
+    "java": "COLOR_SEMANTIC_NEUTRAL_SOLID",
+    "javascript": "colorSemanticNeutralSolid",
+    "python": "COLOR_SEMANTIC_NEUTRAL_SOLID",
+    "typescript": "color.semantic.neutral.solid"
+  },
+  "color.semantic.neutral.subtle": {
+    "css": "--sape-color-semantic-neutral-subtle",
+    "dotnet": "ColorSemanticNeutralSubtle",
+    "java": "COLOR_SEMANTIC_NEUTRAL_SUBTLE",
+    "javascript": "colorSemanticNeutralSubtle",
+    "python": "COLOR_SEMANTIC_NEUTRAL_SUBTLE",
+    "typescript": "color.semantic.neutral.subtle"
+  },
+  "color.semantic.neutral.text": {
+    "css": "--sape-color-semantic-neutral-text",
+    "dotnet": "ColorSemanticNeutralText",
+    "java": "COLOR_SEMANTIC_NEUTRAL_TEXT",
+    "javascript": "colorSemanticNeutralText",
+    "python": "COLOR_SEMANTIC_NEUTRAL_TEXT",
+    "typescript": "color.semantic.neutral.text"
+  },
+  "color.semantic.success.active": {
+    "css": "--sape-color-semantic-success-active",
+    "dotnet": "ColorSemanticSuccessActive",
+    "java": "COLOR_SEMANTIC_SUCCESS_ACTIVE",
+    "javascript": "colorSemanticSuccessActive",
+    "python": "COLOR_SEMANTIC_SUCCESS_ACTIVE",
+    "typescript": "color.semantic.success.active"
+  },
+  "color.semantic.success.border": {
+    "css": "--sape-color-semantic-success-border",
+    "dotnet": "ColorSemanticSuccessBorder",
+    "java": "COLOR_SEMANTIC_SUCCESS_BORDER",
+    "javascript": "colorSemanticSuccessBorder",
+    "python": "COLOR_SEMANTIC_SUCCESS_BORDER",
+    "typescript": "color.semantic.success.border"
+  },
+  "color.semantic.success.disabled": {
+    "css": "--sape-color-semantic-success-disabled",
+    "dotnet": "ColorSemanticSuccessDisabled",
+    "java": "COLOR_SEMANTIC_SUCCESS_DISABLED",
+    "javascript": "colorSemanticSuccessDisabled",
+    "python": "COLOR_SEMANTIC_SUCCESS_DISABLED",
+    "typescript": "color.semantic.success.disabled"
+  },
+  "color.semantic.success.hover": {
+    "css": "--sape-color-semantic-success-hover",
+    "dotnet": "ColorSemanticSuccessHover",
+    "java": "COLOR_SEMANTIC_SUCCESS_HOVER",
+    "javascript": "colorSemanticSuccessHover",
+    "python": "COLOR_SEMANTIC_SUCCESS_HOVER",
+    "typescript": "color.semantic.success.hover"
+  },
+  "color.semantic.success.icon": {
+    "css": "--sape-color-semantic-success-icon",
+    "dotnet": "ColorSemanticSuccessIcon",
+    "java": "COLOR_SEMANTIC_SUCCESS_ICON",
+    "javascript": "colorSemanticSuccessIcon",
+    "python": "COLOR_SEMANTIC_SUCCESS_ICON",
+    "typescript": "color.semantic.success.icon"
+  },
+  "color.semantic.success.solid": {
+    "css": "--sape-color-semantic-success-solid",
+    "dotnet": "ColorSemanticSuccessSolid",
+    "java": "COLOR_SEMANTIC_SUCCESS_SOLID",
+    "javascript": "colorSemanticSuccessSolid",
+    "python": "COLOR_SEMANTIC_SUCCESS_SOLID",
+    "typescript": "color.semantic.success.solid"
+  },
+  "color.semantic.success.subtle": {
+    "css": "--sape-color-semantic-success-subtle",
+    "dotnet": "ColorSemanticSuccessSubtle",
+    "java": "COLOR_SEMANTIC_SUCCESS_SUBTLE",
+    "javascript": "colorSemanticSuccessSubtle",
+    "python": "COLOR_SEMANTIC_SUCCESS_SUBTLE",
+    "typescript": "color.semantic.success.subtle"
+  },
+  "color.semantic.success.text": {
+    "css": "--sape-color-semantic-success-text",
+    "dotnet": "ColorSemanticSuccessText",
+    "java": "COLOR_SEMANTIC_SUCCESS_TEXT",
+    "javascript": "colorSemanticSuccessText",
+    "python": "COLOR_SEMANTIC_SUCCESS_TEXT",
+    "typescript": "color.semantic.success.text"
+  },
+  "color.semantic.warning.active": {
+    "css": "--sape-color-semantic-warning-active",
+    "dotnet": "ColorSemanticWarningActive",
+    "java": "COLOR_SEMANTIC_WARNING_ACTIVE",
+    "javascript": "colorSemanticWarningActive",
+    "python": "COLOR_SEMANTIC_WARNING_ACTIVE",
+    "typescript": "color.semantic.warning.active"
+  },
+  "color.semantic.warning.border": {
+    "css": "--sape-color-semantic-warning-border",
+    "dotnet": "ColorSemanticWarningBorder",
+    "java": "COLOR_SEMANTIC_WARNING_BORDER",
+    "javascript": "colorSemanticWarningBorder",
+    "python": "COLOR_SEMANTIC_WARNING_BORDER",
+    "typescript": "color.semantic.warning.border"
+  },
+  "color.semantic.warning.disabled": {
+    "css": "--sape-color-semantic-warning-disabled",
+    "dotnet": "ColorSemanticWarningDisabled",
+    "java": "COLOR_SEMANTIC_WARNING_DISABLED",
+    "javascript": "colorSemanticWarningDisabled",
+    "python": "COLOR_SEMANTIC_WARNING_DISABLED",
+    "typescript": "color.semantic.warning.disabled"
+  },
+  "color.semantic.warning.hover": {
+    "css": "--sape-color-semantic-warning-hover",
+    "dotnet": "ColorSemanticWarningHover",
+    "java": "COLOR_SEMANTIC_WARNING_HOVER",
+    "javascript": "colorSemanticWarningHover",
+    "python": "COLOR_SEMANTIC_WARNING_HOVER",
+    "typescript": "color.semantic.warning.hover"
+  },
+  "color.semantic.warning.icon": {
+    "css": "--sape-color-semantic-warning-icon",
+    "dotnet": "ColorSemanticWarningIcon",
+    "java": "COLOR_SEMANTIC_WARNING_ICON",
+    "javascript": "colorSemanticWarningIcon",
+    "python": "COLOR_SEMANTIC_WARNING_ICON",
+    "typescript": "color.semantic.warning.icon"
+  },
+  "color.semantic.warning.solid": {
+    "css": "--sape-color-semantic-warning-solid",
+    "dotnet": "ColorSemanticWarningSolid",
+    "java": "COLOR_SEMANTIC_WARNING_SOLID",
+    "javascript": "colorSemanticWarningSolid",
+    "python": "COLOR_SEMANTIC_WARNING_SOLID",
+    "typescript": "color.semantic.warning.solid"
+  },
+  "color.semantic.warning.subtle": {
+    "css": "--sape-color-semantic-warning-subtle",
+    "dotnet": "ColorSemanticWarningSubtle",
+    "java": "COLOR_SEMANTIC_WARNING_SUBTLE",
+    "javascript": "colorSemanticWarningSubtle",
+    "python": "COLOR_SEMANTIC_WARNING_SUBTLE",
+    "typescript": "color.semantic.warning.subtle"
+  },
+  "color.semantic.warning.text": {
+    "css": "--sape-color-semantic-warning-text",
+    "dotnet": "ColorSemanticWarningText",
+    "java": "COLOR_SEMANTIC_WARNING_TEXT",
+    "javascript": "colorSemanticWarningText",
+    "python": "COLOR_SEMANTIC_WARNING_TEXT",
+    "typescript": "color.semantic.warning.text"
+  },
+  "color.surface.base": {
+    "css": "--sape-color-surface-base",
+    "dotnet": "ColorSurfaceBase",
+    "java": "COLOR_SURFACE_BASE",
+    "javascript": "colorSurfaceBase",
+    "python": "COLOR_SURFACE_BASE",
+    "typescript": "color.surface.base"
+  },
+  "color.surface.raised": {
+    "css": "--sape-color-surface-raised",
+    "dotnet": "ColorSurfaceRaised",
+    "java": "COLOR_SURFACE_RAISED",
+    "javascript": "colorSurfaceRaised",
+    "python": "COLOR_SURFACE_RAISED",
+    "typescript": "color.surface.raised"
+  },
+  "color.surface.selected": {
+    "css": "--sape-color-surface-selected",
+    "dotnet": "ColorSurfaceSelected",
+    "java": "COLOR_SURFACE_SELECTED",
+    "javascript": "colorSurfaceSelected",
+    "python": "COLOR_SURFACE_SELECTED",
+    "typescript": "color.surface.selected"
+  },
+  "color.text.brand": {
+    "css": "--sape-color-text-brand",
+    "dotnet": "ColorTextBrand",
+    "java": "COLOR_TEXT_BRAND",
+    "javascript": "colorTextBrand",
+    "python": "COLOR_TEXT_BRAND",
+    "typescript": "color.text.brand"
+  },
+  "color.text.inverse": {
+    "css": "--sape-color-text-inverse",
+    "dotnet": "ColorTextInverse",
+    "java": "COLOR_TEXT_INVERSE",
+    "javascript": "colorTextInverse",
+    "python": "COLOR_TEXT_INVERSE",
+    "typescript": "color.text.inverse"
+  },
+  "color.text.muted": {
+    "css": "--sape-color-text-muted",
+    "dotnet": "ColorTextMuted",
+    "java": "COLOR_TEXT_MUTED",
+    "javascript": "colorTextMuted",
+    "python": "COLOR_TEXT_MUTED",
+    "typescript": "color.text.muted"
+  },
+  "color.text.primary": {
+    "css": "--sape-color-text-primary",
+    "dotnet": "ColorTextPrimary",
+    "java": "COLOR_TEXT_PRIMARY",
+    "javascript": "colorTextPrimary",
+    "python": "COLOR_TEXT_PRIMARY",
+    "typescript": "color.text.primary"
+  },
+  "color.text.secondary": {
+    "css": "--sape-color-text-secondary",
+    "dotnet": "ColorTextSecondary",
+    "java": "COLOR_TEXT_SECONDARY",
+    "javascript": "colorTextSecondary",
+    "python": "COLOR_TEXT_SECONDARY",
+    "typescript": "color.text.secondary"
+  },
+  "density.comfortable": {
+    "css": "--sape-density-comfortable",
+    "dotnet": "DensityComfortable",
+    "java": "DENSITY_COMFORTABLE",
+    "javascript": "densityComfortable",
+    "python": "DENSITY_COMFORTABLE",
+    "typescript": "density.comfortable"
+  },
+  "density.compact": {
+    "css": "--sape-density-compact",
+    "dotnet": "DensityCompact",
+    "java": "DENSITY_COMPACT",
+    "javascript": "densityCompact",
+    "python": "DENSITY_COMPACT",
+    "typescript": "density.compact"
+  },
+  "density.standard": {
+    "css": "--sape-density-standard",
+    "dotnet": "DensityStandard",
+    "java": "DENSITY_STANDARD",
+    "javascript": "densityStandard",
+    "python": "DENSITY_STANDARD",
+    "typescript": "density.standard"
+  },
+  "elevation.level_0.border": {
+    "css": "--sape-elevation-level-0-border",
+    "dotnet": "ElevationLevel0Border",
+    "java": "ELEVATION_LEVEL_0_BORDER",
+    "javascript": "elevationLevel0Border",
+    "python": "ELEVATION_LEVEL_0_BORDER",
+    "typescript": "elevation.level_0.border"
+  },
+  "elevation.level_0.shadow": {
+    "css": "--sape-elevation-level-0-shadow",
+    "dotnet": "ElevationLevel0Shadow",
+    "java": "ELEVATION_LEVEL_0_SHADOW",
+    "javascript": "elevationLevel0Shadow",
+    "python": "ELEVATION_LEVEL_0_SHADOW",
+    "typescript": "elevation.level_0.shadow"
+  },
+  "elevation.level_0.surface": {
+    "css": "--sape-elevation-level-0-surface",
+    "dotnet": "ElevationLevel0Surface",
+    "java": "ELEVATION_LEVEL_0_SURFACE",
+    "javascript": "elevationLevel0Surface",
+    "python": "ELEVATION_LEVEL_0_SURFACE",
+    "typescript": "elevation.level_0.surface"
+  },
+  "elevation.level_1.border": {
+    "css": "--sape-elevation-level-1-border",
+    "dotnet": "ElevationLevel1Border",
+    "java": "ELEVATION_LEVEL_1_BORDER",
+    "javascript": "elevationLevel1Border",
+    "python": "ELEVATION_LEVEL_1_BORDER",
+    "typescript": "elevation.level_1.border"
+  },
+  "elevation.level_1.shadow": {
+    "css": "--sape-elevation-level-1-shadow",
+    "dotnet": "ElevationLevel1Shadow",
+    "java": "ELEVATION_LEVEL_1_SHADOW",
+    "javascript": "elevationLevel1Shadow",
+    "python": "ELEVATION_LEVEL_1_SHADOW",
+    "typescript": "elevation.level_1.shadow"
+  },
+  "elevation.level_1.surface": {
+    "css": "--sape-elevation-level-1-surface",
+    "dotnet": "ElevationLevel1Surface",
+    "java": "ELEVATION_LEVEL_1_SURFACE",
+    "javascript": "elevationLevel1Surface",
+    "python": "ELEVATION_LEVEL_1_SURFACE",
+    "typescript": "elevation.level_1.surface"
+  },
+  "elevation.level_2.border": {
+    "css": "--sape-elevation-level-2-border",
+    "dotnet": "ElevationLevel2Border",
+    "java": "ELEVATION_LEVEL_2_BORDER",
+    "javascript": "elevationLevel2Border",
+    "python": "ELEVATION_LEVEL_2_BORDER",
+    "typescript": "elevation.level_2.border"
+  },
+  "elevation.level_2.shadow": {
+    "css": "--sape-elevation-level-2-shadow",
+    "dotnet": "ElevationLevel2Shadow",
+    "java": "ELEVATION_LEVEL_2_SHADOW",
+    "javascript": "elevationLevel2Shadow",
+    "python": "ELEVATION_LEVEL_2_SHADOW",
+    "typescript": "elevation.level_2.shadow"
+  },
+  "elevation.level_2.surface": {
+    "css": "--sape-elevation-level-2-surface",
+    "dotnet": "ElevationLevel2Surface",
+    "java": "ELEVATION_LEVEL_2_SURFACE",
+    "javascript": "elevationLevel2Surface",
+    "python": "ELEVATION_LEVEL_2_SURFACE",
+    "typescript": "elevation.level_2.surface"
+  },
+  "elevation.level_3.border": {
+    "css": "--sape-elevation-level-3-border",
+    "dotnet": "ElevationLevel3Border",
+    "java": "ELEVATION_LEVEL_3_BORDER",
+    "javascript": "elevationLevel3Border",
+    "python": "ELEVATION_LEVEL_3_BORDER",
+    "typescript": "elevation.level_3.border"
+  },
+  "elevation.level_3.shadow": {
+    "css": "--sape-elevation-level-3-shadow",
+    "dotnet": "ElevationLevel3Shadow",
+    "java": "ELEVATION_LEVEL_3_SHADOW",
+    "javascript": "elevationLevel3Shadow",
+    "python": "ELEVATION_LEVEL_3_SHADOW",
+    "typescript": "elevation.level_3.shadow"
+  },
+  "elevation.level_3.surface": {
+    "css": "--sape-elevation-level-3-surface",
+    "dotnet": "ElevationLevel3Surface",
+    "java": "ELEVATION_LEVEL_3_SURFACE",
+    "javascript": "elevationLevel3Surface",
+    "python": "ELEVATION_LEVEL_3_SURFACE",
+    "typescript": "elevation.level_3.surface"
+  },
+  "elevation.level_4.border": {
+    "css": "--sape-elevation-level-4-border",
+    "dotnet": "ElevationLevel4Border",
+    "java": "ELEVATION_LEVEL_4_BORDER",
+    "javascript": "elevationLevel4Border",
+    "python": "ELEVATION_LEVEL_4_BORDER",
+    "typescript": "elevation.level_4.border"
+  },
+  "elevation.level_4.shadow": {
+    "css": "--sape-elevation-level-4-shadow",
+    "dotnet": "ElevationLevel4Shadow",
+    "java": "ELEVATION_LEVEL_4_SHADOW",
+    "javascript": "elevationLevel4Shadow",
+    "python": "ELEVATION_LEVEL_4_SHADOW",
+    "typescript": "elevation.level_4.shadow"
+  },
+  "elevation.level_4.surface": {
+    "css": "--sape-elevation-level-4-surface",
+    "dotnet": "ElevationLevel4Surface",
+    "java": "ELEVATION_LEVEL_4_SURFACE",
+    "javascript": "elevationLevel4Surface",
+    "python": "ELEVATION_LEVEL_4_SURFACE",
+    "typescript": "elevation.level_4.surface"
+  },
+  "elevation.level_5.border": {
+    "css": "--sape-elevation-level-5-border",
+    "dotnet": "ElevationLevel5Border",
+    "java": "ELEVATION_LEVEL_5_BORDER",
+    "javascript": "elevationLevel5Border",
+    "python": "ELEVATION_LEVEL_5_BORDER",
+    "typescript": "elevation.level_5.border"
+  },
+  "elevation.level_5.shadow": {
+    "css": "--sape-elevation-level-5-shadow",
+    "dotnet": "ElevationLevel5Shadow",
+    "java": "ELEVATION_LEVEL_5_SHADOW",
+    "javascript": "elevationLevel5Shadow",
+    "python": "ELEVATION_LEVEL_5_SHADOW",
+    "typescript": "elevation.level_5.shadow"
+  },
+  "elevation.level_5.surface": {
+    "css": "--sape-elevation-level-5-surface",
+    "dotnet": "ElevationLevel5Surface",
+    "java": "ELEVATION_LEVEL_5_SURFACE",
+    "javascript": "elevationLevel5Surface",
+    "python": "ELEVATION_LEVEL_5_SURFACE",
+    "typescript": "elevation.level_5.surface"
+  },
+  "font.family.logo_descriptor": {
+    "css": "--sape-font-family-logo-descriptor",
+    "dotnet": "FontFamilyLogoDescriptor",
+    "java": "FONT_FAMILY_LOGO_DESCRIPTOR",
+    "javascript": "fontFamilyLogoDescriptor",
+    "python": "FONT_FAMILY_LOGO_DESCRIPTOR",
+    "typescript": "font.family.logo_descriptor"
+  },
+  "font.family.mono": {
+    "css": "--sape-font-family-mono",
+    "dotnet": "FontFamilyMono",
+    "java": "FONT_FAMILY_MONO",
+    "javascript": "fontFamilyMono",
+    "python": "FONT_FAMILY_MONO",
+    "typescript": "font.family.mono"
+  },
+  "font.family.primary": {
+    "css": "--sape-font-family-primary",
+    "dotnet": "FontFamilyPrimary",
+    "java": "FONT_FAMILY_PRIMARY",
+    "javascript": "fontFamilyPrimary",
+    "python": "FONT_FAMILY_PRIMARY",
+    "typescript": "font.family.primary"
+  },
+  "font.family.secondary": {
+    "css": "--sape-font-family-secondary",
+    "dotnet": "FontFamilySecondary",
+    "java": "FONT_FAMILY_SECONDARY",
+    "javascript": "fontFamilySecondary",
+    "python": "FONT_FAMILY_SECONDARY",
+    "typescript": "font.family.secondary"
+  },
+  "font.family.system_mono": {
+    "css": "--sape-font-family-system-mono",
+    "dotnet": "FontFamilySystemMono",
+    "java": "FONT_FAMILY_SYSTEM_MONO",
+    "javascript": "fontFamilySystemMono",
+    "python": "FONT_FAMILY_SYSTEM_MONO",
+    "typescript": "font.family.system_mono"
+  },
+  "font.family.system_sans": {
+    "css": "--sape-font-family-system-sans",
+    "dotnet": "FontFamilySystemSans",
+    "java": "FONT_FAMILY_SYSTEM_SANS",
+    "javascript": "fontFamilySystemSans",
+    "python": "FONT_FAMILY_SYSTEM_SANS",
+    "typescript": "font.family.system_sans"
+  },
+  "font.letter_spacing.code": {
+    "css": "--sape-font-letter-spacing-code",
+    "dotnet": "FontLetterSpacingCode",
+    "java": "FONT_LETTER_SPACING_CODE",
+    "javascript": "fontLetterSpacingCode",
+    "python": "FONT_LETTER_SPACING_CODE",
+    "typescript": "font.letter_spacing.code"
+  },
+  "font.letter_spacing.label": {
+    "css": "--sape-font-letter-spacing-label",
+    "dotnet": "FontLetterSpacingLabel",
+    "java": "FONT_LETTER_SPACING_LABEL",
+    "javascript": "fontLetterSpacingLabel",
+    "python": "FONT_LETTER_SPACING_LABEL",
+    "typescript": "font.letter_spacing.label"
+  },
+  "font.letter_spacing.normal": {
+    "css": "--sape-font-letter-spacing-normal",
+    "dotnet": "FontLetterSpacingNormal",
+    "java": "FONT_LETTER_SPACING_NORMAL",
+    "javascript": "fontLetterSpacingNormal",
+    "python": "FONT_LETTER_SPACING_NORMAL",
+    "typescript": "font.letter_spacing.normal"
+  },
+  "font.line_height.normal": {
+    "css": "--sape-font-line-height-normal",
+    "dotnet": "FontLineHeightNormal",
+    "java": "FONT_LINE_HEIGHT_NORMAL",
+    "javascript": "fontLineHeightNormal",
+    "python": "FONT_LINE_HEIGHT_NORMAL",
+    "typescript": "font.line_height.normal"
+  },
+  "font.line_height.relaxed": {
+    "css": "--sape-font-line-height-relaxed",
+    "dotnet": "FontLineHeightRelaxed",
+    "java": "FONT_LINE_HEIGHT_RELAXED",
+    "javascript": "fontLineHeightRelaxed",
+    "python": "FONT_LINE_HEIGHT_RELAXED",
+    "typescript": "font.line_height.relaxed"
+  },
+  "font.line_height.snug": {
+    "css": "--sape-font-line-height-snug",
+    "dotnet": "FontLineHeightSnug",
+    "java": "FONT_LINE_HEIGHT_SNUG",
+    "javascript": "fontLineHeightSnug",
+    "python": "FONT_LINE_HEIGHT_SNUG",
+    "typescript": "font.line_height.snug"
+  },
+  "font.line_height.tight": {
+    "css": "--sape-font-line-height-tight",
+    "dotnet": "FontLineHeightTight",
+    "java": "FONT_LINE_HEIGHT_TIGHT",
+    "javascript": "fontLineHeightTight",
+    "python": "FONT_LINE_HEIGHT_TIGHT",
+    "typescript": "font.line_height.tight"
+  },
+  "font.role.body.family": {
+    "css": "--sape-font-role-body-family",
+    "dotnet": "FontRoleBodyFamily",
+    "java": "FONT_ROLE_BODY_FAMILY",
+    "javascript": "fontRoleBodyFamily",
+    "python": "FONT_ROLE_BODY_FAMILY",
+    "typescript": "font.role.body.family"
+  },
+  "font.role.body.letter_spacing": {
+    "css": "--sape-font-role-body-letter-spacing",
+    "dotnet": "FontRoleBodyLetterSpacing",
+    "java": "FONT_ROLE_BODY_LETTER_SPACING",
+    "javascript": "fontRoleBodyLetterSpacing",
+    "python": "FONT_ROLE_BODY_LETTER_SPACING",
+    "typescript": "font.role.body.letter_spacing"
+  },
+  "font.role.body.line_height": {
+    "css": "--sape-font-role-body-line-height",
+    "dotnet": "FontRoleBodyLineHeight",
+    "java": "FONT_ROLE_BODY_LINE_HEIGHT",
+    "javascript": "fontRoleBodyLineHeight",
+    "python": "FONT_ROLE_BODY_LINE_HEIGHT",
+    "typescript": "font.role.body.line_height"
+  },
+  "font.role.body.size": {
+    "css": "--sape-font-role-body-size",
+    "dotnet": "FontRoleBodySize",
+    "java": "FONT_ROLE_BODY_SIZE",
+    "javascript": "fontRoleBodySize",
+    "python": "FONT_ROLE_BODY_SIZE",
+    "typescript": "font.role.body.size"
+  },
+  "font.role.body.weight": {
+    "css": "--sape-font-role-body-weight",
+    "dotnet": "FontRoleBodyWeight",
+    "java": "FONT_ROLE_BODY_WEIGHT",
+    "javascript": "fontRoleBodyWeight",
+    "python": "FONT_ROLE_BODY_WEIGHT",
+    "typescript": "font.role.body.weight"
+  },
+  "font.role.caption.family": {
+    "css": "--sape-font-role-caption-family",
+    "dotnet": "FontRoleCaptionFamily",
+    "java": "FONT_ROLE_CAPTION_FAMILY",
+    "javascript": "fontRoleCaptionFamily",
+    "python": "FONT_ROLE_CAPTION_FAMILY",
+    "typescript": "font.role.caption.family"
+  },
+  "font.role.caption.letter_spacing": {
+    "css": "--sape-font-role-caption-letter-spacing",
+    "dotnet": "FontRoleCaptionLetterSpacing",
+    "java": "FONT_ROLE_CAPTION_LETTER_SPACING",
+    "javascript": "fontRoleCaptionLetterSpacing",
+    "python": "FONT_ROLE_CAPTION_LETTER_SPACING",
+    "typescript": "font.role.caption.letter_spacing"
+  },
+  "font.role.caption.line_height": {
+    "css": "--sape-font-role-caption-line-height",
+    "dotnet": "FontRoleCaptionLineHeight",
+    "java": "FONT_ROLE_CAPTION_LINE_HEIGHT",
+    "javascript": "fontRoleCaptionLineHeight",
+    "python": "FONT_ROLE_CAPTION_LINE_HEIGHT",
+    "typescript": "font.role.caption.line_height"
+  },
+  "font.role.caption.size": {
+    "css": "--sape-font-role-caption-size",
+    "dotnet": "FontRoleCaptionSize",
+    "java": "FONT_ROLE_CAPTION_SIZE",
+    "javascript": "fontRoleCaptionSize",
+    "python": "FONT_ROLE_CAPTION_SIZE",
+    "typescript": "font.role.caption.size"
+  },
+  "font.role.caption.weight": {
+    "css": "--sape-font-role-caption-weight",
+    "dotnet": "FontRoleCaptionWeight",
+    "java": "FONT_ROLE_CAPTION_WEIGHT",
+    "javascript": "fontRoleCaptionWeight",
+    "python": "FONT_ROLE_CAPTION_WEIGHT",
+    "typescript": "font.role.caption.weight"
+  },
+  "font.role.code.family": {
+    "css": "--sape-font-role-code-family",
+    "dotnet": "FontRoleCodeFamily",
+    "java": "FONT_ROLE_CODE_FAMILY",
+    "javascript": "fontRoleCodeFamily",
+    "python": "FONT_ROLE_CODE_FAMILY",
+    "typescript": "font.role.code.family"
+  },
+  "font.role.code.letter_spacing": {
+    "css": "--sape-font-role-code-letter-spacing",
+    "dotnet": "FontRoleCodeLetterSpacing",
+    "java": "FONT_ROLE_CODE_LETTER_SPACING",
+    "javascript": "fontRoleCodeLetterSpacing",
+    "python": "FONT_ROLE_CODE_LETTER_SPACING",
+    "typescript": "font.role.code.letter_spacing"
+  },
+  "font.role.code.line_height": {
+    "css": "--sape-font-role-code-line-height",
+    "dotnet": "FontRoleCodeLineHeight",
+    "java": "FONT_ROLE_CODE_LINE_HEIGHT",
+    "javascript": "fontRoleCodeLineHeight",
+    "python": "FONT_ROLE_CODE_LINE_HEIGHT",
+    "typescript": "font.role.code.line_height"
+  },
+  "font.role.code.size": {
+    "css": "--sape-font-role-code-size",
+    "dotnet": "FontRoleCodeSize",
+    "java": "FONT_ROLE_CODE_SIZE",
+    "javascript": "fontRoleCodeSize",
+    "python": "FONT_ROLE_CODE_SIZE",
+    "typescript": "font.role.code.size"
+  },
+  "font.role.code.weight": {
+    "css": "--sape-font-role-code-weight",
+    "dotnet": "FontRoleCodeWeight",
+    "java": "FONT_ROLE_CODE_WEIGHT",
+    "javascript": "fontRoleCodeWeight",
+    "python": "FONT_ROLE_CODE_WEIGHT",
+    "typescript": "font.role.code.weight"
+  },
+  "font.role.display.family": {
+    "css": "--sape-font-role-display-family",
+    "dotnet": "FontRoleDisplayFamily",
+    "java": "FONT_ROLE_DISPLAY_FAMILY",
+    "javascript": "fontRoleDisplayFamily",
+    "python": "FONT_ROLE_DISPLAY_FAMILY",
+    "typescript": "font.role.display.family"
+  },
+  "font.role.display.letter_spacing": {
+    "css": "--sape-font-role-display-letter-spacing",
+    "dotnet": "FontRoleDisplayLetterSpacing",
+    "java": "FONT_ROLE_DISPLAY_LETTER_SPACING",
+    "javascript": "fontRoleDisplayLetterSpacing",
+    "python": "FONT_ROLE_DISPLAY_LETTER_SPACING",
+    "typescript": "font.role.display.letter_spacing"
+  },
+  "font.role.display.line_height": {
+    "css": "--sape-font-role-display-line-height",
+    "dotnet": "FontRoleDisplayLineHeight",
+    "java": "FONT_ROLE_DISPLAY_LINE_HEIGHT",
+    "javascript": "fontRoleDisplayLineHeight",
+    "python": "FONT_ROLE_DISPLAY_LINE_HEIGHT",
+    "typescript": "font.role.display.line_height"
+  },
+  "font.role.display.size": {
+    "css": "--sape-font-role-display-size",
+    "dotnet": "FontRoleDisplaySize",
+    "java": "FONT_ROLE_DISPLAY_SIZE",
+    "javascript": "fontRoleDisplaySize",
+    "python": "FONT_ROLE_DISPLAY_SIZE",
+    "typescript": "font.role.display.size"
+  },
+  "font.role.display.weight": {
+    "css": "--sape-font-role-display-weight",
+    "dotnet": "FontRoleDisplayWeight",
+    "java": "FONT_ROLE_DISPLAY_WEIGHT",
+    "javascript": "fontRoleDisplayWeight",
+    "python": "FONT_ROLE_DISPLAY_WEIGHT",
+    "typescript": "font.role.display.weight"
+  },
+  "font.role.document_body.family": {
+    "css": "--sape-font-role-document-body-family",
+    "dotnet": "FontRoleDocumentBodyFamily",
+    "java": "FONT_ROLE_DOCUMENT_BODY_FAMILY",
+    "javascript": "fontRoleDocumentBodyFamily",
+    "python": "FONT_ROLE_DOCUMENT_BODY_FAMILY",
+    "typescript": "font.role.document_body.family"
+  },
+  "font.role.document_body.letter_spacing": {
+    "css": "--sape-font-role-document-body-letter-spacing",
+    "dotnet": "FontRoleDocumentBodyLetterSpacing",
+    "java": "FONT_ROLE_DOCUMENT_BODY_LETTER_SPACING",
+    "javascript": "fontRoleDocumentBodyLetterSpacing",
+    "python": "FONT_ROLE_DOCUMENT_BODY_LETTER_SPACING",
+    "typescript": "font.role.document_body.letter_spacing"
+  },
+  "font.role.document_body.line_height": {
+    "css": "--sape-font-role-document-body-line-height",
+    "dotnet": "FontRoleDocumentBodyLineHeight",
+    "java": "FONT_ROLE_DOCUMENT_BODY_LINE_HEIGHT",
+    "javascript": "fontRoleDocumentBodyLineHeight",
+    "python": "FONT_ROLE_DOCUMENT_BODY_LINE_HEIGHT",
+    "typescript": "font.role.document_body.line_height"
+  },
+  "font.role.document_body.size": {
+    "css": "--sape-font-role-document-body-size",
+    "dotnet": "FontRoleDocumentBodySize",
+    "java": "FONT_ROLE_DOCUMENT_BODY_SIZE",
+    "javascript": "fontRoleDocumentBodySize",
+    "python": "FONT_ROLE_DOCUMENT_BODY_SIZE",
+    "typescript": "font.role.document_body.size"
+  },
+  "font.role.document_body.weight": {
+    "css": "--sape-font-role-document-body-weight",
+    "dotnet": "FontRoleDocumentBodyWeight",
+    "java": "FONT_ROLE_DOCUMENT_BODY_WEIGHT",
+    "javascript": "fontRoleDocumentBodyWeight",
+    "python": "FONT_ROLE_DOCUMENT_BODY_WEIGHT",
+    "typescript": "font.role.document_body.weight"
+  },
+  "font.role.document_heading.family": {
+    "css": "--sape-font-role-document-heading-family",
+    "dotnet": "FontRoleDocumentHeadingFamily",
+    "java": "FONT_ROLE_DOCUMENT_HEADING_FAMILY",
+    "javascript": "fontRoleDocumentHeadingFamily",
+    "python": "FONT_ROLE_DOCUMENT_HEADING_FAMILY",
+    "typescript": "font.role.document_heading.family"
+  },
+  "font.role.document_heading.letter_spacing": {
+    "css": "--sape-font-role-document-heading-letter-spacing",
+    "dotnet": "FontRoleDocumentHeadingLetterSpacing",
+    "java": "FONT_ROLE_DOCUMENT_HEADING_LETTER_SPACING",
+    "javascript": "fontRoleDocumentHeadingLetterSpacing",
+    "python": "FONT_ROLE_DOCUMENT_HEADING_LETTER_SPACING",
+    "typescript": "font.role.document_heading.letter_spacing"
+  },
+  "font.role.document_heading.line_height": {
+    "css": "--sape-font-role-document-heading-line-height",
+    "dotnet": "FontRoleDocumentHeadingLineHeight",
+    "java": "FONT_ROLE_DOCUMENT_HEADING_LINE_HEIGHT",
+    "javascript": "fontRoleDocumentHeadingLineHeight",
+    "python": "FONT_ROLE_DOCUMENT_HEADING_LINE_HEIGHT",
+    "typescript": "font.role.document_heading.line_height"
+  },
+  "font.role.document_heading.size": {
+    "css": "--sape-font-role-document-heading-size",
+    "dotnet": "FontRoleDocumentHeadingSize",
+    "java": "FONT_ROLE_DOCUMENT_HEADING_SIZE",
+    "javascript": "fontRoleDocumentHeadingSize",
+    "python": "FONT_ROLE_DOCUMENT_HEADING_SIZE",
+    "typescript": "font.role.document_heading.size"
+  },
+  "font.role.document_heading.weight": {
+    "css": "--sape-font-role-document-heading-weight",
+    "dotnet": "FontRoleDocumentHeadingWeight",
+    "java": "FONT_ROLE_DOCUMENT_HEADING_WEIGHT",
+    "javascript": "fontRoleDocumentHeadingWeight",
+    "python": "FONT_ROLE_DOCUMENT_HEADING_WEIGHT",
+    "typescript": "font.role.document_heading.weight"
+  },
+  "font.role.document_title.family": {
+    "css": "--sape-font-role-document-title-family",
+    "dotnet": "FontRoleDocumentTitleFamily",
+    "java": "FONT_ROLE_DOCUMENT_TITLE_FAMILY",
+    "javascript": "fontRoleDocumentTitleFamily",
+    "python": "FONT_ROLE_DOCUMENT_TITLE_FAMILY",
+    "typescript": "font.role.document_title.family"
+  },
+  "font.role.document_title.letter_spacing": {
+    "css": "--sape-font-role-document-title-letter-spacing",
+    "dotnet": "FontRoleDocumentTitleLetterSpacing",
+    "java": "FONT_ROLE_DOCUMENT_TITLE_LETTER_SPACING",
+    "javascript": "fontRoleDocumentTitleLetterSpacing",
+    "python": "FONT_ROLE_DOCUMENT_TITLE_LETTER_SPACING",
+    "typescript": "font.role.document_title.letter_spacing"
+  },
+  "font.role.document_title.line_height": {
+    "css": "--sape-font-role-document-title-line-height",
+    "dotnet": "FontRoleDocumentTitleLineHeight",
+    "java": "FONT_ROLE_DOCUMENT_TITLE_LINE_HEIGHT",
+    "javascript": "fontRoleDocumentTitleLineHeight",
+    "python": "FONT_ROLE_DOCUMENT_TITLE_LINE_HEIGHT",
+    "typescript": "font.role.document_title.line_height"
+  },
+  "font.role.document_title.size": {
+    "css": "--sape-font-role-document-title-size",
+    "dotnet": "FontRoleDocumentTitleSize",
+    "java": "FONT_ROLE_DOCUMENT_TITLE_SIZE",
+    "javascript": "fontRoleDocumentTitleSize",
+    "python": "FONT_ROLE_DOCUMENT_TITLE_SIZE",
+    "typescript": "font.role.document_title.size"
+  },
+  "font.role.document_title.weight": {
+    "css": "--sape-font-role-document-title-weight",
+    "dotnet": "FontRoleDocumentTitleWeight",
+    "java": "FONT_ROLE_DOCUMENT_TITLE_WEIGHT",
+    "javascript": "fontRoleDocumentTitleWeight",
+    "python": "FONT_ROLE_DOCUMENT_TITLE_WEIGHT",
+    "typescript": "font.role.document_title.weight"
+  },
+  "font.role.footnote.family": {
+    "css": "--sape-font-role-footnote-family",
+    "dotnet": "FontRoleFootnoteFamily",
+    "java": "FONT_ROLE_FOOTNOTE_FAMILY",
+    "javascript": "fontRoleFootnoteFamily",
+    "python": "FONT_ROLE_FOOTNOTE_FAMILY",
+    "typescript": "font.role.footnote.family"
+  },
+  "font.role.footnote.letter_spacing": {
+    "css": "--sape-font-role-footnote-letter-spacing",
+    "dotnet": "FontRoleFootnoteLetterSpacing",
+    "java": "FONT_ROLE_FOOTNOTE_LETTER_SPACING",
+    "javascript": "fontRoleFootnoteLetterSpacing",
+    "python": "FONT_ROLE_FOOTNOTE_LETTER_SPACING",
+    "typescript": "font.role.footnote.letter_spacing"
+  },
+  "font.role.footnote.line_height": {
+    "css": "--sape-font-role-footnote-line-height",
+    "dotnet": "FontRoleFootnoteLineHeight",
+    "java": "FONT_ROLE_FOOTNOTE_LINE_HEIGHT",
+    "javascript": "fontRoleFootnoteLineHeight",
+    "python": "FONT_ROLE_FOOTNOTE_LINE_HEIGHT",
+    "typescript": "font.role.footnote.line_height"
+  },
+  "font.role.footnote.size": {
+    "css": "--sape-font-role-footnote-size",
+    "dotnet": "FontRoleFootnoteSize",
+    "java": "FONT_ROLE_FOOTNOTE_SIZE",
+    "javascript": "fontRoleFootnoteSize",
+    "python": "FONT_ROLE_FOOTNOTE_SIZE",
+    "typescript": "font.role.footnote.size"
+  },
+  "font.role.footnote.weight": {
+    "css": "--sape-font-role-footnote-weight",
+    "dotnet": "FontRoleFootnoteWeight",
+    "java": "FONT_ROLE_FOOTNOTE_WEIGHT",
+    "javascript": "fontRoleFootnoteWeight",
+    "python": "FONT_ROLE_FOOTNOTE_WEIGHT",
+    "typescript": "font.role.footnote.weight"
+  },
+  "font.role.headline.family": {
+    "css": "--sape-font-role-headline-family",
+    "dotnet": "FontRoleHeadlineFamily",
+    "java": "FONT_ROLE_HEADLINE_FAMILY",
+    "javascript": "fontRoleHeadlineFamily",
+    "python": "FONT_ROLE_HEADLINE_FAMILY",
+    "typescript": "font.role.headline.family"
+  },
+  "font.role.headline.letter_spacing": {
+    "css": "--sape-font-role-headline-letter-spacing",
+    "dotnet": "FontRoleHeadlineLetterSpacing",
+    "java": "FONT_ROLE_HEADLINE_LETTER_SPACING",
+    "javascript": "fontRoleHeadlineLetterSpacing",
+    "python": "FONT_ROLE_HEADLINE_LETTER_SPACING",
+    "typescript": "font.role.headline.letter_spacing"
+  },
+  "font.role.headline.line_height": {
+    "css": "--sape-font-role-headline-line-height",
+    "dotnet": "FontRoleHeadlineLineHeight",
+    "java": "FONT_ROLE_HEADLINE_LINE_HEIGHT",
+    "javascript": "fontRoleHeadlineLineHeight",
+    "python": "FONT_ROLE_HEADLINE_LINE_HEIGHT",
+    "typescript": "font.role.headline.line_height"
+  },
+  "font.role.headline.size": {
+    "css": "--sape-font-role-headline-size",
+    "dotnet": "FontRoleHeadlineSize",
+    "java": "FONT_ROLE_HEADLINE_SIZE",
+    "javascript": "fontRoleHeadlineSize",
+    "python": "FONT_ROLE_HEADLINE_SIZE",
+    "typescript": "font.role.headline.size"
+  },
+  "font.role.headline.weight": {
+    "css": "--sape-font-role-headline-weight",
+    "dotnet": "FontRoleHeadlineWeight",
+    "java": "FONT_ROLE_HEADLINE_WEIGHT",
+    "javascript": "fontRoleHeadlineWeight",
+    "python": "FONT_ROLE_HEADLINE_WEIGHT",
+    "typescript": "font.role.headline.weight"
+  },
+  "font.role.label.family": {
+    "css": "--sape-font-role-label-family",
+    "dotnet": "FontRoleLabelFamily",
+    "java": "FONT_ROLE_LABEL_FAMILY",
+    "javascript": "fontRoleLabelFamily",
+    "python": "FONT_ROLE_LABEL_FAMILY",
+    "typescript": "font.role.label.family"
+  },
+  "font.role.label.letter_spacing": {
+    "css": "--sape-font-role-label-letter-spacing",
+    "dotnet": "FontRoleLabelLetterSpacing",
+    "java": "FONT_ROLE_LABEL_LETTER_SPACING",
+    "javascript": "fontRoleLabelLetterSpacing",
+    "python": "FONT_ROLE_LABEL_LETTER_SPACING",
+    "typescript": "font.role.label.letter_spacing"
+  },
+  "font.role.label.line_height": {
+    "css": "--sape-font-role-label-line-height",
+    "dotnet": "FontRoleLabelLineHeight",
+    "java": "FONT_ROLE_LABEL_LINE_HEIGHT",
+    "javascript": "fontRoleLabelLineHeight",
+    "python": "FONT_ROLE_LABEL_LINE_HEIGHT",
+    "typescript": "font.role.label.line_height"
+  },
+  "font.role.label.size": {
+    "css": "--sape-font-role-label-size",
+    "dotnet": "FontRoleLabelSize",
+    "java": "FONT_ROLE_LABEL_SIZE",
+    "javascript": "fontRoleLabelSize",
+    "python": "FONT_ROLE_LABEL_SIZE",
+    "typescript": "font.role.label.size"
+  },
+  "font.role.label.weight": {
+    "css": "--sape-font-role-label-weight",
+    "dotnet": "FontRoleLabelWeight",
+    "java": "FONT_ROLE_LABEL_WEIGHT",
+    "javascript": "fontRoleLabelWeight",
+    "python": "FONT_ROLE_LABEL_WEIGHT",
+    "typescript": "font.role.label.weight"
+  },
+  "font.role.numeric.family": {
+    "css": "--sape-font-role-numeric-family",
+    "dotnet": "FontRoleNumericFamily",
+    "java": "FONT_ROLE_NUMERIC_FAMILY",
+    "javascript": "fontRoleNumericFamily",
+    "python": "FONT_ROLE_NUMERIC_FAMILY",
+    "typescript": "font.role.numeric.family"
+  },
+  "font.role.numeric.letter_spacing": {
+    "css": "--sape-font-role-numeric-letter-spacing",
+    "dotnet": "FontRoleNumericLetterSpacing",
+    "java": "FONT_ROLE_NUMERIC_LETTER_SPACING",
+    "javascript": "fontRoleNumericLetterSpacing",
+    "python": "FONT_ROLE_NUMERIC_LETTER_SPACING",
+    "typescript": "font.role.numeric.letter_spacing"
+  },
+  "font.role.numeric.line_height": {
+    "css": "--sape-font-role-numeric-line-height",
+    "dotnet": "FontRoleNumericLineHeight",
+    "java": "FONT_ROLE_NUMERIC_LINE_HEIGHT",
+    "javascript": "fontRoleNumericLineHeight",
+    "python": "FONT_ROLE_NUMERIC_LINE_HEIGHT",
+    "typescript": "font.role.numeric.line_height"
+  },
+  "font.role.numeric.size": {
+    "css": "--sape-font-role-numeric-size",
+    "dotnet": "FontRoleNumericSize",
+    "java": "FONT_ROLE_NUMERIC_SIZE",
+    "javascript": "fontRoleNumericSize",
+    "python": "FONT_ROLE_NUMERIC_SIZE",
+    "typescript": "font.role.numeric.size"
+  },
+  "font.role.numeric.weight": {
+    "css": "--sape-font-role-numeric-weight",
+    "dotnet": "FontRoleNumericWeight",
+    "java": "FONT_ROLE_NUMERIC_WEIGHT",
+    "javascript": "fontRoleNumericWeight",
+    "python": "FONT_ROLE_NUMERIC_WEIGHT",
+    "typescript": "font.role.numeric.weight"
+  },
+  "font.role.table.family": {
+    "css": "--sape-font-role-table-family",
+    "dotnet": "FontRoleTableFamily",
+    "java": "FONT_ROLE_TABLE_FAMILY",
+    "javascript": "fontRoleTableFamily",
+    "python": "FONT_ROLE_TABLE_FAMILY",
+    "typescript": "font.role.table.family"
+  },
+  "font.role.table.letter_spacing": {
+    "css": "--sape-font-role-table-letter-spacing",
+    "dotnet": "FontRoleTableLetterSpacing",
+    "java": "FONT_ROLE_TABLE_LETTER_SPACING",
+    "javascript": "fontRoleTableLetterSpacing",
+    "python": "FONT_ROLE_TABLE_LETTER_SPACING",
+    "typescript": "font.role.table.letter_spacing"
+  },
+  "font.role.table.line_height": {
+    "css": "--sape-font-role-table-line-height",
+    "dotnet": "FontRoleTableLineHeight",
+    "java": "FONT_ROLE_TABLE_LINE_HEIGHT",
+    "javascript": "fontRoleTableLineHeight",
+    "python": "FONT_ROLE_TABLE_LINE_HEIGHT",
+    "typescript": "font.role.table.line_height"
+  },
+  "font.role.table.size": {
+    "css": "--sape-font-role-table-size",
+    "dotnet": "FontRoleTableSize",
+    "java": "FONT_ROLE_TABLE_SIZE",
+    "javascript": "fontRoleTableSize",
+    "python": "FONT_ROLE_TABLE_SIZE",
+    "typescript": "font.role.table.size"
+  },
+  "font.role.table.weight": {
+    "css": "--sape-font-role-table-weight",
+    "dotnet": "FontRoleTableWeight",
+    "java": "FONT_ROLE_TABLE_WEIGHT",
+    "javascript": "fontRoleTableWeight",
+    "python": "FONT_ROLE_TABLE_WEIGHT",
+    "typescript": "font.role.table.weight"
+  },
+  "font.role.title.family": {
+    "css": "--sape-font-role-title-family",
+    "dotnet": "FontRoleTitleFamily",
+    "java": "FONT_ROLE_TITLE_FAMILY",
+    "javascript": "fontRoleTitleFamily",
+    "python": "FONT_ROLE_TITLE_FAMILY",
+    "typescript": "font.role.title.family"
+  },
+  "font.role.title.letter_spacing": {
+    "css": "--sape-font-role-title-letter-spacing",
+    "dotnet": "FontRoleTitleLetterSpacing",
+    "java": "FONT_ROLE_TITLE_LETTER_SPACING",
+    "javascript": "fontRoleTitleLetterSpacing",
+    "python": "FONT_ROLE_TITLE_LETTER_SPACING",
+    "typescript": "font.role.title.letter_spacing"
+  },
+  "font.role.title.line_height": {
+    "css": "--sape-font-role-title-line-height",
+    "dotnet": "FontRoleTitleLineHeight",
+    "java": "FONT_ROLE_TITLE_LINE_HEIGHT",
+    "javascript": "fontRoleTitleLineHeight",
+    "python": "FONT_ROLE_TITLE_LINE_HEIGHT",
+    "typescript": "font.role.title.line_height"
+  },
+  "font.role.title.size": {
+    "css": "--sape-font-role-title-size",
+    "dotnet": "FontRoleTitleSize",
+    "java": "FONT_ROLE_TITLE_SIZE",
+    "javascript": "fontRoleTitleSize",
+    "python": "FONT_ROLE_TITLE_SIZE",
+    "typescript": "font.role.title.size"
+  },
+  "font.role.title.weight": {
+    "css": "--sape-font-role-title-weight",
+    "dotnet": "FontRoleTitleWeight",
+    "java": "FONT_ROLE_TITLE_WEIGHT",
+    "javascript": "fontRoleTitleWeight",
+    "python": "FONT_ROLE_TITLE_WEIGHT",
+    "typescript": "font.role.title.weight"
+  },
+  "font.size.10": {
+    "css": "--sape-font-size-10",
+    "dotnet": "FontSize10",
+    "java": "FONT_SIZE_10",
+    "javascript": "fontSize10",
+    "python": "FONT_SIZE_10",
+    "typescript": "font.size.10"
+  },
+  "font.size.12": {
+    "css": "--sape-font-size-12",
+    "dotnet": "FontSize12",
+    "java": "FONT_SIZE_12",
+    "javascript": "fontSize12",
+    "python": "FONT_SIZE_12",
+    "typescript": "font.size.12"
+  },
+  "font.size.14": {
+    "css": "--sape-font-size-14",
+    "dotnet": "FontSize14",
+    "java": "FONT_SIZE_14",
+    "javascript": "fontSize14",
+    "python": "FONT_SIZE_14",
+    "typescript": "font.size.14"
+  },
+  "font.size.16": {
+    "css": "--sape-font-size-16",
+    "dotnet": "FontSize16",
+    "java": "FONT_SIZE_16",
+    "javascript": "fontSize16",
+    "python": "FONT_SIZE_16",
+    "typescript": "font.size.16"
+  },
+  "font.size.18": {
+    "css": "--sape-font-size-18",
+    "dotnet": "FontSize18",
+    "java": "FONT_SIZE_18",
+    "javascript": "fontSize18",
+    "python": "FONT_SIZE_18",
+    "typescript": "font.size.18"
+  },
+  "font.size.20": {
+    "css": "--sape-font-size-20",
+    "dotnet": "FontSize20",
+    "java": "FONT_SIZE_20",
+    "javascript": "fontSize20",
+    "python": "FONT_SIZE_20",
+    "typescript": "font.size.20"
+  },
+  "font.size.24": {
+    "css": "--sape-font-size-24",
+    "dotnet": "FontSize24",
+    "java": "FONT_SIZE_24",
+    "javascript": "fontSize24",
+    "python": "FONT_SIZE_24",
+    "typescript": "font.size.24"
+  },
+  "font.size.32": {
+    "css": "--sape-font-size-32",
+    "dotnet": "FontSize32",
+    "java": "FONT_SIZE_32",
+    "javascript": "fontSize32",
+    "python": "FONT_SIZE_32",
+    "typescript": "font.size.32"
+  },
+  "font.size.40": {
+    "css": "--sape-font-size-40",
+    "dotnet": "FontSize40",
+    "java": "FONT_SIZE_40",
+    "javascript": "fontSize40",
+    "python": "FONT_SIZE_40",
+    "typescript": "font.size.40"
+  },
+  "font.size.48": {
+    "css": "--sape-font-size-48",
+    "dotnet": "FontSize48",
+    "java": "FONT_SIZE_48",
+    "javascript": "fontSize48",
+    "python": "FONT_SIZE_48",
+    "typescript": "font.size.48"
+  },
+  "font.size.64": {
+    "css": "--sape-font-size-64",
+    "dotnet": "FontSize64",
+    "java": "FONT_SIZE_64",
+    "javascript": "fontSize64",
+    "python": "FONT_SIZE_64",
+    "typescript": "font.size.64"
+  },
+  "font.weight.bold": {
+    "css": "--sape-font-weight-bold",
+    "dotnet": "FontWeightBold",
+    "java": "FONT_WEIGHT_BOLD",
+    "javascript": "fontWeightBold",
+    "python": "FONT_WEIGHT_BOLD",
+    "typescript": "font.weight.bold"
+  },
+  "font.weight.medium": {
+    "css": "--sape-font-weight-medium",
+    "dotnet": "FontWeightMedium",
+    "java": "FONT_WEIGHT_MEDIUM",
+    "javascript": "fontWeightMedium",
+    "python": "FONT_WEIGHT_MEDIUM",
+    "typescript": "font.weight.medium"
+  },
+  "font.weight.regular": {
+    "css": "--sape-font-weight-regular",
+    "dotnet": "FontWeightRegular",
+    "java": "FONT_WEIGHT_REGULAR",
+    "javascript": "fontWeightRegular",
+    "python": "FONT_WEIGHT_REGULAR",
+    "typescript": "font.weight.regular"
+  },
+  "font.weight.semibold": {
+    "css": "--sape-font-weight-semibold",
+    "dotnet": "FontWeightSemibold",
+    "java": "FONT_WEIGHT_SEMIBOLD",
+    "javascript": "fontWeightSemibold",
+    "python": "FONT_WEIGHT_SEMIBOLD",
+    "typescript": "font.weight.semibold"
+  },
+  "grid.breakpoint.desktop": {
+    "css": "--sape-grid-breakpoint-desktop",
+    "dotnet": "GridBreakpointDesktop",
+    "java": "GRID_BREAKPOINT_DESKTOP",
+    "javascript": "gridBreakpointDesktop",
+    "python": "GRID_BREAKPOINT_DESKTOP",
+    "typescript": "grid.breakpoint.desktop"
+  },
+  "grid.breakpoint.mobile": {
+    "css": "--sape-grid-breakpoint-mobile",
+    "dotnet": "GridBreakpointMobile",
+    "java": "GRID_BREAKPOINT_MOBILE",
+    "javascript": "gridBreakpointMobile",
+    "python": "GRID_BREAKPOINT_MOBILE",
+    "typescript": "grid.breakpoint.mobile"
+  },
+  "grid.breakpoint.tablet": {
+    "css": "--sape-grid-breakpoint-tablet",
+    "dotnet": "GridBreakpointTablet",
+    "java": "GRID_BREAKPOINT_TABLET",
+    "javascript": "gridBreakpointTablet",
+    "python": "GRID_BREAKPOINT_TABLET",
+    "typescript": "grid.breakpoint.tablet"
+  },
+  "grid.breakpoint.wide": {
+    "css": "--sape-grid-breakpoint-wide",
+    "dotnet": "GridBreakpointWide",
+    "java": "GRID_BREAKPOINT_WIDE",
+    "javascript": "gridBreakpointWide",
+    "python": "GRID_BREAKPOINT_WIDE",
+    "typescript": "grid.breakpoint.wide"
+  },
+  "grid.document.a4_landscape_margin": {
+    "css": "--sape-grid-document-a4-landscape-margin",
+    "dotnet": "GridDocumentA4LandscapeMargin",
+    "java": "GRID_DOCUMENT_A4_LANDSCAPE_MARGIN",
+    "javascript": "gridDocumentA4LandscapeMargin",
+    "python": "GRID_DOCUMENT_A4_LANDSCAPE_MARGIN",
+    "typescript": "grid.document.a4_landscape_margin"
+  },
+  "grid.document.a4_margin": {
+    "css": "--sape-grid-document-a4-margin",
+    "dotnet": "GridDocumentA4Margin",
+    "java": "GRID_DOCUMENT_A4_MARGIN",
+    "javascript": "gridDocumentA4Margin",
+    "python": "GRID_DOCUMENT_A4_MARGIN",
+    "typescript": "grid.document.a4_margin"
+  },
+  "grid.presentation.columns": {
+    "css": "--sape-grid-presentation-columns",
+    "dotnet": "GridPresentationColumns",
+    "java": "GRID_PRESENTATION_COLUMNS",
+    "javascript": "gridPresentationColumns",
+    "python": "GRID_PRESENTATION_COLUMNS",
+    "typescript": "grid.presentation.columns"
+  },
+  "grid.presentation.safe_margin": {
+    "css": "--sape-grid-presentation-safe-margin",
+    "dotnet": "GridPresentationSafeMargin",
+    "java": "GRID_PRESENTATION_SAFE_MARGIN",
+    "javascript": "gridPresentationSafeMargin",
+    "python": "GRID_PRESENTATION_SAFE_MARGIN",
+    "typescript": "grid.presentation.safe_margin"
+  },
+  "grid.web.desktop_columns": {
+    "css": "--sape-grid-web-desktop-columns",
+    "dotnet": "GridWebDesktopColumns",
+    "java": "GRID_WEB_DESKTOP_COLUMNS",
+    "javascript": "gridWebDesktopColumns",
+    "python": "GRID_WEB_DESKTOP_COLUMNS",
+    "typescript": "grid.web.desktop_columns"
+  },
+  "grid.web.gutter": {
+    "css": "--sape-grid-web-gutter",
+    "dotnet": "GridWebGutter",
+    "java": "GRID_WEB_GUTTER",
+    "javascript": "gridWebGutter",
+    "python": "GRID_WEB_GUTTER",
+    "typescript": "grid.web.gutter"
+  },
+  "grid.web.mobile_columns": {
+    "css": "--sape-grid-web-mobile-columns",
+    "dotnet": "GridWebMobileColumns",
+    "java": "GRID_WEB_MOBILE_COLUMNS",
+    "javascript": "gridWebMobileColumns",
+    "python": "GRID_WEB_MOBILE_COLUMNS",
+    "typescript": "grid.web.mobile_columns"
+  },
+  "grid.web.tablet_columns": {
+    "css": "--sape-grid-web-tablet-columns",
+    "dotnet": "GridWebTabletColumns",
+    "java": "GRID_WEB_TABLET_COLUMNS",
+    "javascript": "gridWebTabletColumns",
+    "python": "GRID_WEB_TABLET_COLUMNS",
+    "typescript": "grid.web.tablet_columns"
+  },
+  "motion.duration.base": {
+    "css": "--sape-motion-duration-base",
+    "dotnet": "MotionDurationBase",
+    "java": "MOTION_DURATION_BASE",
+    "javascript": "motionDurationBase",
+    "python": "MOTION_DURATION_BASE",
+    "typescript": "motion.duration.base"
+  },
+  "motion.duration.fast": {
+    "css": "--sape-motion-duration-fast",
+    "dotnet": "MotionDurationFast",
+    "java": "MOTION_DURATION_FAST",
+    "javascript": "motionDurationFast",
+    "python": "MOTION_DURATION_FAST",
+    "typescript": "motion.duration.fast"
+  },
+  "motion.duration.instant": {
+    "css": "--sape-motion-duration-instant",
+    "dotnet": "MotionDurationInstant",
+    "java": "MOTION_DURATION_INSTANT",
+    "javascript": "motionDurationInstant",
+    "python": "MOTION_DURATION_INSTANT",
+    "typescript": "motion.duration.instant"
+  },
+  "motion.duration.slow": {
+    "css": "--sape-motion-duration-slow",
+    "dotnet": "MotionDurationSlow",
+    "java": "MOTION_DURATION_SLOW",
+    "javascript": "motionDurationSlow",
+    "python": "MOTION_DURATION_SLOW",
+    "typescript": "motion.duration.slow"
+  },
+  "motion.easing.emphasized": {
+    "css": "--sape-motion-easing-emphasized",
+    "dotnet": "MotionEasingEmphasized",
+    "java": "MOTION_EASING_EMPHASIZED",
+    "javascript": "motionEasingEmphasized",
+    "python": "MOTION_EASING_EMPHASIZED",
+    "typescript": "motion.easing.emphasized"
+  },
+  "motion.easing.standard": {
+    "css": "--sape-motion-easing-standard",
+    "dotnet": "MotionEasingStandard",
+    "java": "MOTION_EASING_STANDARD",
+    "javascript": "motionEasingStandard",
+    "python": "MOTION_EASING_STANDARD",
+    "typescript": "motion.easing.standard"
+  },
+  "motion.opacity.disabled": {
+    "css": "--sape-motion-opacity-disabled",
+    "dotnet": "MotionOpacityDisabled",
+    "java": "MOTION_OPACITY_DISABLED",
+    "javascript": "motionOpacityDisabled",
+    "python": "MOTION_OPACITY_DISABLED",
+    "typescript": "motion.opacity.disabled"
+  },
+  "motion.opacity.muted": {
+    "css": "--sape-motion-opacity-muted",
+    "dotnet": "MotionOpacityMuted",
+    "java": "MOTION_OPACITY_MUTED",
+    "javascript": "motionOpacityMuted",
+    "python": "MOTION_OPACITY_MUTED",
+    "typescript": "motion.opacity.muted"
+  },
+  "motion.opacity.overlay": {
+    "css": "--sape-motion-opacity-overlay",
+    "dotnet": "MotionOpacityOverlay",
+    "java": "MOTION_OPACITY_OVERLAY",
+    "javascript": "motionOpacityOverlay",
+    "python": "MOTION_OPACITY_OVERLAY",
+    "typescript": "motion.opacity.overlay"
+  },
+  "motion.z_index.base": {
+    "css": "--sape-motion-z-index-base",
+    "dotnet": "MotionZIndexBase",
+    "java": "MOTION_Z_INDEX_BASE",
+    "javascript": "motionZIndexBase",
+    "python": "MOTION_Z_INDEX_BASE",
+    "typescript": "motion.z_index.base"
+  },
+  "motion.z_index.menu": {
+    "css": "--sape-motion-z-index-menu",
+    "dotnet": "MotionZIndexMenu",
+    "java": "MOTION_Z_INDEX_MENU",
+    "javascript": "motionZIndexMenu",
+    "python": "MOTION_Z_INDEX_MENU",
+    "typescript": "motion.z_index.menu"
+  },
+  "motion.z_index.modal": {
+    "css": "--sape-motion-z-index-modal",
+    "dotnet": "MotionZIndexModal",
+    "java": "MOTION_Z_INDEX_MODAL",
+    "javascript": "motionZIndexModal",
+    "python": "MOTION_Z_INDEX_MODAL",
+    "typescript": "motion.z_index.modal"
+  },
+  "motion.z_index.popover": {
+    "css": "--sape-motion-z-index-popover",
+    "dotnet": "MotionZIndexPopover",
+    "java": "MOTION_Z_INDEX_POPOVER",
+    "javascript": "motionZIndexPopover",
+    "python": "MOTION_Z_INDEX_POPOVER",
+    "typescript": "motion.z_index.popover"
+  },
+  "motion.z_index.sticky": {
+    "css": "--sape-motion-z-index-sticky",
+    "dotnet": "MotionZIndexSticky",
+    "java": "MOTION_Z_INDEX_STICKY",
+    "javascript": "motionZIndexSticky",
+    "python": "MOTION_Z_INDEX_STICKY",
+    "typescript": "motion.z_index.sticky"
+  },
+  "motion.z_index.toast": {
+    "css": "--sape-motion-z-index-toast",
+    "dotnet": "MotionZIndexToast",
+    "java": "MOTION_Z_INDEX_TOAST",
+    "javascript": "motionZIndexToast",
+    "python": "MOTION_Z_INDEX_TOAST",
+    "typescript": "motion.z_index.toast"
+  },
+  "radius.full": {
+    "css": "--sape-radius-full",
+    "dotnet": "RadiusFull",
+    "java": "RADIUS_FULL",
+    "javascript": "radiusFull",
+    "python": "RADIUS_FULL",
+    "typescript": "radius.full"
+  },
+  "radius.lg": {
+    "css": "--sape-radius-lg",
+    "dotnet": "RadiusLg",
+    "java": "RADIUS_LG",
+    "javascript": "radiusLg",
+    "python": "RADIUS_LG",
+    "typescript": "radius.lg"
+  },
+  "radius.md": {
+    "css": "--sape-radius-md",
+    "dotnet": "RadiusMd",
+    "java": "RADIUS_MD",
+    "javascript": "radiusMd",
+    "python": "RADIUS_MD",
+    "typescript": "radius.md"
+  },
+  "radius.none": {
+    "css": "--sape-radius-none",
+    "dotnet": "RadiusNone",
+    "java": "RADIUS_NONE",
+    "javascript": "radiusNone",
+    "python": "RADIUS_NONE",
+    "typescript": "radius.none"
+  },
+  "radius.sm": {
+    "css": "--sape-radius-sm",
+    "dotnet": "RadiusSm",
+    "java": "RADIUS_SM",
+    "javascript": "radiusSm",
+    "python": "RADIUS_SM",
+    "typescript": "radius.sm"
+  },
+  "radius.xl": {
+    "css": "--sape-radius-xl",
+    "dotnet": "RadiusXl",
+    "java": "RADIUS_XL",
+    "javascript": "radiusXl",
+    "python": "RADIUS_XL",
+    "typescript": "radius.xl"
+  },
+  "radius.xs": {
+    "css": "--sape-radius-xs",
+    "dotnet": "RadiusXs",
+    "java": "RADIUS_XS",
+    "javascript": "radiusXs",
+    "python": "RADIUS_XS",
+    "typescript": "radius.xs"
+  },
+  "shadow.level_1": {
+    "css": "--sape-shadow-level-1",
+    "dotnet": "ShadowLevel1",
+    "java": "SHADOW_LEVEL_1",
+    "javascript": "shadowLevel1",
+    "python": "SHADOW_LEVEL_1",
+    "typescript": "shadow.level_1"
+  },
+  "shadow.level_2": {
+    "css": "--sape-shadow-level-2",
+    "dotnet": "ShadowLevel2",
+    "java": "SHADOW_LEVEL_2",
+    "javascript": "shadowLevel2",
+    "python": "SHADOW_LEVEL_2",
+    "typescript": "shadow.level_2"
+  },
+  "shadow.level_3": {
+    "css": "--sape-shadow-level-3",
+    "dotnet": "ShadowLevel3",
+    "java": "SHADOW_LEVEL_3",
+    "javascript": "shadowLevel3",
+    "python": "SHADOW_LEVEL_3",
+    "typescript": "shadow.level_3"
+  },
+  "shadow.level_4": {
+    "css": "--sape-shadow-level-4",
+    "dotnet": "ShadowLevel4",
+    "java": "SHADOW_LEVEL_4",
+    "javascript": "shadowLevel4",
+    "python": "SHADOW_LEVEL_4",
+    "typescript": "shadow.level_4"
+  },
+  "shadow.level_5": {
+    "css": "--sape-shadow-level-5",
+    "dotnet": "ShadowLevel5",
+    "java": "SHADOW_LEVEL_5",
+    "javascript": "shadowLevel5",
+    "python": "SHADOW_LEVEL_5",
+    "typescript": "shadow.level_5"
+  },
+  "shadow.none": {
+    "css": "--sape-shadow-none",
+    "dotnet": "ShadowNone",
+    "java": "SHADOW_NONE",
+    "javascript": "shadowNone",
+    "python": "SHADOW_NONE",
+    "typescript": "shadow.none"
+  },
+  "size.content.app": {
+    "css": "--sape-size-content-app",
+    "dotnet": "SizeContentApp",
+    "java": "SIZE_CONTENT_APP",
+    "javascript": "sizeContentApp",
+    "python": "SIZE_CONTENT_APP",
+    "typescript": "size.content.app"
+  },
+  "size.content.measure": {
+    "css": "--sape-size-content-measure",
+    "dotnet": "SizeContentMeasure",
+    "java": "SIZE_CONTENT_MEASURE",
+    "javascript": "sizeContentMeasure",
+    "python": "SIZE_CONTENT_MEASURE",
+    "typescript": "size.content.measure"
+  },
+  "size.content.wide": {
+    "css": "--sape-size-content-wide",
+    "dotnet": "SizeContentWide",
+    "java": "SIZE_CONTENT_WIDE",
+    "javascript": "sizeContentWide",
+    "python": "SIZE_CONTENT_WIDE",
+    "typescript": "size.content.wide"
+  },
+  "size.control.lg": {
+    "css": "--sape-size-control-lg",
+    "dotnet": "SizeControlLg",
+    "java": "SIZE_CONTROL_LG",
+    "javascript": "sizeControlLg",
+    "python": "SIZE_CONTROL_LG",
+    "typescript": "size.control.lg"
+  },
+  "size.control.md": {
+    "css": "--sape-size-control-md",
+    "dotnet": "SizeControlMd",
+    "java": "SIZE_CONTROL_MD",
+    "javascript": "sizeControlMd",
+    "python": "SIZE_CONTROL_MD",
+    "typescript": "size.control.md"
+  },
+  "size.control.sm": {
+    "css": "--sape-size-control-sm",
+    "dotnet": "SizeControlSm",
+    "java": "SIZE_CONTROL_SM",
+    "javascript": "sizeControlSm",
+    "python": "SIZE_CONTROL_SM",
+    "typescript": "size.control.sm"
+  },
+  "size.control.touch_min": {
+    "css": "--sape-size-control-touch-min",
+    "dotnet": "SizeControlTouchMin",
+    "java": "SIZE_CONTROL_TOUCH_MIN",
+    "javascript": "sizeControlTouchMin",
+    "python": "SIZE_CONTROL_TOUCH_MIN",
+    "typescript": "size.control.touch_min"
+  },
+  "size.icon.lg": {
+    "css": "--sape-size-icon-lg",
+    "dotnet": "SizeIconLg",
+    "java": "SIZE_ICON_LG",
+    "javascript": "sizeIconLg",
+    "python": "SIZE_ICON_LG",
+    "typescript": "size.icon.lg"
+  },
+  "size.icon.md": {
+    "css": "--sape-size-icon-md",
+    "dotnet": "SizeIconMd",
+    "java": "SIZE_ICON_MD",
+    "javascript": "sizeIconMd",
+    "python": "SIZE_ICON_MD",
+    "typescript": "size.icon.md"
+  },
+  "size.icon.sm": {
+    "css": "--sape-size-icon-sm",
+    "dotnet": "SizeIconSm",
+    "java": "SIZE_ICON_SM",
+    "javascript": "sizeIconSm",
+    "python": "SIZE_ICON_SM",
+    "typescript": "size.icon.sm"
+  },
+  "spacing.0": {
+    "css": "--sape-spacing-0",
+    "dotnet": "Spacing0",
+    "java": "SPACING_0",
+    "javascript": "spacing0",
+    "python": "SPACING_0",
+    "typescript": "spacing.0"
+  },
+  "spacing.1": {
+    "css": "--sape-spacing-1",
+    "dotnet": "Spacing1",
+    "java": "SPACING_1",
+    "javascript": "spacing1",
+    "python": "SPACING_1",
+    "typescript": "spacing.1"
+  },
+  "spacing.10": {
+    "css": "--sape-spacing-10",
+    "dotnet": "Spacing10",
+    "java": "SPACING_10",
+    "javascript": "spacing10",
+    "python": "SPACING_10",
+    "typescript": "spacing.10"
+  },
+  "spacing.12": {
+    "css": "--sape-spacing-12",
+    "dotnet": "Spacing12",
+    "java": "SPACING_12",
+    "javascript": "spacing12",
+    "python": "SPACING_12",
+    "typescript": "spacing.12"
+  },
+  "spacing.16": {
+    "css": "--sape-spacing-16",
+    "dotnet": "Spacing16",
+    "java": "SPACING_16",
+    "javascript": "spacing16",
+    "python": "SPACING_16",
+    "typescript": "spacing.16"
+  },
+  "spacing.2": {
+    "css": "--sape-spacing-2",
+    "dotnet": "Spacing2",
+    "java": "SPACING_2",
+    "javascript": "spacing2",
+    "python": "SPACING_2",
+    "typescript": "spacing.2"
+  },
+  "spacing.20": {
+    "css": "--sape-spacing-20",
+    "dotnet": "Spacing20",
+    "java": "SPACING_20",
+    "javascript": "spacing20",
+    "python": "SPACING_20",
+    "typescript": "spacing.20"
+  },
+  "spacing.24": {
+    "css": "--sape-spacing-24",
+    "dotnet": "Spacing24",
+    "java": "SPACING_24",
+    "javascript": "spacing24",
+    "python": "SPACING_24",
+    "typescript": "spacing.24"
+  },
+  "spacing.3": {
+    "css": "--sape-spacing-3",
+    "dotnet": "Spacing3",
+    "java": "SPACING_3",
+    "javascript": "spacing3",
+    "python": "SPACING_3",
+    "typescript": "spacing.3"
+  },
+  "spacing.4": {
+    "css": "--sape-spacing-4",
+    "dotnet": "Spacing4",
+    "java": "SPACING_4",
+    "javascript": "spacing4",
+    "python": "SPACING_4",
+    "typescript": "spacing.4"
+  },
+  "spacing.5": {
+    "css": "--sape-spacing-5",
+    "dotnet": "Spacing5",
+    "java": "SPACING_5",
+    "javascript": "spacing5",
+    "python": "SPACING_5",
+    "typescript": "spacing.5"
+  },
+  "spacing.6": {
+    "css": "--sape-spacing-6",
+    "dotnet": "Spacing6",
+    "java": "SPACING_6",
+    "javascript": "spacing6",
+    "python": "SPACING_6",
+    "typescript": "spacing.6"
+  },
+  "spacing.8": {
+    "css": "--sape-spacing-8",
+    "dotnet": "Spacing8",
+    "java": "SPACING_8",
+    "javascript": "spacing8",
+    "python": "SPACING_8",
+    "typescript": "spacing.8"
+  }
+}

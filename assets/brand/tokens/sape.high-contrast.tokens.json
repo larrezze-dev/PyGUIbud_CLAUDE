@@ -1,0 +1,1715 @@
+{
+  "$metadata": {
+    "deterministic": true,
+    "generator": "sape_design_system_tools",
+    "kind": "compiled-theme",
+    "source": {
+      "files": [
+        {
+          "path": "tokens/source/color.tokens.json",
+          "tokens": 153
+        },
+        {
+          "path": "tokens/source/typography.tokens.json",
+          "tokens": 28
+        },
+        {
+          "path": "tokens/source/spacing.tokens.json",
+          "tokens": 16
+        },
+        {
+          "path": "tokens/source/size.tokens.json",
+          "tokens": 10
+        },
+        {
+          "path": "tokens/source/radius.tokens.json",
+          "tokens": 7
+        },
+        {
+          "path": "tokens/source/border.tokens.json",
+          "tokens": 4
+        },
+        {
+          "path": "tokens/source/shadow.tokens.json",
+          "tokens": 6
+        },
+        {
+          "path": "tokens/source/elevation.tokens.json",
+          "tokens": 0
+        },
+        {
+          "path": "tokens/source/grid.tokens.json",
+          "tokens": 12
+        },
+        {
+          "path": "tokens/source/motion.tokens.json",
+          "tokens": 15
+        },
+        {
+          "path": "tokens/source/semantic.tokens.json",
+          "tokens": 26
+        }
+      ],
+      "token_count": 277,
+      "types": {
+        "color": 179,
+        "cubicBezier": 2,
+        "dimension": 58,
+        "duration": 4,
+        "fontFamily": 6,
+        "fontWeight": 4,
+        "number": 17,
+        "shadow": 6,
+        "string": 1
+      }
+    },
+    "theme": "high-contrast",
+    "version": "1.0.0"
+  },
+  "border": {
+    "style": {
+      "solid": {
+        "$description": "Borde continuo.",
+        "$type": "string",
+        "$value": "solid"
+      }
+    },
+    "width": {
+      "hairline": {
+        "$description": "Borde base.",
+        "$type": "dimension",
+        "$value": "1px"
+      },
+      "heavy": {
+        "$description": "Uso excepcional de alto contraste.",
+        "$type": "dimension",
+        "$value": "3px"
+      },
+      "strong": {
+        "$description": "Borde de foco o seleccion.",
+        "$type": "dimension",
+        "$value": "2px"
+      }
+    }
+  },
+  "color": {
+    "action": {
+      "primary": {
+        "active": {
+          "$description": "Active primario.",
+          "$theme": "high-contrast",
+          "$type": "color",
+          "$value": "#000000"
+        },
+        "background": {
+          "$description": "Boton primario.",
+          "$theme": "high-contrast",
+          "$type": "color",
+          "$value": "#0B1B78"
+        },
+        "disabled": {
+          "$description": "Boton primario deshabilitado.",
+          "$theme": "high-contrast",
+          "$type": "color",
+          "$value": "#767B83"
+        },
+        "hover": {
+          "$description": "Hover primario.",
+          "$theme": "high-contrast",
+          "$type": "color",
+          "$value": "#071044"
+        },
+        "text": {
+          "$description": "Texto boton primario.",
+          "$theme": "high-contrast",
+          "$type": "color",
+          "$value": "#FFFFFF"
+        }
+      }
+    },
+    "background": {
+      "base": {
+        "$description": "Fondo base de interfaz.",
+        "$theme": "high-contrast",
+        "$type": "color",
+        "$value": "#FFFFFF"
+      },
+      "inverse": {
+        "$description": "Fondo oscuro.",
+        "$theme": "high-contrast",
+        "$type": "color",
+        "$value": "#000000"
+      },
+      "subtle": {
+        "$description": "Fondo de secciones.",
+        "$theme": "high-contrast",
+        "$type": "color",
+        "$value": "#F2F4F6"
+      }
+    },
+    "border": {
+      "base": {
+        "$description": "Alias compatible de color.border.control. Los usos decorativos deben migrar explicitamente a color.border.subtle.",
+        "$theme": "high-contrast",
+        "$type": "color",
+        "$value": "#000000"
+      },
+      "control": {
+        "$description": "Borde funcional para inputs, selects, textareas, checkboxes, switches y controles cuya delimitacion debe alcanzar al menos 3:1 sobre el fondo base claro.",
+        "$theme": "high-contrast",
+        "$type": "color",
+        "$value": "#000000"
+      },
+      "disabled": {
+        "$description": "Borde de controles deshabilitados. Puede tener menor enfasis que control, pero el estado no debe depender solo del color.",
+        "$theme": "high-contrast",
+        "$type": "color",
+        "$value": "#33383E"
+      },
+      "error": {
+        "$description": "Borde funcional de error. Debe combinarse con texto o icono de error.",
+        "$theme": "high-contrast",
+        "$type": "color",
+        "$value": "#842126"
+      },
+      "focus": {
+        "$description": "Indicador de foco.",
+        "$theme": "high-contrast",
+        "$type": "color",
+        "$value": "#1C3FF0"
+      },
+      "selected": {
+        "$description": "Borde de seleccion activa; no hereda de bordes sutiles.",
+        "$theme": "high-contrast",
+        "$type": "color",
+        "$value": "#000000"
+      },
+      "strong": {
+        "$description": "Borde fuerte.",
+        "$theme": "high-contrast",
+        "$type": "color",
+        "$value": "#000000"
+      },
+      "subtle": {
+        "$description": "Borde sutil/decorativo. Puede usarse en divisores, filas no interactivas y superficies identificables por otros medios; no debe ser la unica senal visual de un control funcional.",
+        "$theme": "high-contrast",
+        "$type": "color",
+        "$value": "#33383E"
+      },
+      "success": {
+        "$description": "Borde funcional de exito. Debe combinarse con texto o icono de exito.",
+        "$theme": "high-contrast",
+        "$type": "color",
+        "$value": "#0F5C3C"
+      },
+      "warning": {
+        "$description": "Borde funcional de advertencia. Debe combinarse con texto o icono de advertencia.",
+        "$theme": "high-contrast",
+        "$type": "color",
+        "$value": "#6F4200"
+      }
+    },
+    "brand": {
+      "accent": {
+        "$description": "Azul de accion digital derivado de LM-002 para estados interactivos.",
+        "$type": "color",
+        "$value": "#2E86FF"
+      },
+      "primary": {
+        "$description": "Azul SAPÉ principal derivado del nucleo energetico recurrente en LM-001, LM-007 y LM-008.",
+        "$type": "color",
+        "$value": "#1C3FF0"
+      },
+      "primary_soft": {
+        "$description": "Azul SAPÉ claro detectado como brillo del logotipo.",
+        "$type": "color",
+        "$value": "#8FA8FF"
+      },
+      "primary_strong": {
+        "$description": "Azul SAPÉ profundo detectado en los SVG canónicos.",
+        "$type": "color",
+        "$value": "#122AD2"
+      },
+      "secondary": {
+        "$description": "Grafito azulado tomado del logo transparente para texto, superficies tecnicas y documentos.",
+        "$type": "color",
+        "$value": "#212832"
+      }
+    },
+    "data": {
+      "categorical": {
+        "1": {
+          "$description": "Serie categórica SAPÉ principal.",
+          "$type": "color",
+          "$value": "#1C3FF0"
+        },
+        "2": {
+          "$description": "Serie categórica verde tecnico.",
+          "$type": "color",
+          "$value": "#178A5A"
+        },
+        "3": {
+          "$description": "Serie categórica ambar.",
+          "$type": "color",
+          "$value": "#B86B00"
+        },
+        "4": {
+          "$description": "Serie categórica violeta controlado.",
+          "$type": "color",
+          "$value": "#7A4EE8"
+        },
+        "5": {
+          "$description": "Serie categórica cian profundo.",
+          "$type": "color",
+          "$value": "#0F8B8D"
+        },
+        "6": {
+          "$description": "Serie categórica rojo sobrio.",
+          "$type": "color",
+          "$value": "#C9333A"
+        },
+        "7": {
+          "$description": "Serie categórica azul grisaceo.",
+          "$type": "color",
+          "$value": "#6270A6"
+        },
+        "8": {
+          "$description": "Serie desaturada.",
+          "$type": "color",
+          "$value": "#6B7075"
+        }
+      },
+      "diverging": {
+        "negative": {
+          "$description": "Extremo negativo.",
+          "$type": "color",
+          "$value": "#C9333A"
+        },
+        "negative_soft": {
+          "$description": "Negativo suave.",
+          "$type": "color",
+          "$value": "#F0A6AA"
+        },
+        "neutral": {
+          "$description": "Punto neutro.",
+          "$type": "color",
+          "$value": "#D7DBE0"
+        },
+        "positive": {
+          "$description": "Extremo positivo.",
+          "$type": "color",
+          "$value": "#178A5A"
+        },
+        "positive_soft": {
+          "$description": "Positivo suave.",
+          "$type": "color",
+          "$value": "#8FD8B7"
+        }
+      },
+      "sequential": {
+        "1": {
+          "$description": "Secuencial claro.",
+          "$type": "color",
+          "$value": "#EEF3FF"
+        },
+        "2": {
+          "$description": "Secuencial medio claro.",
+          "$type": "color",
+          "$value": "#B9CBFF"
+        },
+        "3": {
+          "$description": "Secuencial medio.",
+          "$type": "color",
+          "$value": "#5F80FF"
+        },
+        "4": {
+          "$description": "Secuencial fuerte.",
+          "$type": "color",
+          "$value": "#1C3FF0"
+        },
+        "5": {
+          "$description": "Secuencial oscuro.",
+          "$type": "color",
+          "$value": "#071044"
+        }
+      }
+    },
+    "logo": {
+      "exact": {
+        "lm_001": {
+          "hex_000000": {
+            "$description": "Color exacto detectado en LM-001 (SAPE-logo-final-dark_4k.svg); fondo oscuro integrado o sombra interna; 2 aparicion(es).",
+            "$type": "color",
+            "$value": "#000000"
+          },
+          "hex_070809": {
+            "$description": "Color exacto detectado en LM-001 (SAPE-logo-final-dark_4k.svg); fondo oscuro integrado o sombra interna; 1 aparicion(es).",
+            "$type": "color",
+            "$value": "#070809"
+          },
+          "hex_0d0f13": {
+            "$description": "Color exacto detectado en LM-001 (SAPE-logo-final-dark_4k.svg); fondo oscuro integrado o sombra interna; 1 aparicion(es).",
+            "$type": "color",
+            "$value": "#0D0F13"
+          },
+          "hex_122ad2": {
+            "$description": "Color exacto detectado en LM-001 (SAPE-logo-final-dark_4k.svg); azul de energia/iluminacion del logotipo; 1 aparicion(es).",
+            "$type": "color",
+            "$value": "#122AD2"
+          },
+          "hex_15181d": {
+            "$description": "Color exacto detectado en LM-001 (SAPE-logo-final-dark_4k.svg); metal neutro, borde o brillo del logotipo; 1 aparicion(es).",
+            "$type": "color",
+            "$value": "#15181D"
+          },
+          "hex_1c3ff0": {
+            "$description": "Color exacto detectado en LM-001 (SAPE-logo-final-dark_4k.svg); azul de energia/iluminacion del logotipo; 1 aparicion(es).",
+            "$type": "color",
+            "$value": "#1C3FF0"
+          },
+          "hex_3f6dff": {
+            "$description": "Color exacto detectado en LM-001 (SAPE-logo-final-dark_4k.svg); azul de energia/iluminacion del logotipo; 1 aparicion(es).",
+            "$type": "color",
+            "$value": "#3F6DFF"
+          },
+          "hex_767b83": {
+            "$description": "Color exacto detectado en LM-001 (SAPE-logo-final-dark_4k.svg); metal neutro, borde o brillo del logotipo; 1 aparicion(es).",
+            "$type": "color",
+            "$value": "#767B83"
+          },
+          "hex_8d929a": {
+            "$description": "Color exacto detectado en LM-001 (SAPE-logo-final-dark_4k.svg); metal neutro, borde o brillo del logotipo; 1 aparicion(es).",
+            "$type": "color",
+            "$value": "#8D929A"
+          },
+          "hex_8fa8ff": {
+            "$description": "Color exacto detectado en LM-001 (SAPE-logo-final-dark_4k.svg); azul de energia/iluminacion del logotipo; 1 aparicion(es).",
+            "$type": "color",
+            "$value": "#8FA8FF"
+          },
+          "hex_a7acb3": {
+            "$description": "Color exacto detectado en LM-001 (SAPE-logo-final-dark_4k.svg); metal neutro, borde o brillo del logotipo; 1 aparicion(es).",
+            "$type": "color",
+            "$value": "#A7ACB3"
+          },
+          "hex_b3b8bf": {
+            "$description": "Color exacto detectado en LM-001 (SAPE-logo-final-dark_4k.svg); metal neutro, borde o brillo del logotipo; 1 aparicion(es).",
+            "$type": "color",
+            "$value": "#B3B8BF"
+          },
+          "hex_cfd3d8": {
+            "$description": "Color exacto detectado en LM-001 (SAPE-logo-final-dark_4k.svg); metal neutro, borde o brillo del logotipo; 1 aparicion(es).",
+            "$type": "color",
+            "$value": "#CFD3D8"
+          },
+          "hex_d7dbe0": {
+            "$description": "Color exacto detectado en LM-001 (SAPE-logo-final-dark_4k.svg); metal neutro, borde o brillo del logotipo; 1 aparicion(es).",
+            "$type": "color",
+            "$value": "#D7DBE0"
+          },
+          "hex_f2f4f6": {
+            "$description": "Color exacto detectado en LM-001 (SAPE-logo-final-dark_4k.svg); metal neutro, borde o brillo del logotipo; 2 aparicion(es).",
+            "$type": "color",
+            "$value": "#F2F4F6"
+          },
+          "hex_ffffff": {
+            "$description": "Color exacto detectado en LM-001 (SAPE-logo-final-dark_4k.svg); metal neutro, borde o brillo del logotipo; 3 aparicion(es).",
+            "$type": "color",
+            "$value": "#FFFFFF"
+          }
+        },
+        "lm_002": {
+          "hex_0f5fd6": {
+            "$description": "Color exacto detectado en LM-002 (SAPE-logo-final-transparent_4k.svg); azul de energia/iluminacion del logotipo; 1 aparicion(es).",
+            "$type": "color",
+            "$value": "#0F5FD6"
+          },
+          "hex_1573f4": {
+            "$description": "Color exacto detectado en LM-002 (SAPE-logo-final-transparent_4k.svg); azul de energia/iluminacion del logotipo; 1 aparicion(es).",
+            "$type": "color",
+            "$value": "#1573F4"
+          },
+          "hex_212832": {
+            "$description": "Color exacto detectado en LM-002 (SAPE-logo-final-transparent_4k.svg); metal neutro, borde o brillo del logotipo; 1 aparicion(es).",
+            "$type": "color",
+            "$value": "#212832"
+          },
+          "hex_2a323d": {
+            "$description": "Color exacto detectado en LM-002 (SAPE-logo-final-transparent_4k.svg); metal neutro, borde o brillo del logotipo; 1 aparicion(es).",
+            "$type": "color",
+            "$value": "#2A323D"
+          },
+          "hex_2e86ff": {
+            "$description": "Color exacto detectado en LM-002 (SAPE-logo-final-transparent_4k.svg); azul de energia/iluminacion del logotipo; 1 aparicion(es).",
+            "$type": "color",
+            "$value": "#2E86FF"
+          },
+          "hex_333c48": {
+            "$description": "Color exacto detectado en LM-002 (SAPE-logo-final-transparent_4k.svg); metal neutro, borde o brillo del logotipo; 1 aparicion(es).",
+            "$type": "color",
+            "$value": "#333C48"
+          }
+        },
+        "lm_007": {
+          "hex_000000": {
+            "$description": "Color exacto detectado en LM-007 (SAPE-logo-horizontal-final-dark_4k.svg); fondo oscuro integrado o sombra interna; 2 aparicion(es).",
+            "$type": "color",
+            "$value": "#000000"
+          },
+          "hex_050608": {
+            "$description": "Color exacto detectado en LM-007 (SAPE-logo-horizontal-final-dark_4k.svg); fondo oscuro integrado o sombra interna; 1 aparicion(es).",
+            "$type": "color",
+            "$value": "#050608"
+          },
+          "hex_0c0e12": {
+            "$description": "Color exacto detectado en LM-007 (SAPE-logo-horizontal-final-dark_4k.svg); fondo oscuro integrado o sombra interna; 1 aparicion(es).",
+            "$type": "color",
+            "$value": "#0C0E12"
+          },
+          "hex_122ad2": {
+            "$description": "Color exacto detectado en LM-007 (SAPE-logo-horizontal-final-dark_4k.svg); azul de energia/iluminacion del logotipo; 1 aparicion(es).",
+            "$type": "color",
+            "$value": "#122AD2"
+          },
+          "hex_15181d": {
+            "$description": "Color exacto detectado en LM-007 (SAPE-logo-horizontal-final-dark_4k.svg); metal neutro, borde o brillo del logotipo; 1 aparicion(es).",
+            "$type": "color",
+            "$value": "#15181D"
+          },
+          "hex_1c3ff0": {
+            "$description": "Color exacto detectado en LM-007 (SAPE-logo-horizontal-final-dark_4k.svg); azul de energia/iluminacion del logotipo; 1 aparicion(es).",
+            "$type": "color",
+            "$value": "#1C3FF0"
+          },
+          "hex_3f6dff": {
+            "$description": "Color exacto detectado en LM-007 (SAPE-logo-horizontal-final-dark_4k.svg); azul de energia/iluminacion del logotipo; 1 aparicion(es).",
+            "$type": "color",
+            "$value": "#3F6DFF"
+          },
+          "hex_767b83": {
+            "$description": "Color exacto detectado en LM-007 (SAPE-logo-horizontal-final-dark_4k.svg); metal neutro, borde o brillo del logotipo; 1 aparicion(es).",
+            "$type": "color",
+            "$value": "#767B83"
+          },
+          "hex_8d929a": {
+            "$description": "Color exacto detectado en LM-007 (SAPE-logo-horizontal-final-dark_4k.svg); metal neutro, borde o brillo del logotipo; 1 aparicion(es).",
+            "$type": "color",
+            "$value": "#8D929A"
+          },
+          "hex_8ea0b4": {
+            "$description": "Color exacto detectado en LM-007 (SAPE-logo-horizontal-final-dark_4k.svg); color declarado del logotipo; 1 aparicion(es).",
+            "$type": "color",
+            "$value": "#8EA0B4"
+          },
+          "hex_8fa8ff": {
+            "$description": "Color exacto detectado en LM-007 (SAPE-logo-horizontal-final-dark_4k.svg); azul de energia/iluminacion del logotipo; 1 aparicion(es).",
+            "$type": "color",
+            "$value": "#8FA8FF"
+          },
+          "hex_a7acb3": {
+            "$description": "Color exacto detectado en LM-007 (SAPE-logo-horizontal-final-dark_4k.svg); metal neutro, borde o brillo del logotipo; 1 aparicion(es).",
+            "$type": "color",
+            "$value": "#A7ACB3"
+          },
+          "hex_b3b8bf": {
+            "$description": "Color exacto detectado en LM-007 (SAPE-logo-horizontal-final-dark_4k.svg); metal neutro, borde o brillo del logotipo; 1 aparicion(es).",
+            "$type": "color",
+            "$value": "#B3B8BF"
+          },
+          "hex_cfd3d8": {
+            "$description": "Color exacto detectado en LM-007 (SAPE-logo-horizontal-final-dark_4k.svg); metal neutro, borde o brillo del logotipo; 1 aparicion(es).",
+            "$type": "color",
+            "$value": "#CFD3D8"
+          },
+          "hex_d7dbe0": {
+            "$description": "Color exacto detectado en LM-007 (SAPE-logo-horizontal-final-dark_4k.svg); metal neutro, borde o brillo del logotipo; 1 aparicion(es).",
+            "$type": "color",
+            "$value": "#D7DBE0"
+          },
+          "hex_f2f4f6": {
+            "$description": "Color exacto detectado en LM-007 (SAPE-logo-horizontal-final-dark_4k.svg); metal neutro, borde o brillo del logotipo; 3 aparicion(es).",
+            "$type": "color",
+            "$value": "#F2F4F6"
+          },
+          "hex_ffffff": {
+            "$description": "Color exacto detectado en LM-007 (SAPE-logo-horizontal-final-dark_4k.svg); metal neutro, borde o brillo del logotipo; 3 aparicion(es).",
+            "$type": "color",
+            "$value": "#FFFFFF"
+          }
+        },
+        "lm_008": {
+          "hex_000000": {
+            "$description": "Color exacto detectado en LM-008 (SAPE-logo-horizontal-final-transparent_4k.svg); fondo oscuro integrado o sombra interna; 2 aparicion(es).",
+            "$type": "color",
+            "$value": "#000000"
+          },
+          "hex_122ad2": {
+            "$description": "Color exacto detectado en LM-008 (SAPE-logo-horizontal-final-transparent_4k.svg); azul de energia/iluminacion del logotipo; 1 aparicion(es).",
+            "$type": "color",
+            "$value": "#122AD2"
+          },
+          "hex_1c3ff0": {
+            "$description": "Color exacto detectado en LM-008 (SAPE-logo-horizontal-final-transparent_4k.svg); azul de energia/iluminacion del logotipo; 1 aparicion(es).",
+            "$type": "color",
+            "$value": "#1C3FF0"
+          },
+          "hex_2b3036": {
+            "$description": "Color exacto detectado en LM-008 (SAPE-logo-horizontal-final-transparent_4k.svg); metal neutro, borde o brillo del logotipo; 1 aparicion(es).",
+            "$type": "color",
+            "$value": "#2B3036"
+          },
+          "hex_33383e": {
+            "$description": "Color exacto detectado en LM-008 (SAPE-logo-horizontal-final-transparent_4k.svg); metal neutro, borde o brillo del logotipo; 1 aparicion(es).",
+            "$type": "color",
+            "$value": "#33383E"
+          },
+          "hex_3f6dff": {
+            "$description": "Color exacto detectado en LM-008 (SAPE-logo-horizontal-final-transparent_4k.svg); azul de energia/iluminacion del logotipo; 1 aparicion(es).",
+            "$type": "color",
+            "$value": "#3F6DFF"
+          },
+          "hex_484d53": {
+            "$description": "Color exacto detectado en LM-008 (SAPE-logo-horizontal-final-transparent_4k.svg); metal neutro, borde o brillo del logotipo; 1 aparicion(es).",
+            "$type": "color",
+            "$value": "#484D53"
+          },
+          "hex_4c5157": {
+            "$description": "Color exacto detectado en LM-008 (SAPE-logo-horizontal-final-transparent_4k.svg); metal neutro, borde o brillo del logotipo; 1 aparicion(es).",
+            "$type": "color",
+            "$value": "#4C5157"
+          },
+          "hex_5c636b": {
+            "$description": "Color exacto detectado en LM-008 (SAPE-logo-horizontal-final-transparent_4k.svg); metal neutro, borde o brillo del logotipo; 1 aparicion(es).",
+            "$type": "color",
+            "$value": "#5C636B"
+          },
+          "hex_6b7075": {
+            "$description": "Color exacto detectado en LM-008 (SAPE-logo-horizontal-final-transparent_4k.svg); metal neutro, borde o brillo del logotipo; 1 aparicion(es).",
+            "$type": "color",
+            "$value": "#6B7075"
+          },
+          "hex_7d8288": {
+            "$description": "Color exacto detectado en LM-008 (SAPE-logo-horizontal-final-transparent_4k.svg); metal neutro, borde o brillo del logotipo; 1 aparicion(es).",
+            "$type": "color",
+            "$value": "#7D8288"
+          },
+          "hex_8b9095": {
+            "$description": "Color exacto detectado en LM-008 (SAPE-logo-horizontal-final-transparent_4k.svg); metal neutro, borde o brillo del logotipo; 1 aparicion(es).",
+            "$type": "color",
+            "$value": "#8B9095"
+          },
+          "hex_8fa8ff": {
+            "$description": "Color exacto detectado en LM-008 (SAPE-logo-horizontal-final-transparent_4k.svg); azul de energia/iluminacion del logotipo; 1 aparicion(es).",
+            "$type": "color",
+            "$value": "#8FA8FF"
+          },
+          "hex_aeb3b8": {
+            "$description": "Color exacto detectado en LM-008 (SAPE-logo-horizontal-final-transparent_4k.svg); metal neutro, borde o brillo del logotipo; 2 aparicion(es).",
+            "$type": "color",
+            "$value": "#AEB3B8"
+          },
+          "hex_ffffff": {
+            "$description": "Color exacto detectado en LM-008 (SAPE-logo-horizontal-final-transparent_4k.svg); metal neutro, borde o brillo del logotipo; 3 aparicion(es).",
+            "$type": "color",
+            "$value": "#FFFFFF"
+          }
+        }
+      }
+    },
+    "neutral": {
+      "0": {
+        "$description": "Blanco.",
+        "$type": "color",
+        "$value": "#FFFFFF"
+      },
+      "100": {
+        "$description": "Superficie clara detectada en logos dark.",
+        "$type": "color",
+        "$value": "#F2F4F6"
+      },
+      "200": {
+        "$description": "Borde claro detectado.",
+        "$type": "color",
+        "$value": "#D7DBE0"
+      },
+      "300": {
+        "$description": "Borde/documento.",
+        "$type": "color",
+        "$value": "#CFD3D8"
+      },
+      "400": {
+        "$description": "Texto atenuado.",
+        "$type": "color",
+        "$value": "#A7ACB3"
+      },
+      "50": {
+        "$description": "Fondo base claro.",
+        "$type": "color",
+        "$value": "#F8FAFC"
+      },
+      "500": {
+        "$description": "Texto secundario metalico.",
+        "$type": "color",
+        "$value": "#767B83"
+      },
+      "600": {
+        "$description": "Texto terciario dark/documento.",
+        "$type": "color",
+        "$value": "#5C636B"
+      },
+      "700": {
+        "$description": "Texto principal sobre claro.",
+        "$type": "color",
+        "$value": "#33383E"
+      },
+      "800": {
+        "$description": "Texto principal SAPÉ.",
+        "$type": "color",
+        "$value": "#212832"
+      },
+      "900": {
+        "$description": "Fondo oscuro tecnico.",
+        "$type": "color",
+        "$value": "#0D0F13"
+      },
+      "950": {
+        "$description": "Fondo de maximo contraste.",
+        "$type": "color",
+        "$value": "#050608"
+      }
+    },
+    "overlay": {
+      "scrim": {
+        "$description": "Overlay oscuro para modales.",
+        "$type": "color",
+        "$value": "rgba(5, 6, 8, 0.72)"
+      },
+      "veil": {
+        "$description": "Overlay claro para documentos.",
+        "$type": "color",
+        "$value": "rgba(255, 255, 255, 0.72)"
+      }
+    },
+    "primary": {
+      "100": {
+        "$description": "Tono primario muy claro.",
+        "$type": "color",
+        "$value": "#DCE6FF"
+      },
+      "200": {
+        "$description": "Tono primario claro.",
+        "$type": "color",
+        "$value": "#B9CBFF"
+      },
+      "300": {
+        "$description": "Tono primario claro detectado en logo.",
+        "$type": "color",
+        "$value": "#8FA8FF"
+      },
+      "400": {
+        "$description": "Tono primario vivo para foco y graficos.",
+        "$type": "color",
+        "$value": "#5F80FF"
+      },
+      "50": {
+        "$description": "Tono primario para fondo sutil.",
+        "$type": "color",
+        "$value": "#EEF3FF"
+      },
+      "500": {
+        "$description": "Azul luminoso detectado en logo.",
+        "$type": "color",
+        "$value": "#3F6DFF"
+      },
+      "600": {
+        "$description": "Azul SAPÉ principal.",
+        "$type": "color",
+        "$value": "#1C3FF0"
+      },
+      "700": {
+        "$description": "Azul SAPÉ fuerte.",
+        "$type": "color",
+        "$value": "#122AD2"
+      },
+      "800": {
+        "$description": "Azul profundo derivado para hover sobre claro.",
+        "$type": "color",
+        "$value": "#1026A6"
+      },
+      "900": {
+        "$description": "Azul corporativo oscuro.",
+        "$type": "color",
+        "$value": "#0B1B78"
+      },
+      "950": {
+        "$description": "Azul nocturno para dark mode.",
+        "$type": "color",
+        "$value": "#071044"
+      }
+    },
+    "secondary": {
+      "100": {
+        "$description": "Neutral frio claro.",
+        "$type": "color",
+        "$value": "#DDE4EA"
+      },
+      "200": {
+        "$description": "Neutral frio para divisores claros.",
+        "$type": "color",
+        "$value": "#C5CFD9"
+      },
+      "300": {
+        "$description": "Metal claro detectado en LM-008.",
+        "$type": "color",
+        "$value": "#AEB3B8"
+      },
+      "400": {
+        "$description": "Metal medio detectado en LM-008.",
+        "$type": "color",
+        "$value": "#8B9095"
+      },
+      "50": {
+        "$description": "Neutral frio para fondos documentales.",
+        "$type": "color",
+        "$value": "#F2F5F8"
+      },
+      "500": {
+        "$description": "Metal tecnico medio.",
+        "$type": "color",
+        "$value": "#6B7075"
+      },
+      "600": {
+        "$description": "Metal oscuro detectado en LM-008.",
+        "$type": "color",
+        "$value": "#4C5157"
+      },
+      "700": {
+        "$description": "Grafito azulado detectado en LM-002.",
+        "$type": "color",
+        "$value": "#333C48"
+      },
+      "800": {
+        "$description": "Grafito SAPÉ para texto principal.",
+        "$type": "color",
+        "$value": "#212832"
+      },
+      "900": {
+        "$description": "Carbono detectado en logos dark.",
+        "$type": "color",
+        "$value": "#15181D"
+      },
+      "950": {
+        "$description": "Negro tecnico de fondos integrados.",
+        "$type": "color",
+        "$value": "#070809"
+      }
+    },
+    "semantic": {
+      "error": {
+        "active": {
+          "$description": "Active de error.",
+          "$type": "color",
+          "$value": "#7F1D22"
+        },
+        "border": {
+          "$description": "Borde de error.",
+          "$type": "color",
+          "$value": "#F0A6AA"
+        },
+        "disabled": {
+          "$description": "Error deshabilitado.",
+          "$type": "color",
+          "$value": "#DFC0C2"
+        },
+        "hover": {
+          "$description": "Hover de error.",
+          "$type": "color",
+          "$value": "#A4272D"
+        },
+        "icon": {
+          "$description": "Icono de error.",
+          "$type": "color",
+          "$value": "#AD2A31"
+        },
+        "solid": {
+          "$description": "Fondo solido para error.",
+          "$type": "color",
+          "$value": "#C9333A"
+        },
+        "subtle": {
+          "$description": "Fondo sutil para error.",
+          "$type": "color",
+          "$value": "#FDEBEC"
+        },
+        "text": {
+          "$description": "Texto de error.",
+          "$type": "color",
+          "$value": "#842126"
+        }
+      },
+      "info": {
+        "active": {
+          "$description": "Active informativo.",
+          "$type": "color",
+          "$value": "#093D87"
+        },
+        "border": {
+          "$description": "Borde informativo.",
+          "$type": "color",
+          "$value": "#9BC2FF"
+        },
+        "disabled": {
+          "$description": "Info deshabilitado.",
+          "$type": "color",
+          "$value": "#B8CAE8"
+        },
+        "hover": {
+          "$description": "Hover informativo.",
+          "$type": "color",
+          "$value": "#0D53B8"
+        },
+        "icon": {
+          "$description": "Icono informativo detectado en LM-002.",
+          "$type": "color",
+          "$value": "#1573F4"
+        },
+        "solid": {
+          "$description": "Fondo solido informativo detectado en LM-002.",
+          "$type": "color",
+          "$value": "#0F5FD6"
+        },
+        "subtle": {
+          "$description": "Fondo sutil informativo.",
+          "$type": "color",
+          "$value": "#EAF2FF"
+        },
+        "text": {
+          "$description": "Texto informativo.",
+          "$type": "color",
+          "$value": "#0B438F"
+        }
+      },
+      "neutral": {
+        "active": {
+          "$description": "Active neutral.",
+          "$type": "color",
+          "$value": "#15181D"
+        },
+        "border": {
+          "$description": "Borde neutral.",
+          "$type": "color",
+          "$value": "#D7DBE0"
+        },
+        "disabled": {
+          "$description": "Neutral deshabilitado.",
+          "$type": "color",
+          "$value": "#CFD3D8"
+        },
+        "hover": {
+          "$description": "Hover neutral.",
+          "$type": "color",
+          "$value": "#2A323D"
+        },
+        "icon": {
+          "$description": "Icono neutral.",
+          "$type": "color",
+          "$value": "#5C636B"
+        },
+        "solid": {
+          "$description": "Fondo neutral solido.",
+          "$type": "color",
+          "$value": "#333C48"
+        },
+        "subtle": {
+          "$description": "Fondo neutral sutil.",
+          "$type": "color",
+          "$value": "#F2F4F6"
+        },
+        "text": {
+          "$description": "Texto neutral.",
+          "$type": "color",
+          "$value": "#212832"
+        }
+      },
+      "success": {
+        "active": {
+          "$description": "Active de exito.",
+          "$type": "color",
+          "$value": "#0B5737"
+        },
+        "border": {
+          "$description": "Borde de exito.",
+          "$type": "color",
+          "$value": "#8FD8B7"
+        },
+        "disabled": {
+          "$description": "Exito deshabilitado.",
+          "$type": "color",
+          "$value": "#BBD8CB"
+        },
+        "hover": {
+          "$description": "Hover de exito.",
+          "$type": "color",
+          "$value": "#117047"
+        },
+        "icon": {
+          "$description": "Icono de exito.",
+          "$type": "color",
+          "$value": "#147A50"
+        },
+        "solid": {
+          "$description": "Fondo solido para exito.",
+          "$type": "color",
+          "$value": "#178A5A"
+        },
+        "subtle": {
+          "$description": "Fondo sutil para exito.",
+          "$type": "color",
+          "$value": "#EAF8F1"
+        },
+        "text": {
+          "$description": "Texto de exito.",
+          "$type": "color",
+          "$value": "#0F5C3C"
+        }
+      },
+      "warning": {
+        "active": {
+          "$description": "Active de advertencia.",
+          "$type": "color",
+          "$value": "#744200"
+        },
+        "border": {
+          "$description": "Borde de advertencia.",
+          "$type": "color",
+          "$value": "#F0C36A"
+        },
+        "disabled": {
+          "$description": "Advertencia deshabilitada.",
+          "$type": "color",
+          "$value": "#E6D1A8"
+        },
+        "hover": {
+          "$description": "Hover de advertencia.",
+          "$type": "color",
+          "$value": "#985700"
+        },
+        "icon": {
+          "$description": "Icono de advertencia.",
+          "$type": "color",
+          "$value": "#9A5A00"
+        },
+        "solid": {
+          "$description": "Fondo solido para advertencia.",
+          "$type": "color",
+          "$value": "#B86B00"
+        },
+        "subtle": {
+          "$description": "Fondo sutil para advertencia.",
+          "$type": "color",
+          "$value": "#FFF4D8"
+        },
+        "text": {
+          "$description": "Texto de advertencia.",
+          "$type": "color",
+          "$value": "#6F4200"
+        }
+      }
+    },
+    "surface": {
+      "base": {
+        "$description": "Superficie base.",
+        "$theme": "high-contrast",
+        "$type": "color",
+        "$value": "#FFFFFF"
+      },
+      "raised": {
+        "$description": "Superficie elevada.",
+        "$theme": "high-contrast",
+        "$type": "color",
+        "$value": "#FFFFFF"
+      },
+      "selected": {
+        "$description": "Superficie seleccionada.",
+        "$theme": "high-contrast",
+        "$type": "color",
+        "$value": "#DCE6FF"
+      }
+    },
+    "text": {
+      "brand": {
+        "$description": "Texto de marca.",
+        "$theme": "high-contrast",
+        "$type": "color",
+        "$value": "#0B1B78"
+      },
+      "inverse": {
+        "$description": "Texto sobre oscuro.",
+        "$theme": "high-contrast",
+        "$type": "color",
+        "$value": "#FFFFFF"
+      },
+      "muted": {
+        "$description": "Texto atenuado.",
+        "$theme": "high-contrast",
+        "$type": "color",
+        "$value": "#33383E"
+      },
+      "primary": {
+        "$description": "Texto principal.",
+        "$theme": "high-contrast",
+        "$type": "color",
+        "$value": "#000000"
+      },
+      "secondary": {
+        "$description": "Texto secundario.",
+        "$theme": "high-contrast",
+        "$type": "color",
+        "$value": "#212832"
+      }
+    }
+  },
+  "density": {
+    "comfortable": {
+      "$description": "Padding comodo.",
+      "$type": "dimension",
+      "$value": "16px"
+    },
+    "compact": {
+      "$description": "Padding compacto.",
+      "$type": "dimension",
+      "$value": "8px"
+    },
+    "standard": {
+      "$description": "Padding estandar.",
+      "$type": "dimension",
+      "$value": "12px"
+    }
+  },
+  "elevation": {
+    "level_0": {
+      "border": "{color.neutral.200}",
+      "shadow": "{shadow.none}",
+      "surface": "{color.neutral.50}"
+    },
+    "level_1": {
+      "border": "{color.neutral.200}",
+      "shadow": "{shadow.level_1}",
+      "surface": "{color.neutral.0}"
+    },
+    "level_2": {
+      "border": "{color.neutral.300}",
+      "shadow": "{shadow.level_2}",
+      "surface": "{color.neutral.0}"
+    },
+    "level_3": {
+      "border": "{color.primary.200}",
+      "shadow": "{shadow.level_3}",
+      "surface": "{color.neutral.0}"
+    },
+    "level_4": {
+      "border": "{color.primary.300}",
+      "shadow": "{shadow.level_4}",
+      "surface": "{color.neutral.0}"
+    },
+    "level_5": {
+      "border": "{color.primary.500}",
+      "shadow": "{shadow.level_5}",
+      "surface": "{color.neutral.0}"
+    }
+  },
+  "font": {
+    "family": {
+      "logo_descriptor": {
+        "$description": "Dependencia declarada en SVG horizontales para el texto smart bud; no se distribuye.",
+        "$type": "fontFamily",
+        "$value": "Chakra Petch"
+      },
+      "mono": {
+        "$description": "Monoespaciada para codigo, datos tecnicos y tablas densas; OFL 1.1.",
+        "$type": "fontFamily",
+        "$value": "JetBrains Mono"
+      },
+      "primary": {
+        "$description": "Familia primaria para UI, web y documentos; OFL 1.1.",
+        "$type": "fontFamily",
+        "$value": "IBM Plex Sans"
+      },
+      "secondary": {
+        "$description": "Alternativa secundaria libre para productos digitales; OFL 1.1.",
+        "$type": "fontFamily",
+        "$value": "Inter"
+      },
+      "system_mono": {
+        "$description": "Fallback monoespaciado de sistema.",
+        "$type": "fontFamily",
+        "$value": "Consolas, SFMono-Regular, Menlo, monospace"
+      },
+      "system_sans": {
+        "$description": "Fallback de sistema para Windows, macOS y Linux.",
+        "$type": "fontFamily",
+        "$value": "Segoe UI, Aptos, Arial, sans-serif"
+      }
+    },
+    "letter_spacing": {
+      "code": {
+        "$description": "Codigo sin tracking.",
+        "$type": "dimension",
+        "$value": "0"
+      },
+      "label": {
+        "$description": "Tracking leve para labels.",
+        "$type": "dimension",
+        "$value": "0.01em"
+      },
+      "normal": {
+        "$description": "Tracking neutro.",
+        "$type": "dimension",
+        "$value": "0"
+      }
+    },
+    "line_height": {
+      "normal": {
+        "$description": "Interlineado de cuerpo.",
+        "$type": "number",
+        "$value": 1.5
+      },
+      "relaxed": {
+        "$description": "Interlineado documental.",
+        "$type": "number",
+        "$value": 1.65
+      },
+      "snug": {
+        "$description": "Interlineado de titulos.",
+        "$type": "number",
+        "$value": 1.25
+      },
+      "tight": {
+        "$description": "Interlineado de display.",
+        "$type": "number",
+        "$value": 1.12
+      }
+    },
+    "role": {
+      "body": {
+        "family": "{font.family.primary}",
+        "letter_spacing": "{font.letter_spacing.normal}",
+        "line_height": "{font.line_height.normal}",
+        "size": "{font.size.16}",
+        "weight": "{font.weight.regular}"
+      },
+      "caption": {
+        "family": "{font.family.primary}",
+        "letter_spacing": "{font.letter_spacing.normal}",
+        "line_height": "{font.line_height.normal}",
+        "size": "{font.size.12}",
+        "weight": "{font.weight.regular}"
+      },
+      "code": {
+        "family": "{font.family.mono}",
+        "letter_spacing": "{font.letter_spacing.code}",
+        "line_height": "{font.line_height.normal}",
+        "size": "{font.size.14}",
+        "weight": "{font.weight.regular}"
+      },
+      "display": {
+        "family": "{font.family.primary}",
+        "letter_spacing": "{font.letter_spacing.normal}",
+        "line_height": "{font.line_height.tight}",
+        "size": "{font.size.48}",
+        "weight": "{font.weight.semibold}"
+      },
+      "document_body": {
+        "family": "{font.family.primary}",
+        "letter_spacing": "{font.letter_spacing.normal}",
+        "line_height": "{font.line_height.relaxed}",
+        "size": "{font.size.12}",
+        "weight": "{font.weight.regular}"
+      },
+      "document_heading": {
+        "family": "{font.family.primary}",
+        "letter_spacing": "{font.letter_spacing.normal}",
+        "line_height": "{font.line_height.snug}",
+        "size": "{font.size.20}",
+        "weight": "{font.weight.semibold}"
+      },
+      "document_title": {
+        "family": "{font.family.primary}",
+        "letter_spacing": "{font.letter_spacing.normal}",
+        "line_height": "{font.line_height.snug}",
+        "size": "{font.size.32}",
+        "weight": "{font.weight.semibold}"
+      },
+      "footnote": {
+        "family": "{font.family.primary}",
+        "letter_spacing": "{font.letter_spacing.normal}",
+        "line_height": "{font.line_height.normal}",
+        "size": "{font.size.10}",
+        "weight": "{font.weight.regular}"
+      },
+      "headline": {
+        "family": "{font.family.primary}",
+        "letter_spacing": "{font.letter_spacing.normal}",
+        "line_height": "{font.line_height.snug}",
+        "size": "{font.size.32}",
+        "weight": "{font.weight.semibold}"
+      },
+      "label": {
+        "family": "{font.family.primary}",
+        "letter_spacing": "{font.letter_spacing.label}",
+        "line_height": "{font.line_height.normal}",
+        "size": "{font.size.14}",
+        "weight": "{font.weight.medium}"
+      },
+      "numeric": {
+        "family": "{font.family.mono}",
+        "letter_spacing": "{font.letter_spacing.normal}",
+        "line_height": "{font.line_height.normal}",
+        "size": "{font.size.14}",
+        "weight": "{font.weight.medium}"
+      },
+      "table": {
+        "family": "{font.family.primary}",
+        "letter_spacing": "{font.letter_spacing.normal}",
+        "line_height": "{font.line_height.normal}",
+        "size": "{font.size.12}",
+        "weight": "{font.weight.regular}"
+      },
+      "title": {
+        "family": "{font.family.primary}",
+        "letter_spacing": "{font.letter_spacing.normal}",
+        "line_height": "{font.line_height.snug}",
+        "size": "{font.size.24}",
+        "weight": "{font.weight.semibold}"
+      }
+    },
+    "size": {
+      "10": {
+        "$description": "Caption tecnico.",
+        "$type": "dimension",
+        "$value": "10px"
+      },
+      "12": {
+        "$description": "Caption y metadatos.",
+        "$type": "dimension",
+        "$value": "12px"
+      },
+      "14": {
+        "$description": "Texto compacto.",
+        "$type": "dimension",
+        "$value": "14px"
+      },
+      "16": {
+        "$description": "Cuerpo base.",
+        "$type": "dimension",
+        "$value": "16px"
+      },
+      "18": {
+        "$description": "Cuerpo destacado.",
+        "$type": "dimension",
+        "$value": "18px"
+      },
+      "20": {
+        "$description": "Title compacto.",
+        "$type": "dimension",
+        "$value": "20px"
+      },
+      "24": {
+        "$description": "Title.",
+        "$type": "dimension",
+        "$value": "24px"
+      },
+      "32": {
+        "$description": "Headline.",
+        "$type": "dimension",
+        "$value": "32px"
+      },
+      "40": {
+        "$description": "Display medio.",
+        "$type": "dimension",
+        "$value": "40px"
+      },
+      "48": {
+        "$description": "Display.",
+        "$type": "dimension",
+        "$value": "48px"
+      },
+      "64": {
+        "$description": "Display grande controlado.",
+        "$type": "dimension",
+        "$value": "64px"
+      }
+    },
+    "weight": {
+      "bold": {
+        "$description": "Peso bold reservado para maxima jerarquia.",
+        "$type": "fontWeight",
+        "$value": 700
+      },
+      "medium": {
+        "$description": "Peso medio para labels.",
+        "$type": "fontWeight",
+        "$value": 500
+      },
+      "regular": {
+        "$description": "Peso regular.",
+        "$type": "fontWeight",
+        "$value": 400
+      },
+      "semibold": {
+        "$description": "Peso semibold para titulos.",
+        "$type": "fontWeight",
+        "$value": 600
+      }
+    }
+  },
+  "grid": {
+    "breakpoint": {
+      "desktop": {
+        "$description": "Escritorio.",
+        "$type": "dimension",
+        "$value": "1024px"
+      },
+      "mobile": {
+        "$description": "Inicio movil.",
+        "$type": "dimension",
+        "$value": "360px"
+      },
+      "tablet": {
+        "$description": "Tablet.",
+        "$type": "dimension",
+        "$value": "768px"
+      },
+      "wide": {
+        "$description": "Escritorio amplio.",
+        "$type": "dimension",
+        "$value": "1440px"
+      }
+    },
+    "document": {
+      "a4_landscape_margin": {
+        "$description": "Margen A4 horizontal.",
+        "$type": "dimension",
+        "$value": "14mm"
+      },
+      "a4_margin": {
+        "$description": "Margen A4 vertical.",
+        "$type": "dimension",
+        "$value": "18mm"
+      }
+    },
+    "presentation": {
+      "columns": {
+        "$description": "Columnas presentacion.",
+        "$type": "number",
+        "$value": 12
+      },
+      "safe_margin": {
+        "$description": "Margen seguro 16:9.",
+        "$type": "dimension",
+        "$value": "48px"
+      }
+    },
+    "web": {
+      "desktop_columns": {
+        "$description": "Columnas web escritorio.",
+        "$type": "number",
+        "$value": 12
+      },
+      "gutter": {
+        "$description": "Gutter web estandar.",
+        "$type": "dimension",
+        "$value": "24px"
+      },
+      "mobile_columns": {
+        "$description": "Columnas web movil.",
+        "$type": "number",
+        "$value": 4
+      },
+      "tablet_columns": {
+        "$description": "Columnas web tablet.",
+        "$type": "number",
+        "$value": 8
+      }
+    }
+  },
+  "motion": {
+    "duration": {
+      "base": {
+        "$description": "Transicion base.",
+        "$type": "duration",
+        "$value": "180ms"
+      },
+      "fast": {
+        "$description": "Transicion rapida.",
+        "$type": "duration",
+        "$value": "120ms"
+      },
+      "instant": {
+        "$description": "Sin movimiento.",
+        "$type": "duration",
+        "$value": "0ms"
+      },
+      "slow": {
+        "$description": "Transicion lenta.",
+        "$type": "duration",
+        "$value": "260ms"
+      }
+    },
+    "easing": {
+      "emphasized": {
+        "$description": "Curva para entrada de capas.",
+        "$type": "cubicBezier",
+        "$value": "cubic-bezier(0.16, 1, 0.3, 1)"
+      },
+      "standard": {
+        "$description": "Curva base.",
+        "$type": "cubicBezier",
+        "$value": "cubic-bezier(0.2, 0, 0, 1)"
+      }
+    },
+    "opacity": {
+      "disabled": {
+        "$description": "Estado deshabilitado.",
+        "$type": "number",
+        "$value": 0.42
+      },
+      "muted": {
+        "$description": "Contenido secundario.",
+        "$type": "number",
+        "$value": 0.68
+      },
+      "overlay": {
+        "$description": "Scrim modal.",
+        "$type": "number",
+        "$value": 0.72
+      }
+    },
+    "z_index": {
+      "base": {
+        "$description": "Base.",
+        "$type": "number",
+        "$value": 0
+      },
+      "menu": {
+        "$description": "Menu.",
+        "$type": "number",
+        "$value": 300
+      },
+      "modal": {
+        "$description": "Modal.",
+        "$type": "number",
+        "$value": 800
+      },
+      "popover": {
+        "$description": "Popover.",
+        "$type": "number",
+        "$value": 500
+      },
+      "sticky": {
+        "$description": "Header fijo.",
+        "$type": "number",
+        "$value": 100
+      },
+      "toast": {
+        "$description": "Notificacion.",
+        "$type": "number",
+        "$value": 900
+      }
+    }
+  },
+  "radius": {
+    "full": {
+      "$description": "Solo chips, pills tecnicos y avatares.",
+      "$type": "dimension",
+      "$value": "999px"
+    },
+    "lg": {
+      "$description": "Maximo recomendado para tarjetas.",
+      "$type": "dimension",
+      "$value": "8px"
+    },
+    "md": {
+      "$description": "Radio de superficies.",
+      "$type": "dimension",
+      "$value": "6px"
+    },
+    "none": {
+      "$description": "Sin radio.",
+      "$type": "dimension",
+      "$value": "0px"
+    },
+    "sm": {
+      "$description": "Radio de controles.",
+      "$type": "dimension",
+      "$value": "4px"
+    },
+    "xl": {
+      "$description": "Uso excepcional en contenedores grandes.",
+      "$type": "dimension",
+      "$value": "12px"
+    },
+    "xs": {
+      "$description": "Radio tecnico minimo.",
+      "$type": "dimension",
+      "$value": "2px"
+    }
+  },
+  "shadow": {
+    "level_1": {
+      "$description": "Separacion minima.",
+      "$type": "shadow",
+      "$value": "0 1px 2px rgba(5, 6, 8, 0.10)"
+    },
+    "level_2": {
+      "$description": "Tarjetas y barras.",
+      "$type": "shadow",
+      "$value": "0 2px 6px rgba(5, 6, 8, 0.12)"
+    },
+    "level_3": {
+      "$description": "Menu o popover.",
+      "$type": "shadow",
+      "$value": "0 6px 16px rgba(5, 6, 8, 0.16)"
+    },
+    "level_4": {
+      "$description": "Modal.",
+      "$type": "shadow",
+      "$value": "0 12px 28px rgba(5, 6, 8, 0.20)"
+    },
+    "level_5": {
+      "$description": "Overlay critico.",
+      "$type": "shadow",
+      "$value": "0 20px 44px rgba(5, 6, 8, 0.24)"
+    },
+    "none": {
+      "$description": "Sin sombra.",
+      "$type": "shadow",
+      "$value": "none"
+    }
+  },
+  "size": {
+    "content": {
+      "app": {
+        "$description": "Ancho de referencia app.",
+        "$type": "dimension",
+        "$value": "1440px"
+      },
+      "measure": {
+        "$description": "Ancho maximo de lectura.",
+        "$type": "dimension",
+        "$value": "720px"
+      },
+      "wide": {
+        "$description": "Ancho maximo web.",
+        "$type": "dimension",
+        "$value": "1180px"
+      }
+    },
+    "control": {
+      "lg": {
+        "$description": "Control prominente.",
+        "$type": "dimension",
+        "$value": "48px"
+      },
+      "md": {
+        "$description": "Control estandar.",
+        "$type": "dimension",
+        "$value": "40px"
+      },
+      "sm": {
+        "$description": "Control compacto.",
+        "$type": "dimension",
+        "$value": "32px"
+      },
+      "touch_min": {
+        "$description": "Area tactil minima.",
+        "$type": "dimension",
+        "$value": "44px"
+      }
+    },
+    "icon": {
+      "lg": {
+        "$description": "Icono destacado.",
+        "$type": "dimension",
+        "$value": "24px"
+      },
+      "md": {
+        "$description": "Icono estandar.",
+        "$type": "dimension",
+        "$value": "20px"
+      },
+      "sm": {
+        "$description": "Icono compacto.",
+        "$type": "dimension",
+        "$value": "16px"
+      }
+    }
+  },
+  "spacing": {
+    "0": {
+      "$description": "Espaciado SAPÉ 0.",
+      "$type": "dimension",
+      "$value": "0px"
+    },
+    "1": {
+      "$description": "Espaciado SAPÉ 1.",
+      "$type": "dimension",
+      "$value": "4px"
+    },
+    "10": {
+      "$description": "Espaciado SAPÉ 10.",
+      "$type": "dimension",
+      "$value": "40px"
+    },
+    "12": {
+      "$description": "Espaciado SAPÉ 12.",
+      "$type": "dimension",
+      "$value": "48px"
+    },
+    "16": {
+      "$description": "Espaciado SAPÉ 16.",
+      "$type": "dimension",
+      "$value": "64px"
+    },
+    "2": {
+      "$description": "Espaciado SAPÉ 2.",
+      "$type": "dimension",
+      "$value": "8px"
+    },
+    "20": {
+      "$description": "Espaciado SAPÉ 20.",
+      "$type": "dimension",
+      "$value": "80px"
+    },
+    "24": {
+      "$description": "Espaciado SAPÉ 24.",
+      "$type": "dimension",
+      "$value": "96px"
+    },
+    "3": {
+      "$description": "Espaciado SAPÉ 3.",
+      "$type": "dimension",
+      "$value": "12px"
+    },
+    "4": {
+      "$description": "Espaciado SAPÉ 4.",
+      "$type": "dimension",
+      "$value": "16px"
+    },
+    "5": {
+      "$description": "Espaciado SAPÉ 5.",
+      "$type": "dimension",
+      "$value": "20px"
+    },
+    "6": {
+      "$description": "Espaciado SAPÉ 6.",
+      "$type": "dimension",
+      "$value": "24px"
+    },
+    "8": {
+      "$description": "Espaciado SAPÉ 8.",
+      "$type": "dimension",
+      "$value": "32px"
+    }
+  }
+}
