@@ -1,0 +1,22 @@
+# Translations template for dialogs.
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: dialogs\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: pyguibud-uic <version>\n"
+
+#: dialogs.ui:3
+msgctxt "dialog"
+msgid "About"
+msgstr ""
+
+#: dialogs.ui:3
+msgid "Dialogs only."
+msgstr ""
+
+#: dialogs.ui:3
+msgid "Question"
+msgstr ""

@@ -9,6 +9,7 @@ from typing import NoReturn
 
 from .__about__ import __version__
 from .i18n import (
+    LANGUAGE_CODE_RE,
     LANGUAGES,
     PSEUDO_LANGUAGE,
     _,
@@ -47,11 +48,22 @@ def _select_initial_language(argv: list[str] | None) -> None:
         requested = known.lang
     except _PreParseError:
         pass
-    set_language(normalise_language(requested) or detect_language())
+    set_language(_requested_language(requested) or detect_language())
+
+
+def _requested_language(value: str | None) -> str | None:
+    """The supported code of a ``--lang`` value, or None.
+
+    Unlike an environment variable (``de_DE.UTF-8``), the option must be a plain language code,
+    so ``de_DE/../x`` or ``en_XA;rm`` is refused instead of being cut down to a language (QA-11-12).
+    """
+    if value is None or LANGUAGE_CODE_RE.fullmatch(value) is None:
+        return None
+    return normalise_language(value)
 
 
 def _language_arg(value: str) -> str:
-    code = normalise_language(value)
+    code = _requested_language(value)
     if code is None:
         valid = ", ".join((*LANGUAGES, PSEUDO_LANGUAGE))
         raise argparse.ArgumentTypeError(

@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<pyguibud-ui schema_version="1.0" xmlns="urn:pyguibud:ui:1" xmlns:tb="urn:pyguibud:ext:ttkbootstrap:1">
+<meta source_locale="en_GB" theme="darkly" i18n_domain="rich"/><resources><image id="pic" src="pic.gif"/><image id="ppm" src="pic.ppm"/></resources><variables><var id="name" type="string" default="Bo"/><var id="choice" type="int" default="2"/><var id="level" type="double" default="40"/><var id="flag" type="bool" default="true"/></variables>
+<window id="main" kind="main" min_width="200">
+  <prop name="title">Rich</prop>
+  <menubar>
+    <menu id="mnu">
+      <prop name="text" translatable="true">_Edit</prop>
+      <action id="act_a" handler="on_cmd" shortcut="Ctrl+O">
+        <prop name="image" ref="pic"/><prop name="state">disabled</prop>
+        <prop name="text" translatable="true">_Open</prop>
+      </action>
+      <separator/>
+      <menu id="mnu_sub"><prop name="text">_More</prop>
+        <action id="act_b" shortcut="Ctrl+O"><prop name="text">Again</prop></action>
+      </menu>
+    </menu>
+  </menubar>
+  <layout type="grid" gap="4"><column index="0" weight="1" minsize="50"/></layout>
+  <widget class="Notebook" id="nbk">
+    <cell row="0" column="0" sticky="nsew"/>
+    <widget class="Frame" id="frm">
+      <page image="pic"><prop name="text">_Alpha</prop></page>
+      <layout type="grid" padding="3" gap="2"/>
+      <widget class="Label" id="lbl"><prop name="image" ref="pic"/><prop name="text">Pic</prop>
+        <cell row="0" column="0"/></widget>
+      <widget class="Button" id="btn" tb:bootstyle="success">
+        <prop name="state">disabled</prop><prop name="text">_Go</prop>
+        <event name="command" handler="on_cmd"/><event name="focus_in" handler="on_focus"/>
+        <event name="key:Ctrl+K" handler="on_key"/><event name="key:&lt;F5&gt;" handler="on_key"/>
+        <cell row="0" column="1"/></widget>
+      <widget class="Entry" id="ent" bind="name">
+        <event name="change" handler="on_change"/><event name="activate" handler="on_act"/>
+        <cell row="1" column="0"/></widget>
+      <widget class="Checkbutton" id="chk"><prop name="text">Check</prop>
+        <event name="change" handler="on_change"/><cell row="1" column="1"/></widget>
+      <widget class="Radiobutton" id="rad" bind="choice"><prop name="value">2</prop>
+        <cell row="2" column="0"/></widget>
+      <widget class="Radiobutton" id="rad_s"><prop name="value">x</prop>
+        <event name="change" handler="on_change"/><cell row="2" column="1"/></widget>
+      <widget class="Combobox" id="cmb"><event name="select" handler="on_select"/>
+        <cell row="3" column="0"/></widget>
+      <widget class="Spinbox" id="spn"><prop name="maximum">5</prop>
+        <cell row="3" column="1"/></widget>
+      <widget class="Scale" id="scl"><event name="change" handler="on_change"/>
+        <cell row="4" column="0"/></widget>
+      <widget class="Progressbar" id="prg" bind="level"><cell row="4" column="1"/></widget>
+      <widget class="tb:Meter" id="mtr" fallback="Progressbar"><cell row="5" column="0"/></widget>
+      <widget class="Text" id="txt" tb:bootstyle="info">
+        <event name="change" handler="on_change"/><cell row="5" column="1"/></widget>
+      <widget class="Listbox" id="lst"><event name="activate" handler="on_act"/>
+        <event name="select" handler="on_select"/><cell row="6" column="0"/></widget>
+      <widget class="Treeview" id="tree"><prop name="show">headings</prop>
+        <cell row="6" column="1"/></widget>
+      <widget class="Scrollbar" id="sbr"><event name="change" handler="on_change"/>
+        <cell row="7" column="0"/></widget>
+      <widget class="Canvas" id="cnv"><prop name="background">#ffffff</prop>
+        <event name="focus_out" handler="on_focus"/><cell row="7" column="1"/></widget>
+      <widget class="Label" id="lbl_bound" bind="name"><prop name="text">ignored</prop>
+        <cell row="8" column="0"/></widget>
+      <widget class="Button" id="btn_bad" tb:bootstyle="Not Valid!">
+        <cell row="8" column="1"/></widget>
+      <widget class="Button" id="btn_odd" tb:bootstyle="nonsense">
+        <cell row="9" column="0"/></widget>
+      <widget class="Separator" id="sep"><cell row="9" column="1"/></widget>
+      <widget class="LabelFrame" id="lfr"><prop name="text">Group</prop>
+        <layout type="pack"/><cell row="10" column="0"/></widget>
+    </widget>
+    <widget class="ScrolledFrame" id="scf">
+      <page><prop name="text">Scroll</prop></page>
+      <layout type="pack" orient="horizontal" gap="5"/>
+      <widget class="Label" id="l1"><prop name="text">one</prop><pack/></widget>
+      <widget class="Label" id="l2"><prop name="text">two</prop>
+        <pack fill="y" expand="true"/></widget>
+      <include id="inc" src="#" component="part"><pack/></include>
+    </widget>
+    <widget class="PanedWindow" id="pnd">
+      <page><prop name="text">Panes</prop></page>
+      <widget class="Frame" id="pa"><page weight="1"/><layout type="pack"/></widget>
+      <widget class="Frame" id="pb"><page weight="2"/><layout type="pack"/></widget>
+    </widget>
+  </widget>
+  <statusbar id="sts"><prop name="text">Status</prop></statusbar>
+</window>
+<window id="dlg" kind="dialog" modal="true" buttons="ok,cancel">
+  <prop name="title" translatable="true">Dialog</prop>
+  <layout type="pack"/>
+  <widget class="Label" id="dl"><prop name="image" ref="ppm"/><pack/></widget>
+</window>
+<window id="part" kind="component">
+  <layout type="grid" padding="2"><row index="0" weight="1"/></layout>
+  <widget class="Entry" id="pe" bind="name"><cell row="0" column="0"/></widget>
+</window>
+</pyguibud-ui>

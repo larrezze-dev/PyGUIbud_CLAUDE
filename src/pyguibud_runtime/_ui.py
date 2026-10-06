@@ -101,7 +101,7 @@ class LoadedUi(UiScope):
     def show(self, window_id: str) -> str | None:
         """Show the main window or a dialog; a modal dialog returns its button token or None."""
         session, _texts = self._live()
-        if window_id not in self._windows:
+        if not isinstance(window_id, str) or window_id not in self._windows:
             raise UiError(
                 "runtime.unknown_window", _M_UNKNOWN_WINDOW, path=self._path, id=window_id
             )

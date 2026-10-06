@@ -8,16 +8,28 @@ path or an unvalidated bind sequence: only Python callables and option values ar
 from __future__ import annotations
 
 import contextlib
-import re
 import warnings
 from collections.abc import Callable, Iterable, Mapping
 from dataclasses import dataclass
-from typing import Any, Literal, TypeAlias
+from typing import Any, TypeAlias
 
+from pyguibud.backends._tkmap import (
+    _BOOTSTYLE,
+    _BOOTSTYLE_RE,
+    _M_BOOTSTYLE,
+    _M_FALLBACK,
+    _MNEMONIC,
+    _OPTION,
+    _PADDED,
+    _TK_BASED,
+    _TRACE_VAR,
+    _VAR_OPTION,
+    clip_text,
+    event_wiring,
+)
 from pyguibud.backends.base import BuildPlan, Instance, TextSlot
 from pyguibud.core.keys import parse_chord, split_mnemonic, tk_key_sequences, tk_shortcut
 from pyguibud.core.model import (
-    NS_TB,
     Action,
     GridCell,
     Include,
@@ -38,61 +50,12 @@ __all__ = ["TkSession", "event_wiring"]
 #: A toolkit object; typed loosely because ``tkinter`` is never imported here.
 Tk: TypeAlias = Any
 
-# ---------------------------------------------------------------- pure tables
-_SELECT = {
-    "Notebook": "<<NotebookTabChanged>>",
-    "Combobox": "<<ComboboxSelected>>",
-    "Listbox": "<<ListboxSelect>>",
-    "Treeview": "<<TreeviewSelect>>",
-}
-_DOUBLE = ("<Double-Button-1>", "<Return>", "<KP_Enter>")
-_ACTIVATE = {"Entry": ("<Return>", "<KP_Enter>"), "Listbox": _DOUBLE, "Treeview": _DOUBLE}
-_VAR_OPTION = dict.fromkeys(
-    ("Entry", "Combobox", "Spinbox", "Label"), "textvariable"
-) | dict.fromkeys(("Scale", "Progressbar", "Checkbutton", "Radiobutton"), "variable")
-# The private variable an unbound widget gets so that ``change`` can be traced.
-_TRACE_VAR = {"Checkbutton": "bool", "Scale": "double"} | dict.fromkeys(
-    ("Entry", "Combobox", "Spinbox", "Radiobutton"), "string"
-)
-_OPTION = {
-    ("Scale", "minimum"): "from_",
-    ("Scale", "maximum"): "to",
-    ("Spinbox", "minimum"): "from_",
-    ("Spinbox", "maximum"): "to",
-    ("ScrolledFrame", "autohide"): "auto_hide",
-}
-_MNEMONIC = frozenset({"Button", "Checkbutton", "Radiobutton"})  # underline only (trim 2)
-_TK_BASED = frozenset({"Text", "Listbox", "Canvas"})  # no ``bootstyle``
-_PADDED = frozenset({"Frame", "LabelFrame", "ScrolledFrame"})
-_BOOTSTYLE_RE = re.compile(r"[a-z]+(-[a-z]+)*( [a-z]+(-[a-z]+)*)*")
-_BOOTSTYLE = f"{{{NS_TB}}}bootstyle"
-# Translators: logged when a .ui uses an extension widget the runtime cannot render yet.
-_M_FALLBACK = N_("The widget class '{name}' is shown as its fallback '{fallback}'.")
-# Translators: a ttkbootstrap style name from a .ui file was not applied.
-_M_BOOTSTYLE = N_("The bootstyle '{value}' of '{id}' is ignored.")
+# The pure tables live in ``_tkmap`` (shared with the code generator, ADR-008).
 # Translators: a keyboard shortcut appears twice in one window.
 _M_SHORTCUT = N_("The shortcut '{shortcut}' of '{id}' is already used in this window.")
 # Translators: a text (usually a translation) is too long to display; {length} and {limit} are
 # numbers of characters.
 _M_CLIPPED = N_("The text of '{id}' has {length} characters; only the first {limit} are shown.")
-_ELLIPSIS = "…"
-
-Wiring = tuple[Literal["command", "trace", "modified", "virtual", "bind", "key"], tuple[str, ...]]
-
-
-def event_wiring(class_name: str, event: str) -> Wiring:
-    """How an abstract event of a core class is wired in Tk (pure; the validator vetted it)."""
-    if event == "command" or (event == "change" and class_name == "Scrollbar"):
-        return "command", ()
-    if event == "change":
-        return ("modified", ("<<Modified>>",)) if class_name == "Text" else ("trace", ())
-    if event == "select":
-        return "virtual", (_SELECT[class_name],)
-    if event == "activate":
-        return "bind", _ACTIVATE[class_name]
-    if event.startswith("key:"):
-        return "key", (event[4:],)
-    return "bind", ("<FocusIn>" if event == "focus_in" else "<FocusOut>",)
 
 
 def _call(fn: Callable[[], object], result: str | None = None) -> Callable[..., str | None]:
@@ -103,19 +66,6 @@ def _call(fn: Callable[[], object], result: str | None = None) -> Callable[..., 
         return result
 
     return callback
-
-
-def clip_text(text: str, underline: int) -> tuple[str, int] | None:
-    """``text`` cut to ``MAX_TEXT_LENGTH`` characters with an ellipsis, or None if it fits.
-
-    Tk freezes for minutes on a one-line text of a few million characters, and a translation
-    is never validated, so every display text is bounded here. ``underline`` is dropped when it
-    falls in the removed part.
-    """
-    if len(text) <= MAX_TEXT_LENGTH:
-        return None
-    kept = MAX_TEXT_LENGTH - len(_ELLIPSIS)
-    return text[:kept] + _ELLIPSIS, underline if underline < kept else -1
 
 
 @dataclass(frozen=True, slots=True)

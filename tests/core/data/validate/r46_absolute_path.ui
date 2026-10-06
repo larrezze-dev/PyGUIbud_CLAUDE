@@ -7,6 +7,5 @@
     <layout type="grid"/>
     <include id="a" src="/abs/x.ui" component="Panel"><cell row="0" column="0"/></include>
     <include id="b" src="C:\x.ui" component="Panel"><cell row="1" column="0"/></include>
-    <include id="c" src="\\server\share\x.ui" component="Panel"><cell row="2" column="0"/></include>
   </window>
 </pyguibud-ui>

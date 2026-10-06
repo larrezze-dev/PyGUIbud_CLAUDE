@@ -27,6 +27,7 @@ from pathlib import Path
 __all__ = [
     "DOMAIN",
     "LANGUAGES",
+    "LANGUAGE_CODE_RE",
     "LOCALE_DIR",
     "NP_",
     "N_",
@@ -53,6 +54,10 @@ DOMAIN = "pyguibud"
 LOCALE_DIR = Path(__file__).parent / "locale"
 SOURCE_LANGUAGE = "en_GB"
 PSEUDO_LANGUAGE = "en_XA"
+#: The grammar of a language code (``en_GB``, ``pt-BR``, ``de``): the validator's R81, the
+#: ``--lang`` options and the runtime's ``lang`` check. The support code of generated modules
+#: keeps a copy (a test keeps the copies in step).
+LANGUAGE_CODE_RE = re.compile(r"[A-Za-z]{2,3}([_-][A-Za-z0-9]{2,8})*")
 
 # Native autonyms; order is the display order. The pseudo-locale is intentionally absent.
 LANGUAGES: dict[str, str] = {

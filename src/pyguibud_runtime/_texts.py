@@ -4,19 +4,17 @@ from __future__ import annotations
 
 import gettext
 import logging
-import re
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Protocol, TypeAlias
 
 from pyguibud.backends.base import TextSlot
 from pyguibud.core.errors import format_message
-from pyguibud.i18n import LOCALE_DIR, N_, PSEUDO_LANGUAGE, PseudoTranslations
+from pyguibud.i18n import LANGUAGE_CODE_RE, LOCALE_DIR, N_, PSEUDO_LANGUAGE, PseudoTranslations
 
 __all__ = ["DocumentTexts", "Texts", "Translator", "check_lang", "check_translator", "log"]
 
 logger = logging.getLogger("pyguibud_runtime")
-_LANG_RE = re.compile(r"[A-Za-z]{2,3}([_-][A-Za-z0-9]{2,8})*")
 # Translators: {domain} is a catalogue name, {lang} a language code and {directory} a folder.
 _M_CATALOGUE = N_(
     "No usable translations '{domain}' for '{lang}' in '{directory}'; the source texts are shown."
@@ -37,7 +35,7 @@ def log(msgid: str, **params: object) -> None:
 
 def check_lang(lang: str | None) -> str | None:
     """Reject anything but a language code (blocks path traversal through ``languages=``)."""
-    if lang is not None and (not isinstance(lang, str) or not _LANG_RE.fullmatch(lang)):
+    if lang is not None and (not isinstance(lang, str) or not LANGUAGE_CODE_RE.fullmatch(lang)):
         raise ValueError(f"lang must be a language code such as 'de_DE', not {lang!r}")
     return lang
 

@@ -1,0 +1,52 @@
+# Translations template for hello.
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: hello\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: pyguibud-uic <version>\n"
+
+#: hello.ui:8
+msgctxt "window title"
+msgid "Hello PyGUIbud"
+msgstr ""
+
+#. The underscore marks the access key.
+#: hello.ui:11
+msgid "_File"
+msgstr ""
+
+#: hello.ui:13
+msgid "_Quit"
+msgstr ""
+
+#: hello.ui:18
+msgid "Ready"
+msgstr ""
+
+#. Title of the first tab.
+#: hello.ui:28
+msgctxt "tab"
+msgid "Greeting"
+msgstr ""
+
+#: hello.ui:34
+msgctxt "greeting form"
+msgid "Your name:"
+msgstr ""
+
+#: hello.ui:42
+msgid "Say hello"
+msgstr ""
+
+#: hello.ui:49
+msgctxt "tab"
+msgid "About"
+msgstr ""
+
+#. Shown on the About tab.
+#: hello.ui:53
+msgid "PyGUIbud example: one window, two tabs."
+msgstr ""

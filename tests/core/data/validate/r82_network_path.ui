@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<pyguibud-ui schema_version="1.0" xmlns="urn:pyguibud:ui:1">
+  <resources>
+    <image id="logo" src="//server/share/logo.png"/>
+    <image id="dev" src="icons/CON.png"/>
+  </resources>
+  <window id="main">
+    <layout type="grid"/>
+    <include id="c" src="\\server\share\x.ui" component="Panel"><cell row="0" column="0"/></include>
+  </window>
+</pyguibud-ui>

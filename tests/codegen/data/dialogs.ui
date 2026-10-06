@@ -1,0 +1,3 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<pyguibud-ui schema_version="1.0" xmlns="urn:pyguibud:ui:1" xmlns:tb="urn:pyguibud:ext:ttkbootstrap:1">
+<meta source_locale="en_GB" i18n_domain="dialogs"/><window id="dlg_about" kind="dialog" modal="true" buttons="ok"><prop name="title" translatable="true" context="dialog">About</prop><layout type="pack"/><widget class="Label" id="lbl_about"><prop name="text" translatable="true">Dialogs only.</prop><pack/></widget></window><window id="dlg_ask" kind="dialog" buttons="ok,cancel"><prop name="title" translatable="true">Question</prop><layout type="grid"/><widget class="Entry" id="ent_ask"><cell row="0" column="0"/></widget></window></pyguibud-ui>

@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<pyguibud-ui schema_version="1.0" xmlns="urn:pyguibud:ui:1" xmlns:tb="urn:pyguibud:ext:ttkbootstrap:1">
+  <meta generator="pyguibud" source_locale="en_GB" i18n_domain="hello" theme="flatly"/>
+  <variables>
+    <var id="user_name" type="string"/>
+  </variables>
+  <window id="main" kind="main" min_width="480" min_height="320">
+    <prop name="title" translatable="true" context="window title">Hello PyGUIbud</prop>
+    <menubar>
+      <menu id="mnu_file">
+        <prop name="text" translatable="true" comment="The underscore marks the access key.">_File</prop>
+        <action id="act_quit" handler="on_quit" shortcut="Ctrl+Q">
+          <prop name="text" translatable="true">_Quit</prop>
+        </action>
+      </menu>
+    </menubar>
+    <statusbar id="sts_main">
+      <prop name="text" translatable="true">Ready</prop>
+    </statusbar>
+    <layout type="grid" padding="12" gap="6">
+      <column index="0" weight="1"/>
+      <row index="0" weight="1"/>
+    </layout>
+    <widget class="Notebook" id="nbk_main">
+      <cell row="0" column="0" sticky="nsew"/>
+      <widget class="Frame" id="frm_greeting">
+        <page>
+          <prop name="text" translatable="true" context="tab" comment="Title of the first tab.">Greeting</prop>
+        </page>
+        <layout type="grid" padding="12" gap="6">
+          <column index="1" weight="1"/>
+        </layout>
+        <widget class="Label" id="lbl_name">
+          <prop name="text" translatable="true" context="greeting form">Your name:</prop>
+          <cell row="0" column="0" sticky="w"/>
+        </widget>
+        <widget class="Entry" id="ent_name" bind="user_name">
+          <event name="activate" handler="on_greet"/>
+          <cell row="0" column="1" sticky="ew"/>
+        </widget>
+        <widget class="Button" id="btn_greet" tb:bootstyle="primary">
+          <prop name="text" translatable="true">Say hello</prop>
+          <event name="command" handler="on_greet"/>
+          <cell row="1" column="1" sticky="e"/>
+        </widget>
+      </widget>
+      <widget class="Frame" id="frm_about">
+        <page>
+          <prop name="text" translatable="true" context="tab">About</prop>
+        </page>
+        <layout type="pack" padding="12"/>
+        <widget class="Label" id="lbl_about">
+          <prop name="text" translatable="true" comment="Shown on the About tab.">PyGUIbud example: one window, two tabs.</prop>
+          <pack fill="x"/>
+        </widget>
+      </widget>
+    </widget>
+  </window>
+</pyguibud-ui>

@@ -1,0 +1,3 @@
+4:5: error: validate.network_path: resources/image[logo]
+5:5: error: validate.network_path: resources/image[dev]
+9:5: error: validate.network_path: window[main]/include[c]

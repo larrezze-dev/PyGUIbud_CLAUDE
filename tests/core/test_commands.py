@@ -354,6 +354,16 @@ def test_resources(stack: CommandStack, doc: Document) -> None:
         SetResource(doc, Variable(id="x", type="int"))  # type: ignore[arg-type]
 
 
+@pytest.mark.parametrize("src", ["//host/share/a.png", "\\\\host\\share\\a.png", "icons/con.png"])
+def test_a_network_or_device_image_path_is_blocked(
+    stack: CommandStack, doc: Document, src: str
+) -> None:
+    # QA-11-03 (R82): the designer's guard refuses it like --check, load_ui and codegen do.
+    outcome = stack.execute(SetResource(doc, ImageResource(id="img_a", src=src)))
+    assert not outcome and outcome.findings[0].code == "validate.network_path"
+    assert "img_a" not in doc.resources
+
+
 def test_referenced_resource_cannot_be_removed(stack: CommandStack, doc: Document) -> None:
     stack.execute(SetResource(doc, ImageResource(id="img_a", src="a.png")))
     stack.execute(SetProp(w(doc, "btn_greet"), Prop(name="image", ref="img_a")))

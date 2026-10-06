@@ -264,7 +264,7 @@ key      := A–Z | 0–9 | F1–F24 | Enter | Return | Escape | Tab | Space | B
 
 ## 7. Resources and includes at runtime
 ### 7.1 Images
-- `src` is resolved relative to **its own** `.ui` file's directory (an included file uses its own). R46/R47 absolute or escaping paths stay **warnings** (schema decision), and the runtime loads them. There is no sandbox: images are decoded by Tk only (documented).
+- `src` is resolved relative to **its own** `.ui` file's directory (an included file uses its own). R46/R47 absolute or escaping paths stay **warnings** (schema decision), and the runtime loads them; the code generator refuses them unless `--force` (Step 11, QA-11-03). UNC, Win32-namespace and device paths are R82 **errors** (Step 11) and are never opened. There is no sandbox: images are decoded by Tk only (documented).
 - Formats: **PNG, GIF, PPM/PGM only**, decoded natively by Tk 8.6. No Pillow, for every backend and for codegen (decision U6).
 - The file was probed in P3: it exists, its magic matches the suffix, it is ≤ 16 MiB and each side is ≤ 4096 px (R74–R76).
 - One `PhotoImage` per `(document, id)`, held in `LoadedUi._images` for the life of the UI.
@@ -396,11 +396,13 @@ All anchored at the node shown, with the usual `{}`-param msgids marked `N_`, pl
 | R73 | `validate.duplicate_shortcut` | W | "The shortcut '{shortcut}' is used more than once in '{window}'; only the first one works." | same canonical chord twice among one window's actions |
 | R74 | `validate.image_format` | E | "'{src}' is not a supported image; use PNG, GIF, PPM or PGM." | resource `src` suffix (case-insensitive) ∉ `.png .gif .ppm .pgm` |
 | R75 | `validate.image_missing` | E | "The image file '{src}' does not exist." | probe `missing` (files only) |
-| R76 | `validate.image_invalid` | E | "The image file '{src}' cannot be used: {reason}" | probe `invalid`: damaged header, content not matching suffix, over 16 MiB, side over 4096 px. For a GIF both the logical screen and the **first image descriptor** (after the global colour table and any extension blocks; Tk allocates the frame from it) must be 1..4096 px; no image before the trailer or the end of the file = damaged (QA-10-10) |
+| R76 | `validate.image_invalid` | E | "The image file '{src}' cannot be used: {reason}" | probe `invalid`: damaged header, content not matching suffix, over 16 MiB, side over 4096 px, plain-text P2/P3 (Tk cannot read them), a PNG whose chunks do not reach `IEND` intact (CRC, `IDAT`, no unknown critical chunk) or a PPM/PGM raster shorter than its header says (Step 11, QA-11-06/07). For a GIF both the logical screen and the **first image descriptor** (after the global colour table and any extension blocks; Tk allocates the frame from it) must be 1..4096 px; no image before the trailer or the end of the file = damaged (QA-10-10) |
 | R77 | `validate.bad_radio_value` | E | "The value '{value}' of '{id}' must be a whole number, because it is bound to the int variable '{bind}'." | Radiobutton bound to an `int` variable with a `value` failing R31 int (absent = `""` fails) |
 | R78 | `validate.bad_i18n_domain` | E | "'{value}' is not a valid translation domain; use letters, digits, '_', '-' or '.'." | non-empty `meta.i18n_domain` not matching `^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$` or containing `..` (it becomes a file name) |
 | R79 | `validate.text_too_long` | E | "The property '{name}' has {length} characters; at most {limit} are allowed." | a `string` property (text, title, page text, menu/action/statusbar text, Entry `show`, Radiobutton `value`) longer than `MAX_TEXT_LENGTH` = 100 000 (QA-10-07; the runtime clips translations to the same constant, §6.1) |
 | R80 | `validate.text_too_long` | E | "The default of the variable '{id}' has {length} characters; at most {limit} are allowed." | a variable `default` longer than `MAX_DEFAULT_LENGTH` = 10 000: a bound Entry/Combobox/Spinbox shows it, and the Tk entry lays text out in quadratic time (≈ 0.1 s at 10 000, 6 s at 100 000) |
+| R81 | `validate.bad_source_locale` | E | "'{value}' is not a valid language code for the source texts; use a code such as en_GB." | `meta.source_locale` not matching `i18n.LANGUAGE_CODE_RE` (`^[A-Za-z]{2,3}([_-][A-Za-z0-9]{2,8})*$`); generated modules compare it with the requested language (QA-11-11, Step 11) |
+| R82 | `validate.network_path` | E | "The path '{path}' points to a network share or a device, which is never opened; use a path relative to the .ui file." | image or include `src` that is UNC or a Win32 namespace (`//host/share`, `\\host\share`, `\\?\`, `\\.\`, `\??\`) or has a Win32 device segment (`CON`, `nul.png`, `COM1 .gif`, any case and extension): `core.files.is_network_or_device_path`, a pure string test run before any file access; R46/R47 are then not reported, and the file rules skip the path (QA-11-03, Step 11, user decision "Block UNC") |
 
 ### 9.3 Guards and `--check`
 - **Command guards:** R69–R74 and R77–R80 now participate, with the default guard key. So renaming an id to `run`, typing a bad shortcut or a bad `key:` sequence, and so on, is blocked. R73 never blocks (warning).
@@ -537,7 +539,7 @@ class Session(Protocol):
 | Docs to update on approval | validate-commands §4 (`files=`), §5 (R49–R53, R69–R78), §5.2 and §13 D4 (amended), §12; core-model §6 Action row; FEATURES §4 (`src="#"`, key/shortcut grammar, image formats); `ui-schema-rules` skill summary (R-range, ADR-007); DEVELOPMENT_PLAN §5 notes |
 
 ## 14. Deferred
-- **Step 11:** codegen emits this exact shape, with helpers (mnemonic split, chord → Tk, button bar) inlined dependency-free; `--extract` reproduces §11's msgid set, plus the runtime-owned button labels in the app's domain.
+- **Step 11:** codegen emits this exact shape, with helpers (mnemonic split, chord → Tk, button bar) inlined dependency-free; `--extract` reproduces §11's msgid set. Superseded by `docs/specs/codegen.md` (ADR-008): runtime-owned button labels are not extracted until the button bar exists (Step 14).
 - **Step 14:** `apply`/`help` dialog buttons (handler contract).
 - **Step 16:** tkinter/PySide6 backends; portability of Tk-native `key:` sequences; Qt `Ctrl`↔`Meta` semantics.
 - **Step 17:** `WidgetSpec.factories` calls, `tb:` attribute validation, extension placeholders.

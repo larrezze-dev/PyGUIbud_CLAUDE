@@ -1,0 +1,21 @@
+# Translations template for rich.
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: rich\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: pyguibud-uic <version>\n"
+
+#: rich.ui:8
+msgid "_Edit"
+msgstr ""
+
+#: rich.ui:11
+msgid "_Open"
+msgstr ""
+
+#: rich.ui:86
+msgid "Dialog"
+msgstr ""

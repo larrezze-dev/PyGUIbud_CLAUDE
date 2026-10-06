@@ -1,0 +1,13 @@
+# Translations template for includes.
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: includes\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: pyguibud-uic <version>\n"
+
+#: includes.ui:3
+msgid "Includes"
+msgstr ""

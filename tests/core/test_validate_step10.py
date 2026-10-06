@@ -102,15 +102,25 @@ def pure(text: str) -> ValidationReport:
     return validate_read(read_ui_string(text), default_registry())
 
 
-def png(width: int, height: int, *, ihdr: bool = True) -> bytes:
-    def chunk(kind: bytes, data: bytes) -> bytes:
-        return (
-            struct.pack(">I", len(data)) + kind + data + struct.pack(">I", zlib.crc32(kind + data))
-        )
+def chunk(kind: bytes, data: bytes) -> bytes:
+    return struct.pack(">I", len(data)) + kind + data + struct.pack(">I", zlib.crc32(kind + data))
 
+
+def png(width: int, height: int, *, ihdr: bool = True) -> bytes:
+    """A complete black 8-bit grey PNG (IHDR, IDAT, IEND), as Tk needs (QA-11-06, QA-11-15).
+
+    Oversized dimensions get a token IDAT: the probe refuses them before reading the data.
+    """
     head = b"\x89PNG\r\n\x1a\n"
     kind = b"IHDR" if ihdr else b"IDAT"
-    return head + chunk(kind, struct.pack(">IIBBBBB", width, height, 8, 0, 0, 0, 0))
+    fits = 0 < width <= 4096 and 0 < height <= 4096
+    raw = b"\x00" * (height * (1 + width)) if fits else b"\x00"
+    return (
+        head
+        + chunk(kind, struct.pack(">IIBBBBB", width, height, 8, 0, 0, 0, 0))
+        + chunk(b"IDAT", zlib.compress(raw))
+        + chunk(b"IEND", b"")
+    )
 
 
 def gif(
@@ -404,8 +414,8 @@ def test_images_valid_headers(tmp_path: Path) -> None:
         "b.gif": gif(4096, 1),
         "c.ppm": b"P6\n# a comment\n10 20\n255\n" + b"\x00" * 600,
         "d.pgm": b"P5 3 4 255\n" + b"\x00" * 12,
-        "e.pgm": b"P2\n2 2\n255\n0 0 0 0\n",
-        "f.ppm": b"P3\n1 1\n255\n0 0 0\n",
+        "e.pgm": b"P5\n1 1\n65535\n\x00\x00",  # 16-bit samples
+        "f.ppm": b"P6\n1 1\n255\n\x00\x00\x00 trailing bytes are fine",
         "g.PNG": png(4096, 4096),
         # A colour table and extensions (graphic control, comment) before the first image.
         "h.gif": gif(
@@ -444,6 +454,20 @@ def test_images_valid_headers(tmp_path: Path) -> None:
         ("a.gif", b"GIF89a\x01\x00\x01\x00\x00\x00\x00,\x00\x00", "damaged"),  # cut descriptor
         ("a.gif", b"GIF89a\x01\x00\x01\x00\x00\x00\x00!\xfe\x05ab", "damaged"),  # cut extension
         ("a.gif", b"GIF89a\x01\x00\x01\x00\x00\x00", "damaged"),  # cut screen descriptor
+        # QA-11-06: Tk refuses a PNG that ends early, has a bad CRC or misses IDAT/IEND.
+        ("a.png", png(8, 8)[:40], "incomplete"),
+        ("a.png", png(8, 8)[:-12], "incomplete"),  # no IEND
+        ("a.png", png(8, 8)[:-1] + b"\x00", "incomplete"),  # IEND CRC
+        ("a.png", png(8, 8)[:33] + chunk(b"IEND", b""), "incomplete"),  # no IDAT
+        ("a.png", png(8, 8)[:33] + chunk(b"ABCD", b"") + png(8, 8)[33:], "incomplete"),
+        ("a.png", png(8, 8)[:33] + b"\x7f\xff\xff\xffIDAT", "incomplete"),  # huge length
+        # QA-11-07: plain-text netpbm, and a raster shorter than its header announces.
+        ("a.pgm", b"P2\n2 2\n255\n0 0 0 0\n", "plain-text"),
+        ("a.ppm", b"P3\n1 1\n255\n0 0 0\n", "plain-text"),
+        ("a.ppm", b"P6\n2 2\n255\n" + b"\x00" * 11, "incomplete"),
+        ("a.pgm", b"P5\n2 2\n256\n" + b"\x00" * 7, "incomplete"),
+        ("a.ppm", b"P6\n1 1\n0\n\x00\x00\x00", "damaged"),
+        ("a.ppm", b"P6\n1 1\n70000\n" + b"\x00" * 6, "damaged"),
         ("a.ppm", b"", "damaged"),
         ("a.ppm", b"P7\n1 1\n", "does not match"),
         ("a.ppm", b"P6", "damaged"),
@@ -576,6 +600,27 @@ def test_r78_invalid_domains(domain: str) -> None:
 
 def test_r78_empty_domain_means_no_catalogue() -> None:
     assert "validate.bad_i18n_domain" not in codes(pure(ui_text(window("main", "main"))))
+
+
+# ---------------------------------------------------------------- R81 source_locale (QA-11-11)
+def locale_ui(value: str) -> str:
+    return ui_text(window("main", "main")).replace(
+        'source_locale="en_GB"', f'source_locale="{value}"'
+    )
+
+
+@pytest.mark.parametrize("value", ["en_GB", "pt-BR", "de", "en_XA", "sr_Latn_RS", "fil_PH"])
+def test_r81_valid_source_locales(value: str) -> None:
+    assert "validate.bad_source_locale" not in codes(pure(locale_ui(value)))
+
+
+@pytest.mark.parametrize(
+    "value", ["", "x", "en_", "de_DE/../x", "en_XA;rm", "x'); import os #", "de_DE.UTF-8", "ñu"]
+)
+def test_r81_invalid_source_locales(value: str) -> None:
+    report = pure(locale_ui(value))
+    assert codes(report).count("validate.bad_source_locale") == 1
+    assert not report.ok
 
 
 # ---------------------------------------------------------------- includes: R49 to R52

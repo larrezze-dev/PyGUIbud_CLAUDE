@@ -9,19 +9,12 @@ import warnings
 from typing import Any, ClassVar, cast
 
 from pyguibud.backends._tk import Tk, TkSession
+from pyguibud.backends._tkmap import _CLASSES, _RENAMED
 from pyguibud.backends.base import BuildPlan, NoDisplayError, RootExistsError
 from pyguibud.i18n import N_
 
 __all__ = ["TtkbootstrapBackend"]
 
-# Core class -> ttkbootstrap attribute (spec 8.4); the rest use the same name.
-_RENAMED = {"LabelFrame": "Labelframe", "PanedWindow": "Panedwindow"}
-_CLASSES = (
-    *("Frame", "LabelFrame", "Notebook", "PanedWindow", "ScrolledFrame", "Label", "Button"),
-    *("Entry", "Text", "Checkbutton", "Radiobutton", "Combobox", "Spinbox", "Scale"),
-    *("Progressbar", "Separator", "Listbox", "Treeview", "Scrollbar", "Canvas", "Menu"),
-    "Toplevel",
-)
 # Translators: the .ui file asks for a ttkbootstrap theme that is not installed.
 _M_UNKNOWN_THEME = N_("The theme '{theme}' is not available; the default theme is used.")
 # Translators: the application already has a window, so the .ui file's theme is not applied.

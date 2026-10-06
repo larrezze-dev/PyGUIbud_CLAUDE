@@ -1,12 +1,12 @@
 # PyGUIbud scoreboard
 
-_Last updated: 2026-10-06 13:50:53 UTC+0200_
+_Last updated: 2026-10-06 19:00:20 UTC+0200_
 
-- **Steps done:** 9/21
-- **Current step:** 10 Runtime loader + ttkbootstrap backend (🧪)
-- **Tests:** 2280/2287 passed (tests run now)
-- **Coverage:** 98.4 %
-- **Test detail:** 2287 collected, 0 failed, 0 errors, 7 skipped, 181.28 s
+- **Steps done:** 10/21
+- **Current step:** 11 Code generator pyguibud-uic (🧪)
+- **Tests:** 2549/2556 passed (tests run now)
+- **Coverage:** 93.9 %
+- **Test detail:** 2556 collected, 0 failed, 0 errors, 7 skipped, 378.75 s
 
 ## Quality gates
 
@@ -29,8 +29,8 @@ _Last updated: 2026-10-06 13:50:53 UTC+0200_
 | 07 | Core widget model | BACKEND | ✅ done |
 | 08 | .ui XML schema + I/O | BACKEND | ✅ done |
 | 09 | Validator & command stack | BACKEND | ✅ done |
-| 10 | Runtime loader + ttkbootstrap backend | BACKEND | 🧪 awaiting UAT |
-| 11 | Code generator pyguibud-uic | BACKEND | ⏳ pending |
+| 10 | Runtime loader + ttkbootstrap backend | BACKEND | ✅ done |
+| 11 | Code generator pyguibud-uic | BACKEND | 🧪 awaiting UAT |
 | 12 | Designer shell | FRONTEND | ⏳ pending |
 | 13 | Drag-and-drop & selection | FRONTEND (opus) | ⏳ pending |
 | 14 | Properties, undo/redo, save/load | FRONTEND + BACKEND | ⏳ pending |
@@ -44,4 +44,5 @@ _Last updated: 2026-10-06 13:50:53 UTC+0200_
 
 ## Recent commits
 
+- `ea6c1e6 InitialCommmit`
 - `42b6356 Step 01: project concept, stack, development plan, brand assets`

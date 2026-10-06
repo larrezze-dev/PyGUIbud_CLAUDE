@@ -1,0 +1,3 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<pyguibud-ui schema_version="1.0" xmlns="urn:pyguibud:ui:1" xmlns:tb="urn:pyguibud:ext:ttkbootstrap:1">
+<meta source_locale="en_GB" /><variables><var id="name" type="string" default="part"/></variables><window id="part" kind="component"><layout type="pack"/><widget class="Entry" id="ent" bind="name"><event name="change" handler="on_change"/><pack fill="x"/></widget></window></pyguibud-ui>

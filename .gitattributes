@@ -3,3 +3,7 @@
 
 # Golden demo output
 tests/data/*.txt text eol=lf
+
+# Code generator golden files and generated example
+*.golden text eol=lf
+examples/hello_ui.py text eol=lf

@@ -5,7 +5,7 @@ document), iterative (an explicit stack, so deeply nested documents cannot overf
 stack) and never fails fast: every finding is returned, in a deterministic order. The registry is
 passed in, so the reader stays registry-free.
 
-Rule codes are stable (``validate.*``, R01 to R78). R49 to R53 (includes) and R75 to R76 (image
+Rule codes are stable (``validate.*``, R01 to R82). R49 to R53 (includes) and R75 to R76 (image
 files) need disk access, which is injected as ``files=`` (:class:`FileAccess`) and skipped when
 it is None; every other rule is pure. The command guards of Step 09 part B compare findings with
 :func:`guard_key` and :func:`new_errors`.
@@ -33,6 +33,7 @@ from pyguibud.core.files import (
     MAX_INCLUDE_DEPTH,
     MAX_INCLUDE_FILES,
     ImageProbe,
+    is_network_or_device_path,
 )
 from pyguibud.core.model import (
     CORE_CLASS_NAMES,
@@ -76,7 +77,7 @@ from pyguibud.core.xmltree import (
     parse_fragment,
     split_name,
 )
-from pyguibud.i18n import N_, NP_
+from pyguibud.i18n import LANGUAGE_CODE_RE, N_, NP_
 
 if TYPE_CHECKING:
     from pyguibud.core.xml_io import ReadResult
@@ -295,6 +296,11 @@ _M_DEFAULT_TOO_LONG: Final = N_(
 _M_EMPTY_PATH: Final = N_("'{id}' has no file path.")
 _M_ABSOLUTE_PATH: Final = N_("The path '{path}' is absolute; use a path relative to the .ui file.")
 _M_PATH_ESCAPES: Final = N_("The path '{path}' points outside the folder of the .ui file.")
+# Translators: {path} is a file path written in the .ui file.
+_M_NETWORK_PATH: Final = N_(
+    "The path '{path}' points to a network share or a device, which is never opened; use a "
+    "path relative to the .ui file."
+)
 _M_BAD_COMPONENT: Final = N_("'{component}' is not a valid component id.")
 # Translators: {where} is a technical path; {codepoint} a hexadecimal character code such as 0001.
 _M_ILLEGAL_CHAR: Final = N_(
@@ -353,6 +359,10 @@ _M_BAD_RADIO_VALUE: Final = N_(
 )
 _M_BAD_DOMAIN: Final = N_(
     "'{value}' is not a valid translation domain; use letters, digits, '_', '-' or '.'."
+)
+# Translators: {value} is the source language attribute of a .ui file.
+_M_BAD_SOURCE_LOCALE: Final = N_(
+    "'{value}' is not a valid language code for the source texts; use a code such as en_GB."
 )
 _M_INCLUDE_MISSING: Final = N_("The included file '{src}' does not exist or cannot be read.")
 _M_INCLUDE_ERRORS: Final = NP_(
@@ -1081,6 +1091,16 @@ class _Validator:
             self.sink.error(
                 "validate.bad_i18n_domain", _M_BAD_DOMAIN, document, "meta", value=_clip(domain)
             )
+        locale = getattr(meta, "source_locale", None)
+        if isinstance(locale, str) and LANGUAGE_CODE_RE.fullmatch(locale) is None:
+            # R81: generated modules compare it with the requested language (QA-11-11).
+            self.sink.error(
+                "validate.bad_source_locale",
+                _M_BAD_SOURCE_LOCALE,
+                document,
+                "meta",
+                value=_clip(locale),
+            )
         self.check_extras(meta, "meta", document, "meta")
         self.check_extras(document.resources_extra, "resources", document, "resources")
         self.check_extras(document.variables_extra, "variables", document, "variables")
@@ -1132,7 +1152,7 @@ class _Validator:
                 self.sink.error(
                     "validate.image_format", _M_IMAGE_FORMAT, document, part, src=_clip(src)
                 )
-            elif self.files is not None:
+            elif self.files is not None and not is_network_or_device_path(src):
                 _probe_image(self.files, self.files.root, src, self.sink, document, part)
         self.check_extras(image, "image", document, part)
 
@@ -1176,13 +1196,16 @@ class _Validator:
         self.check_extras(variable, "var", document, part)
 
     def check_path(self, anchor: object, part: str, label: object, value: object) -> None:
-        """R45 to R47 and R54 for a ``src`` attribute."""
+        """R45 to R47, R54 and R82 for a ``src`` attribute."""
         sink = self.sink
         if not isinstance(value, str) or value == "":
             sink.error("validate.empty_path", _M_EMPTY_PATH, anchor, part, id=_clip(label))
             return
         self.chars(value, anchor, part, "src")
-        if _is_absolute(value):
+        if is_network_or_device_path(value):
+            # R82 (QA-11-03): never opened, so the file rules skip it too.
+            sink.error("validate.network_path", _M_NETWORK_PATH, anchor, part, path=_clip(value))
+        elif _is_absolute(value):
             sink.warning(
                 "validate.absolute_path", _M_ABSOLUTE_PATH, anchor, part, path=_clip(value)
             )
@@ -2077,8 +2100,13 @@ class _IncludePass:
         """Check one include; return the frame to explore when its component is new."""
         ctx = frame.ctx
         src, component = include.src, include.component
-        if not isinstance(src, str) or src == "" or not _is_identifier(component):
-            return None  # already reported by R44/R45
+        if (
+            not isinstance(src, str)
+            or src == ""
+            or not _is_identifier(component)
+            or is_network_or_device_path(src)
+        ):
+            return None  # already reported by R44/R45/R82
         if frame.level + 1 > MAX_INCLUDE_DEPTH:
             self.limit_hit(ctx, include, _M_LIMIT_DEPTH, MAX_INCLUDE_DEPTH)
             return None
@@ -2192,6 +2220,7 @@ class _IncludePass:
                 isinstance(image, ImageResource)
                 and isinstance(src, str)
                 and os.path.splitext(src)[1].lower() in IMAGE_SUFFIXES
+                and not is_network_or_device_path(src)  # R82 in its own validation
             ):
                 part = f"resources/image[{image.id}]"
                 _probe_image(self.files, key, src, sink, result.document, part)
