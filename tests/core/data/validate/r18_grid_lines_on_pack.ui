@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<pyguibud-ui schema_version="1.0" xmlns="urn:pyguibud:ui:1">
+  <window id="main">
+    <layout type="pack">
+      <column index="0"/>
+      <row index="1"/>
+    </layout>
+  </window>
+</pyguibud-ui>

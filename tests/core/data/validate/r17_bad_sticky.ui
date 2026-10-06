@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<pyguibud-ui schema_version="1.0" xmlns="urn:pyguibud:ui:1">
+  <window id="main">
+    <layout type="grid"/>
+    <widget class="Label" id="a"><cell row="0" column="0" sticky="nn"/></widget>
+    <widget class="Label" id="b"><cell row="1" column="0" sticky="x"/></widget>
+    <widget class="Label" id="c"><cell row="2" column="0" sticky="nsew"/></widget>
+  </window>
+</pyguibud-ui>

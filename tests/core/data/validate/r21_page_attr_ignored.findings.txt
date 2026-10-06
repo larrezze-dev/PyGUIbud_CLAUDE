@@ -1,0 +1,2 @@
+8:9: warning: validate.page_attr_ignored: window[main]/widget[nbk]/widget[p1]/page
+15:9: warning: validate.page_attr_ignored: window[main]/widget[pnw]/widget[p2]/page

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<pyguibud-ui schema_version="1.0" xmlns="urn:pyguibud:ui:1">
+  <window id="main">
+    <menubar>
+      <menu id="mnu"><prop name="oops">x</prop>
+        <action id="mnu"><prop name="text" translatable="true">Quit</prop></action>
+        <menu id="sub"><action id="" handler="1x"/></menu>
+      </menu>
+    </menubar>
+    <statusbar id="sts"><prop name="text" ref="nope">Ready</prop></statusbar>
+    <layout type="grid"/>
+  </window>
+</pyguibud-ui>

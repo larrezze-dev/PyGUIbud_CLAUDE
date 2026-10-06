@@ -1,0 +1,1 @@
+5:73: error: validate.duplicate_event: window[main]/widget[a]/event[1]

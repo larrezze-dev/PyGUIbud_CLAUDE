@@ -1,0 +1,2 @@
+5:34: error: validate.bad_sticky: window[main]/widget[a]/cell
+6:34: error: validate.bad_sticky: window[main]/widget[b]/cell

@@ -1,0 +1,288 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  PyGUIbud .ui format, schema version 1.0 (urn:pyguibud:ui:1).
+  Published for external tools (editors, linters); PyGUIbud itself never loads this file.
+  Content models use xs:choice so that children may appear in any order, as the reader
+  accepts them; XSD therefore cannot express the singletons (one <meta>, one <layout>, one
+  placement...). The PyGUIbud reader is stricter than this schema and enforces them.
+  Content in other namespaces is allowed everywhere (##other, lax). Unknown attributes or
+  elements without a namespace or in this namespace are invalid here; the reader keeps them
+  with a warning because they are probably typos.
+-->
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:ui="urn:pyguibud:ui:1"
+           targetNamespace="urn:pyguibud:ui:1" elementFormDefault="qualified" version="1.0">
+
+  <xs:element name="pyguibud-ui" type="ui:Document"/>
+
+  <!-- Simple types -->
+  <xs:simpleType name="Version">
+    <xs:restriction base="xs:string"><xs:pattern value="(0|[1-9][0-9]{0,8})\.(0|[1-9][0-9]{0,8})"/></xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="Int">
+    <xs:restriction base="xs:string"><xs:pattern value="-?[0-9]{1,9}"/></xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="ClassName">
+    <xs:restriction base="xs:string"><xs:pattern value="([a-z][a-z0-9_\-]*:)?[A-Z][A-Za-z0-9_]*"/></xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="Bool">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="true"/>
+      <xs:enumeration value="false"/>
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="WindowKind">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="main"/>
+      <xs:enumeration value="dialog"/>
+      <xs:enumeration value="component"/>
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="VarType">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="string"/>
+      <xs:enumeration value="int"/>
+      <xs:enumeration value="double"/>
+      <xs:enumeration value="bool"/>
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="LayoutType">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="grid"/>
+      <xs:enumeration value="pack"/>
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="Orient">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="vertical"/>
+      <xs:enumeration value="horizontal"/>
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="Fill">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="none"/>
+      <xs:enumeration value="x"/>
+      <xs:enumeration value="y"/>
+      <xs:enumeration value="both"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <!-- Property: text only (mixed content would break exact text preservation) -->
+  <xs:complexType name="Prop">
+    <xs:simpleContent>
+      <xs:extension base="xs:string">
+        <xs:attribute name="name" type="xs:string" use="required"/>
+        <xs:attribute name="ref" type="xs:string"/>
+        <xs:attribute name="translatable" type="ui:Bool"/>
+        <xs:attribute name="context" type="xs:string"/>
+        <xs:attribute name="comment" type="xs:string"/>
+        <xs:anyAttribute namespace="##other" processContents="lax"/>
+      </xs:extension>
+    </xs:simpleContent>
+  </xs:complexType>
+
+  <!-- Elements -->
+  <xs:complexType name="Document">
+    <xs:choice minOccurs="0" maxOccurs="unbounded">
+      <xs:element name="meta" type="ui:Meta"/>
+      <xs:element name="resources" type="ui:Resources"/>
+      <xs:element name="variables" type="ui:Variables"/>
+      <xs:element name="window" type="ui:Window"/>
+      <xs:any namespace="##other" processContents="lax"/>
+    </xs:choice>
+    <xs:attribute name="schema_version" type="ui:Version" use="required"/>
+    <xs:anyAttribute namespace="##other" processContents="lax"/>
+  </xs:complexType>
+  <xs:complexType name="Meta">
+    <xs:choice minOccurs="0" maxOccurs="unbounded">
+      <xs:any namespace="##other" processContents="lax"/>
+    </xs:choice>
+    <xs:attribute name="generator" type="xs:string"/>
+    <xs:attribute name="source_locale" type="xs:string"/>
+    <xs:attribute name="i18n_domain" type="xs:string"/>
+    <xs:attribute name="theme" type="xs:string"/>
+    <xs:anyAttribute namespace="##other" processContents="lax"/>
+  </xs:complexType>
+  <xs:complexType name="Resources">
+    <xs:choice minOccurs="0" maxOccurs="unbounded">
+      <xs:element name="image" type="ui:Image"/>
+      <xs:any namespace="##other" processContents="lax"/>
+    </xs:choice>
+    <xs:anyAttribute namespace="##other" processContents="lax"/>
+  </xs:complexType>
+  <xs:complexType name="Image">
+    <xs:choice minOccurs="0" maxOccurs="unbounded">
+      <xs:any namespace="##other" processContents="lax"/>
+    </xs:choice>
+    <xs:attribute name="id" type="xs:string" use="required"/>
+    <xs:attribute name="src" type="xs:string" use="required"/>
+    <xs:anyAttribute namespace="##other" processContents="lax"/>
+  </xs:complexType>
+  <xs:complexType name="Variables">
+    <xs:choice minOccurs="0" maxOccurs="unbounded">
+      <xs:element name="var" type="ui:Var"/>
+      <xs:any namespace="##other" processContents="lax"/>
+    </xs:choice>
+    <xs:anyAttribute namespace="##other" processContents="lax"/>
+  </xs:complexType>
+  <xs:complexType name="Var">
+    <xs:choice minOccurs="0" maxOccurs="unbounded">
+      <xs:any namespace="##other" processContents="lax"/>
+    </xs:choice>
+    <xs:attribute name="id" type="xs:string" use="required"/>
+    <xs:attribute name="type" type="ui:VarType" use="required"/>
+    <xs:attribute name="default" type="xs:string"/>
+    <xs:anyAttribute namespace="##other" processContents="lax"/>
+  </xs:complexType>
+  <xs:complexType name="Window">
+    <xs:choice minOccurs="0" maxOccurs="unbounded">
+      <xs:element name="prop" type="ui:Prop"/>
+      <xs:element name="menubar" type="ui:Menubar"/>
+      <xs:element name="statusbar" type="ui:Statusbar"/>
+      <xs:element name="layout" type="ui:Layout"/>
+      <xs:element name="widget" type="ui:Widget"/>
+      <xs:element name="include" type="ui:Include"/>
+      <xs:any namespace="##other" processContents="lax"/>
+    </xs:choice>
+    <xs:attribute name="id" type="xs:string" use="required"/>
+    <xs:attribute name="kind" type="ui:WindowKind"/>
+    <xs:attribute name="min_width" type="ui:Int"/>
+    <xs:attribute name="min_height" type="ui:Int"/>
+    <xs:attribute name="modal" type="ui:Bool"/>
+    <xs:attribute name="buttons" type="xs:string"/>
+    <xs:anyAttribute namespace="##other" processContents="lax"/>
+  </xs:complexType>
+  <xs:complexType name="Menubar">
+    <xs:choice minOccurs="0" maxOccurs="unbounded">
+      <xs:element name="menu" type="ui:Menu"/>
+      <xs:any namespace="##other" processContents="lax"/>
+    </xs:choice>
+    <xs:anyAttribute namespace="##other" processContents="lax"/>
+  </xs:complexType>
+  <xs:complexType name="Menu">
+    <xs:choice minOccurs="0" maxOccurs="unbounded">
+      <xs:element name="prop" type="ui:Prop"/>
+      <xs:element name="menu" type="ui:Menu"/>
+      <xs:element name="action" type="ui:Action"/>
+      <xs:element name="separator" type="ui:Separator"/>
+      <xs:any namespace="##other" processContents="lax"/>
+    </xs:choice>
+    <xs:attribute name="id" type="xs:string" use="required"/>
+    <xs:anyAttribute namespace="##other" processContents="lax"/>
+  </xs:complexType>
+  <xs:complexType name="Action">
+    <xs:choice minOccurs="0" maxOccurs="unbounded">
+      <xs:element name="prop" type="ui:Prop"/>
+      <xs:any namespace="##other" processContents="lax"/>
+    </xs:choice>
+    <xs:attribute name="id" type="xs:string" use="required"/>
+    <xs:attribute name="handler" type="xs:string"/>
+    <xs:attribute name="shortcut" type="xs:string"/>
+    <xs:anyAttribute namespace="##other" processContents="lax"/>
+  </xs:complexType>
+  <xs:complexType name="Separator">
+    <xs:choice minOccurs="0" maxOccurs="unbounded">
+      <xs:any namespace="##other" processContents="lax"/>
+    </xs:choice>
+    <xs:anyAttribute namespace="##other" processContents="lax"/>
+  </xs:complexType>
+  <xs:complexType name="Statusbar">
+    <xs:choice minOccurs="0" maxOccurs="unbounded">
+      <xs:element name="prop" type="ui:Prop"/>
+      <xs:any namespace="##other" processContents="lax"/>
+    </xs:choice>
+    <xs:attribute name="id" type="xs:string" use="required"/>
+    <xs:anyAttribute namespace="##other" processContents="lax"/>
+  </xs:complexType>
+  <xs:complexType name="Layout">
+    <xs:choice minOccurs="0" maxOccurs="unbounded">
+      <xs:element name="column" type="ui:GridLine"/>
+      <xs:element name="row" type="ui:GridLine"/>
+      <xs:any namespace="##other" processContents="lax"/>
+    </xs:choice>
+    <xs:attribute name="type" type="ui:LayoutType" use="required"/>
+    <xs:attribute name="orient" type="ui:Orient"/>
+    <xs:attribute name="padding" type="ui:Int"/>
+    <xs:attribute name="gap" type="ui:Int"/>
+    <xs:anyAttribute namespace="##other" processContents="lax"/>
+  </xs:complexType>
+  <xs:complexType name="GridLine">
+    <xs:choice minOccurs="0" maxOccurs="unbounded">
+      <xs:any namespace="##other" processContents="lax"/>
+    </xs:choice>
+    <xs:attribute name="index" type="ui:Int" use="required"/>
+    <xs:attribute name="weight" type="ui:Int"/>
+    <xs:attribute name="minsize" type="ui:Int"/>
+    <xs:anyAttribute namespace="##other" processContents="lax"/>
+  </xs:complexType>
+  <xs:complexType name="Widget">
+    <xs:choice minOccurs="0" maxOccurs="unbounded">
+      <xs:element name="prop" type="ui:Prop"/>
+      <xs:element name="event" type="ui:Event"/>
+      <xs:element name="cell" type="ui:Cell"/>
+      <xs:element name="pack" type="ui:Pack"/>
+      <xs:element name="page" type="ui:Page"/>
+      <xs:element name="layout" type="ui:Layout"/>
+      <xs:element name="widget" type="ui:Widget"/>
+      <xs:element name="include" type="ui:Include"/>
+      <xs:any namespace="##other" processContents="lax"/>
+    </xs:choice>
+    <xs:attribute name="class" type="ui:ClassName" use="required"/>
+    <xs:attribute name="id" type="xs:string" use="required"/>
+    <xs:attribute name="bind" type="xs:string"/>
+    <xs:attribute name="fallback" type="xs:string"/>
+    <xs:attribute name="plugin" type="xs:string"/>
+    <xs:anyAttribute namespace="##other" processContents="lax"/>
+  </xs:complexType>
+  <xs:complexType name="Include">
+    <xs:choice minOccurs="0" maxOccurs="unbounded">
+      <xs:element name="cell" type="ui:Cell"/>
+      <xs:element name="pack" type="ui:Pack"/>
+      <xs:element name="page" type="ui:Page"/>
+      <xs:any namespace="##other" processContents="lax"/>
+    </xs:choice>
+    <xs:attribute name="id" type="xs:string" use="required"/>
+    <xs:attribute name="src" type="xs:string" use="required"/>
+    <xs:attribute name="component" type="xs:string" use="required"/>
+    <xs:anyAttribute namespace="##other" processContents="lax"/>
+  </xs:complexType>
+  <xs:complexType name="Event">
+    <xs:choice minOccurs="0" maxOccurs="unbounded">
+      <xs:any namespace="##other" processContents="lax"/>
+    </xs:choice>
+    <xs:attribute name="name" type="xs:string" use="required"/>
+    <xs:attribute name="handler" type="xs:string" use="required"/>
+    <xs:anyAttribute namespace="##other" processContents="lax"/>
+  </xs:complexType>
+  <xs:complexType name="Cell">
+    <xs:choice minOccurs="0" maxOccurs="unbounded">
+      <xs:any namespace="##other" processContents="lax"/>
+    </xs:choice>
+    <xs:attribute name="row" type="ui:Int" use="required"/>
+    <xs:attribute name="column" type="ui:Int" use="required"/>
+    <xs:attribute name="rowspan" type="ui:Int"/>
+    <xs:attribute name="columnspan" type="ui:Int"/>
+    <xs:attribute name="sticky" type="xs:string"/>
+    <xs:attribute name="padx" type="ui:Int"/>
+    <xs:attribute name="pady" type="ui:Int"/>
+    <xs:anyAttribute namespace="##other" processContents="lax"/>
+  </xs:complexType>
+  <xs:complexType name="Pack">
+    <xs:choice minOccurs="0" maxOccurs="unbounded">
+      <xs:any namespace="##other" processContents="lax"/>
+    </xs:choice>
+    <xs:attribute name="fill" type="ui:Fill"/>
+    <xs:attribute name="expand" type="ui:Bool"/>
+    <xs:attribute name="padx" type="ui:Int"/>
+    <xs:attribute name="pady" type="ui:Int"/>
+    <xs:anyAttribute namespace="##other" processContents="lax"/>
+  </xs:complexType>
+  <xs:complexType name="Page">
+    <xs:choice minOccurs="0" maxOccurs="unbounded">
+      <xs:element name="prop" type="ui:Prop"/>
+      <xs:any namespace="##other" processContents="lax"/>
+    </xs:choice>
+    <xs:attribute name="image" type="xs:string"/>
+    <xs:attribute name="weight" type="ui:Int"/>
+    <xs:anyAttribute namespace="##other" processContents="lax"/>
+  </xs:complexType>
+</xs:schema>

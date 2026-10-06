@@ -1,0 +1,2 @@
+5:35: error: validate.bad_event: window[main]/widget[a]/event[0]
+5:71: error: validate.bad_event: window[main]/widget[a]/event[1]

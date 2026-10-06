@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<pyguibud-ui schema_version="1.0" xmlns="urn:pyguibud:ui:1">
+  <window id="main">
+    <layout type="grid"/>
+    <widget class="Label" id="1abc"><cell row="0" column="0"/></widget>
+    <widget class="Label" id="has space"><cell row="1" column="0"/></widget>
+    <widget class="Label" id="_x"><cell row="2" column="0"/></widget>
+    <widget class="Label" id="café"><cell row="3" column="0"/></widget>
+  </window>
+</pyguibud-ui>

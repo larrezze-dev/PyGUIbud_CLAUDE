@@ -6,3 +6,13 @@ build/
 .pytest_cache/
 .ruff_cache/
 .mypy_cache/
+
+# Coverage / tooling artefacts
+*.egg-info/
+.coverage
+.coverage.*
+htmlcov/
+.scorer/
+coverage.xml
+.hypothesis/
+.venv-*/

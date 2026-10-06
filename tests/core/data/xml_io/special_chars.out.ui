@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<pyguibud-ui schema_version="1.0" xmlns="urn:pyguibud:ui:1">
+  <meta source_locale="en_GB"/>
+  <window id="main" kind="main">
+    <widget class="Text" id="txt">
+      <prop name="a">  leading and trailing  </prop>
+      <prop name="b">line one
+line two
+	tabbed</prop>
+      <prop name="c">   </prop>
+      <prop name="d">&amp; &lt; &gt; ]]&gt; "quoted" 'single'</prop>
+      <prop name="e">&lt;raw &amp; text&gt;</prop>
+      <prop name="f" context="a&#10;b&#9;c&#13;d &quot;q&quot; &lt;&amp;" comment="x &gt; y">Zażółć ü ñ €</prop>
+      <prop name="g"/>
+      <prop name="h"/>
+    </widget>
+  </window>
+</pyguibud-ui>

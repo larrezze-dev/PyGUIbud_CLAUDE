@@ -1,0 +1,19 @@
+term,context,en_GB,es_ES,pt_PT,pt_BR,de_DE,it_IT,nl_NL,fr_FR
+widget,UI element placed on a form,widget,widget,widget,widget,Widget,widget,widget,widget
+container,widget that holds other widgets,container,contenedor,contentor,contêiner,Container,contenitore,container,conteneur
+handler,function called when an event fires,handler,manejador,gestor de eventos,manipulador de eventos,Ereignisbehandlung,gestore di eventi,gebeurtenishandler,gestionnaire d'événements
+variable,bound Tk variable,variable,variable,variável,variável,Variable,variabile,variabele,variable
+layout,arrangement of widgets (pack/grid/place),layout,disposición,disposição,layout,Layout,layout,indeling,disposition
+canvas,design surface where widgets are placed,canvas,lienzo,tela de desenho,tela de desenho,Zeichenfläche,area di disegno,tekenvlak,zone de dessin
+palette,list of available widgets,palette,paleta,paleta,paleta,Palette,tavolozza,palet,palette
+inspector,panel to edit properties,inspector,inspector,inspetor,inspetor,Inspektor,ispettore,inspecteur,inspecteur
+object tree,hierarchy of widgets,object tree,árbol de objetos,árvore de objetos,árvore de objetos,Objektbaum,albero degli oggetti,objectboom,arborescence des objets
+preview,live rendering of the form,preview,vista previa,pré-visualização,pré-visualização,Vorschau,anteprima,voorbeeld,aperçu
+theme,visual style (ttkbootstrap theme),theme,tema,tema,tema,Design,tema,thema,thème
+language,interface language,language,idioma,idioma,idioma,Sprache,lingua,taal,langue
+file,menu title / noun,file,archivo,ficheiro,arquivo,Datei,file,bestand,fichier
+save,menu command (verb),save,guardar,guardar,salvar,Speichern,salva,opslaan,enregistrer
+open,menu command (verb),open,abrir,abrir,abrir,Öffnen,apri,openen,ouvrir
+export,menu command (verb),export,exportar,exportar,exportar,Exportieren,esporta,exporteren,exporter
+undo,edit command,undo,deshacer,anular,desfazer,Rückgängig,annulla,ongedaan maken,annuler
+redo,edit command,redo,rehacer,refazer,refazer,Wiederholen,ripeti,opnieuw,rétablir

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<pyguibud-ui schema_version="1.0" xmlns="urn:pyguibud:ui:1">
+  <variables>
+    <var id="n" type="int" default="x1"/>
+    <var id="f" type="double" default="1,5"/>
+    <var id="b" type="bool" default="yes"/>
+    <var id="s" type="string" default="anything"/>
+    <var id="ok" type="int" default="-12"/>
+  </variables>
+  <window id="main">
+    <layout type="grid"/>
+    <widget class="Label" id="a"><cell row="0" column="0"/></widget>
+  </window>
+</pyguibud-ui>

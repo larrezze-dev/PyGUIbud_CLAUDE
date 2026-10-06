@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<pyguibud-ui schema_version="1.0" xmlns="urn:pyguibud:ui:1">
+  <window id="main">
+    <layout type="grid"/>
+    <widget class="Entry" id="a"><prop name="width" translatable="true">10</prop><cell row="0" column="0"/></widget>
+  </window>
+</pyguibud-ui>

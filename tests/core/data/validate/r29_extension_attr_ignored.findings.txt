@@ -1,0 +1,2 @@
+5:5: warning: validate.extension_attr_ignored: window[main]/widget[a]
+5:5: warning: validate.extension_attr_ignored: window[main]/widget[a]

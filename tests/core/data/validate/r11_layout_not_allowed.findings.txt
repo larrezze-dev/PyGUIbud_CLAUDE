@@ -1,0 +1,1 @@
+7:7: error: validate.layout_not_allowed: window[main]/widget[lbl]/layout

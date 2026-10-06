@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<pyguibud-ui schema_version="1.0" xmlns="urn:pyguibud:ui:1">
+  <window id="main">
+    <layout type="grid"/>
+    <include id="a" src="x.ui" component="1Panel"><cell row="0" column="0"/></include>
+    <include id="b" src="x.ui" component="del"><cell row="1" column="0"/></include>
+  </window>
+</pyguibud-ui>

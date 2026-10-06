@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<pyguibud-ui schema_version="1.0" xmlns="urn:pyguibud:ui:1">
+  <meta generator="tests" source_locale="en_GB" i18n_domain="demo" theme="darkly"/>
+  <resources>
+    <image id="logo" src="img/logo.png"/>
+    <image id="icon" src="img/icon.png"/>
+  </resources>
+  <variables>
+    <var id="count" type="int" default="3"/>
+    <var id="ratio" type="double" default="0.5"/>
+    <var id="flag" type="bool" default="true"/>
+    <var id="name" type="string"/>
+  </variables>
+  <window id="main" kind="main" min_width="300" min_height="200" modal="true" buttons="ok">
+    <prop name="title" ref="logo" translatable="true">Demo</prop>
+    <menubar>
+      <menu id="m_file">
+        <prop name="text">_File</prop>
+        <action id="a_open" handler="on_open" shortcut="Ctrl+O">
+          <prop name="text">_Open</prop>
+        </action>
+        <separator/>
+        <menu id="m_recent">
+          <prop name="text">Recent</prop>
+        </menu>
+        <action id="a_quit"/>
+      </menu>
+      <menu id="m_help"/>
+    </menubar>
+    <statusbar id="sb">
+      <prop name="text" translatable="true">Ready</prop>
+    </statusbar>
+    <layout type="grid" orient="horizontal" padding="4" gap="2">
+      <column index="0" weight="1" minsize="10"/>
+      <column index="2"/>
+      <row index="1" weight="2" minsize="30"/>
+      <row index="0"/>
+    </layout>
+    <widget class="Frame" id="f1">
+      <cell row="1" column="2" rowspan="2" columnspan="3" sticky="nsew" padx="1" pady="2"/>
+      <layout type="pack" orient="horizontal"/>
+      <widget class="Button" id="b1" bind="count">
+        <event name="command" handler="on_b1"/>
+        <event name="key:&lt;Control-s&gt;" handler="on_save"/>
+        <pack fill="x" expand="true" padx="3" pady="4"/>
+      </widget>
+      <include id="inc1" src="other.ui" component="Panel">
+        <pack/>
+      </include>
+    </widget>
+    <widget class="Notebook" id="nb">
+      <widget class="Frame" id="pg1">
+        <page image="logo" weight="1">
+          <prop name="text" translatable="true" context="tab" comment="First tab">One</prop>
+        </page>
+      </widget>
+      <widget class="Frame" id="pg2">
+        <page/>
+      </widget>
+      <include id="inc2" src="x.ui" component="Y">
+        <page weight="2"/>
+      </include>
+    </widget>
+  </window>
+  <window id="dlg" kind="dialog"/>
+  <window id="cmp" kind="component"/>
+</pyguibud-ui>

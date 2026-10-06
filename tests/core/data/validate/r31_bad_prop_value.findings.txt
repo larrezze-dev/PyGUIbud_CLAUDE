@@ -1,0 +1,6 @@
+5:34: error: validate.bad_prop_value: window[main]/widget[a]/prop[width]
+6:34: error: validate.bad_prop_value: window[main]/widget[b]/prop[minimum]
+7:42: error: validate.bad_prop_value: window[main]/widget[c]/prop[autohide]
+8:35: error: validate.bad_prop_value: window[main]/widget[d]/prop[state]
+9:35: error: validate.bad_prop_value: window[main]/widget[e]/prop[background]
+10:34: error: validate.bad_prop_value: window[main]/widget[f]/prop[width]

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<pyguibud-ui schema_version="1.0" xmlns="urn:pyguibud:ui:1">
+  <window id="main">
+    <layout type="grid"/>
+    <widget class="Notebook" id="nbk">
+      <cell row="0" column="0"/>
+      <widget class="Frame" id="p1">
+        <page weight="2"/>
+        <layout type="grid"/>
+      </widget>
+    </widget>
+    <widget class="PanedWindow" id="pnw">
+      <cell row="1" column="0"/>
+      <widget class="Frame" id="p2">
+        <page><prop name="text">Left</prop></page>
+        <layout type="grid"/>
+      </widget>
+    </widget>
+  </window>
+</pyguibud-ui>

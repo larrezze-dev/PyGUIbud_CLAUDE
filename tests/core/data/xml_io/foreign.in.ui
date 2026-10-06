@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<pyguibud-ui schema_version="1.0" xmlns="urn:pyguibud:ui:1" xmlns:acme="urn:acme:x" xmlns:tb="urn:pyguibud:ext:ttkbootstrap:1" acme:tag="root">
+  <window id="main" acme:flag="1" xml:lang="en">
+    <acme:note when="now">kept <b xmlns="urn:other">bold</b> text</acme:note>
+    <widget class="tb:Meter" id="meter" fallback="Progressbar" xmlns:loc="urn:local" loc:v="3">
+      <cell row="0" column="0">
+        <loc:hint>inside cell</loc:hint>
+      </cell>
+      <acme:extra xml:lang="de"> <acme:deep/> </acme:extra>
+    </widget>
+    <unknownthing a="1" b="2"/>
+    <widget class="Label" id="lbl" mystery="yes" tb:bootstyle="info">
+      <prop name="text" acme:k="v">x</prop>
+      <event name="change" handler="h"><acme:e/></event>
+      <pack fill="both"/>
+    </widget>
+  </window>
+</pyguibud-ui>

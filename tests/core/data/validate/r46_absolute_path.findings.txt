@@ -1,0 +1,4 @@
+4:5: warning: validate.absolute_path: resources/image[logo]
+8:5: warning: validate.absolute_path: window[main]/include[a]
+9:5: warning: validate.absolute_path: window[main]/include[b]
+10:5: warning: validate.absolute_path: window[main]/include[c]

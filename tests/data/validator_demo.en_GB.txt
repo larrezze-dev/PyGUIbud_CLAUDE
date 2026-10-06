@@ -1,0 +1,59 @@
+PyGUIbud validator demo - every edit is checked before it is kept.
+
+1. Accepted edits
+   Rename 'lbl_name' to 'lbl_user': OK
+   Change the text of 'btn_greet': OK
+   Unsaved changes: yes (undo steps: 2)
+
+2. Blocked edits (the document is protected)
+   Rename 'lbl_user' to 'class': BLOCKED: 'class' is a Python keyword and cannot be used as an id.
+   Rename 'lbl_user' to 'btn_greet': BLOCKED: The id 'btn_greet' is used more than once; the first use is window[main]/widget[nbk_main]/widget[frm_greeting]/widget[btn_greet].
+   Rename 'lbl_user' to '_x': BLOCKED: '_x' is not a valid id: use up to 64 letters (a–z, A–Z), digits and underscores, starting with a letter.
+   Put a label inside the label 'lbl_about': BLOCKED: 'lbl_about' (Label) cannot contain other widgets; move 'lbl_inner' into a container.
+   Add a widget with a pack placement to the grid frame 'frm_greeting': BLOCKED: 'lbl_packed' has a <pack> placement, but 'frm_greeting' expects <cell>.
+   Add a label on top of 'lbl_user' (row 0, column 0): BLOCKED: 'lbl_overlap' overlaps 'lbl_user' in the grid at row 0, column 0.
+   Set the width of 'btn_greet' to -5: BLOCKED: width must be between 0 and 10000, not -5.
+   Set the state of 'btn_greet' to 'maybe': BLOCKED: The property 'state' must be one of normal, disabled, not 'maybe'.
+   Handle the event 'key:' on 'btn_greet': BLOCKED: 'key:' is not a valid event; use command, change, select, activate, focus_in, focus_out or key:<sequence>.
+   Use the handler '1abc' on 'btn_greet': BLOCKED: '1abc' is not a valid handler name: use letters, digits and underscores, starting with a letter, and no Python keyword.
+   Add a check button bound to the text variable 'user_name': BLOCKED: Checkbutton cannot be bound to the string variable 'user_name'; use one of: bool, int.
+   Give the notebook 'nbk_main' a layout: BLOCKED: 'nbk_main' (Notebook) shows its children as pages and cannot have a layout.
+   Add a second main window: BLOCKED: Only one window can be the main window; window[main] already is.
+   Add an empty frame without a layout: BLOCKED: 'frm_empty' has no layout; add a grid or a pack layout.
+   Remove the variable 'user_name', which 'ent_name' uses: BLOCKED: The variable 'user_name' is still used by 'ent_name'; unbind it first.
+   Document unchanged after the blocked edits: yes
+
+3. Typing merges into one undo step
+   Type 'N' into 'lbl_user': OK
+   Type 'Na' into 'lbl_user': OK
+   Type 'Name:' into 'lbl_user': OK
+   Three edits, 1 new undo step; the next undo is: Set property
+
+4. Undo, redo and unsaved changes
+   Saved.
+   Unsaved changes: no (undo steps: 3)
+   Change the text of 'btn_greet': OK
+   Unsaved changes: yes (undo steps: 4)
+   Undo.
+   Unsaved changes: no (undo steps: 3)
+   Redo.
+   Unsaved changes: yes (undo steps: 4)
+   Undo twice (past the save point).
+   Change the text of 'lbl_about': OK
+   Same number of undo steps as when saved, but the saved state was replaced:
+   Unsaved changes: yes (undo steps: 3)
+
+5. Validation of a broken document
+   9:7  error: The property 'state' must be one of normal, disabled, not 'maybe'.
+   10:7  error: '1abc' is not a valid handler name: use letters, digits and underscores, starting with a letter, and no Python keyword.
+   13:5  error: The id 'btn_ok' is used more than once; the first use is window[main]/widget[btn_ok].
+   14:7  error: 'btn_ok' overlaps 'btn_ok' in the grid at row 0, column 0.
+   16:5  error: 'class' is a Python keyword and cannot be used as an id.
+   16:5  error: 'missing' is not a declared variable.
+   19:5  error: 'frm_empty' has no layout; add a grid or a pack layout.
+   23:7  warning: Label has no property 'colour'; it is kept but ignored.
+   Document is valid: no
+
+6. A document from a newer PyGUIbud is read-only
+   Rename 'frm_empty' to 'frm_ok': BLOCKED: This document was opened read-only (schema version 1.1); it cannot be changed.
+   Give 'frm_empty' a layout: BLOCKED: This document was opened read-only (schema version 1.1); it cannot be changed.

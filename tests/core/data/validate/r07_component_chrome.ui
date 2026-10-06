@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<pyguibud-ui schema_version="1.0" xmlns="urn:pyguibud:ui:1">
+  <window id="cmp" kind="component">
+    <statusbar id="sts"/>
+    <layout type="grid"/>
+  </window>
+</pyguibud-ui>

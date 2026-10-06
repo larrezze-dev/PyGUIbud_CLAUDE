@@ -1,4 +1,7 @@
-## Proyecto PyGUIbud
+# Golden rules
+- El proyecto se tiene que desarrollar paso a paso, con un plan definido. Cada paso ejecutado tiene que ser testeado por el usuario.
+
+# Proyecto PyGUIbud
 Crear una aplicación para generar GUI's para Python en TTKBootstrap y si posible PYSide drag-and-drop, concepto similar a PyQt pero generando archivos .ui que solo dependan de tkinter y/o ttkboostrapt/pyside
 
 En primer paso es determinar el stack, que tiene que ser el mas flexible a la vez que lo mas adaptable, pensado para un proyecto open source con forks aceptables por el creador.
@@ -17,7 +20,7 @@ Paso 1: determinar el AI Agent para cada sub-agent o tarea
 Paso 3: determinar el tipo de licencia (AI Ageng)
 Paso 3: determinar las características técnicas (a través de conversaciones con el AI Agent)
 
-## Agentes
+# Agentes
 - ORCHESTRATOR: el agente por defecto y que usa el modelo de AI seleccionado por el usuario. Delega tareas a los sub-agents que pertocan y se comunica directamente con ellos. Es el único agente que reporta al usuario. Crear/buscar el skill para crear este agent.
 - SOFTWARE-ARCHITECHT: el agente que coordinado por ORCHESTRATOR. Especializado en desarrollo de software. Crear/buscar el skill para crear este agent.
 - BACKEND-DEVELOPER: el nombre lo dice.  Crear/buscar el skill para crear este agent. No malgastar tokens, ni ahorrarlos al punto de sacrificar calidad. Decidir el modelo en función de las tareas delegadas (para cada tarea un modelo ponderado)
@@ -29,10 +32,10 @@ Paso 3: determinar las características técnicas (a través de conversaciones c
 - DEPLOYER: se tiene que desplegar de forma que sea compatible con pip y uv (el último si posible).
 - EL LAME-CULOS: una vez completado el proyecto, lo hará visible al mundo.
 
-## Ventana de contexto
+# Ventana de contexto
 Create a realistic development plan, sane into de project on the place and name you prefer. Shall be created that each step can be started and finished in one chat, lefting behind the instructions for the next chat/session to follow up. Don't wait until de token window is over 70% to advise a new session is necessary. Watch all the time the window context to avoid not necessary compression.
 
-### 1.1 Context Threshold Rule (Strict < 70% Limit)
+## 1.1 Context Threshold Rule (Strict < 70% Limit)
 - **Active Monitoring:** The agent and developer must monitor context token utilisation continuously.
 - **Pre-emptive Stop at 60–65%:** If conversation context reaches **60–65%** of the window capacity, the active session **must immediately enter wrap-up mode**. Never wait until or beyond 70%.
 - **Atomic Boundary:** No new feature implementation may begin once the session crosses the 55% mark if that feature cannot be fully coded, tested, and documented within 5%.
@@ -42,11 +45,10 @@ Create a realistic development plan, sane into de project on the place and name 
   3. Emit the **Standard Session Handover Block** (defined in [Section 1.2](app://obsidian.md/index.html#12-standard-session-handover-format)).
   4. Explicitly instruct the user to start a new chat session.
 
-### 1.2 Standard Session Handover Format
+## 1.2 Standard Session Handover Format
 At the conclusion of every chat session (or upon reaching 60–65% context limit), the agent must output:
 
-```markdown
-### 📋 Session Handover Briefing
+📋 Session Handover Briefing
 - **Step Completed:** [e.g., Step 03: XML Parser & Serialiser]
 - **Deliverables Created/Modified:**
   - `pyguibud/core/xml_io.py`
@@ -55,6 +57,24 @@ At the conclusion of every chat session (or upon reaching 60–65% context limit
 - **Current Git / Working State:** Clean, all tests passing.
 - **Next Step to Execute:** [e.g., Step 04: Python Code Generator (`pyguibud.core.codegen`)]
 
-#### 🚀 Next Session Kickoff Prompt
+## 🚀 Next Session Kickoff Prompt
 > Copy and paste the following snippet into the new chat to resume seamlessly:
 > *"Resume PyGUIbud development at Step 04: Python Code Generator (`pyguibud.core.codegen`). Inspect [DEVELOPMENT_PLAN.md](file:./DEVELOPMENT_PLAN.md) and [project.md](file:./project.md). Verify current state with `pytest` before starting."*
+
+# Multi-Language
+Todos los proyectos serán por defecto multi-o pluri-idiomas. El MCP, el código, interfaz, comentarios, variables se desarrollarán en la fase MVP en inglés británico.
+
+## Idiomas adicionales obligatorios
+- Español (España)
+- Portugués (Portugal)
+- Portugués (Brasil)
+- Alemán estándard
+- Italiano
+- Holandés
+- Francés
+
+# Programming Languague / Stack
+A ser definido por el prompt y documentos del proyecto.
+
+# Git / Github
+El usuario lo ejecuta manualmente - el agente AI NUNCA hará un commit o push, está absolutamente prohibido de hacerlo

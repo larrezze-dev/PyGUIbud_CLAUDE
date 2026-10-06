@@ -1,0 +1,3 @@
+4:5: warning: validate.path_escapes: resources/image[logo]
+8:5: warning: validate.path_escapes: window[main]/include[a]
+9:5: warning: validate.path_escapes: window[main]/include[b]

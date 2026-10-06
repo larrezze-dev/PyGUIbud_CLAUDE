@@ -1,0 +1,6 @@
+5:22: warning: validate.unknown_prop: window[main]/menubar/menu[mnu]/prop[oops]
+6:9: error: validate.duplicate_id: window[main]/menubar/menu[mnu]/action[mnu]
+7:24: error: validate.empty_id: window[main]/menubar/menu[mnu]/menu[sub]/action[#0]
+7:24: error: validate.bad_handler: window[main]/menubar/menu[mnu]/menu[sub]/action[#0]
+10:25: error: validate.ref_not_allowed: window[main]/statusbar[sts]/prop[text]
+10:25: error: validate.unknown_resource: window[main]/statusbar[sts]/prop[text]

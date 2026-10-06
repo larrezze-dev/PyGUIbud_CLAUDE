@@ -1,0 +1,5 @@
+# Keep .ui files byte-identical across platforms (golden-file tests compare bytes)
+*.ui text eol=lf
+
+# Golden demo output
+tests/data/*.txt text eol=lf

@@ -1,0 +1,1 @@
+5:5: error: validate.unknown_class: window[main]/widget[g]

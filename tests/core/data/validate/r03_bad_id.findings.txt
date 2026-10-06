@@ -1,0 +1,4 @@
+5:5: error: validate.bad_id: window[main]/widget[1abc]
+6:5: error: validate.bad_id: window[main]/widget[has space]
+7:5: error: validate.bad_id: window[main]/widget[_x]
+8:5: error: validate.bad_id: window[main]/widget[café]

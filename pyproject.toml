@@ -1,0 +1,130 @@
+[build-system]
+requires = ["hatchling>=1.27"]
+build-backend = "hatchling.build"
+
+[project]
+name = "pyguibud"
+dynamic = ["version"]
+description = "Drag-and-drop GUI designer for ttkbootstrap (and optionally PySide6) that saves portable .ui files."
+requires-python = ">=3.10"
+license = "MIT"
+license-files = ["LICENSE", "NOTICE.md"]
+authors = [{ name = "Luciano Arrezze" }]
+keywords = ["gui", "designer", "ttkbootstrap", "tkinter", "pyside6", "drag-and-drop", "ui"]
+classifiers = [
+    "Development Status :: 2 - Pre-Alpha",
+    "Environment :: X11 Applications",
+    "Environment :: Win32 (MS Windows)",
+    "Environment :: MacOS X",
+    "Intended Audience :: Developers",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: User Interfaces",
+    "Typing :: Typed",
+]
+dependencies = [
+    "ttkbootstrap>=2.2,<3",
+]
+
+[project.optional-dependencies]
+pyside = ["PySide6>=6.6"]
+dev = [
+    "pytest>=8.0",
+    "pytest-cov>=5.0",
+    "hypothesis>=6.100",
+    "ruff>=0.6",
+    "mypy>=1.10",
+    "pre-commit>=3.7",
+    "babel>=2.14",
+]
+
+[project.scripts]
+pyguibud = "pyguibud.cli:main"
+pyguibud-uic = "pyguibud.uic:main"
+
+[project.entry-points."pyguibud.widgets"]
+core = "pyguibud.core.widgets:core_widgets"
+
+[project.entry-points."pyguibud.backends"]
+ttkbootstrap = "pyguibud.backends.ttkbootstrap:TtkbootstrapBackend"
+
+[dependency-groups]
+dev = ["pyguibud[dev]"]
+
+# ---------------------------------------------------------------- build
+[tool.hatch.version]
+path = "src/pyguibud/__about__.py"
+
+[tool.hatch.build.targets.wheel]
+# Step 04: both packages ship in the pyguibud wheel; a standalone
+# pyguibud-runtime distribution is planned for a later step.
+packages = ["src/pyguibud", "src/pyguibud_runtime"]
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "/src",
+    "/tests",
+    "/docs",
+    "/examples",
+    "/LICENSE",
+    "/NOTICE.md",
+    "/pyproject.toml",
+]
+exclude = [
+    "/.claude",
+    "/.github",
+    "/assets/brand",
+]
+
+# ---------------------------------------------------------------- tools
+[tool.ruff]
+target-version = "py310"
+line-length = 100
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B", "SIM", "RUF", "N", "ANN"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["ANN"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+
+[tool.mypy]
+python_version = "3.10"
+files = ["src", "tests"]
+strict = true
+warn_unreachable = true
+pretty = true
+
+[[tool.mypy.overrides]]
+module = ["pyguibud_runtime", "pyguibud_runtime.*", "pyguibud.core.*", "pyguibud.cli", "pyguibud.uic"]
+strict = true
+
+[[tool.mypy.overrides]]
+module = ["babel", "babel.*"]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+minversion = "8.0"
+testpaths = ["tests"]
+# --capture=sys: fd-level capture dup2()s fds 1/2 around every test, closing the OS handles Tcl
+# wrapped as its stdout/stderr channels when the session Tk root was created. Tcl on Windows
+# looks channels up by raw HANDLE value, so a file Tk opens later that reuses one of those values
+# fails with an empty TclError (QA-10-13, Tcl 8.6 win/tclWinChan.c OpenFileChannel).
+addopts = "-ra --strict-markers --strict-config --capture=sys"
+markers = ["gui: needs a Tk display"]
+
+[tool.coverage.run]
+source = ["pyguibud", "pyguibud_runtime"]
+branch = true
+
+[tool.coverage.report]
+show_missing = true

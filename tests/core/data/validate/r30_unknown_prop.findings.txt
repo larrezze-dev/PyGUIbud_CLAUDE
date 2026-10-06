@@ -1,0 +1,2 @@
+4:5: warning: validate.unknown_prop: window[main]/prop[geometry]
+6:34: warning: validate.unknown_prop: window[main]/widget[a]/prop[colour]

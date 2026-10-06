@@ -1,0 +1,1 @@
+8:34: error: validate.ref_not_allowed: window[main]/widget[a]/prop[text]

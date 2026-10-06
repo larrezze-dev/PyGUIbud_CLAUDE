@@ -1,0 +1,3 @@
+10:5: error: validate.bind_type_mismatch: window[main]/widget[a]
+11:5: error: validate.bind_type_mismatch: window[main]/widget[b]
+12:5: error: validate.bind_type_mismatch: window[main]/widget[c]

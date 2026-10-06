@@ -1,0 +1,1 @@
+3:3: error: validate.component_chrome: window[cmp]

@@ -1,0 +1,2 @@
+5:5: error: validate.bad_component: window[main]/include[a]
+6:5: error: validate.bad_component: window[main]/include[b]

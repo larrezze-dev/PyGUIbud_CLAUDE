@@ -1,0 +1,1 @@
+5:5: error: validate.keyword_id: window[main]/widget[class]

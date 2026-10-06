@@ -1,0 +1,1 @@
+6:5: error: validate.duplicate_id: window[main]/widget[dup]

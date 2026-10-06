@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<pyguibud-ui schema_version="1.0" xmlns="urn:pyguibud:ui:1">
+  <window id="main">
+    <layout type="grid"/>
+    <menubar><menu id="mnu"><action id="act" handler="__init__"/></menu></menubar>
+    <widget class="Button" id="a"><event name="command" handler="1abc"/><event name="focus_in" handler="class"/><cell row="0" column="0"/></widget>
+  </window>
+</pyguibud-ui>

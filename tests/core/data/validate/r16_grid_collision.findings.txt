@@ -1,0 +1,2 @@
+6:34: error: validate.grid_collision: window[main]/widget[b]/cell
+7:34: error: validate.grid_collision: window[main]/widget[c]/cell

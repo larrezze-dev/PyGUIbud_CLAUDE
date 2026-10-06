@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<pyguibud-ui schema_version="1.0" xmlns="urn:pyguibud:ui:1">
+  <resources>
+    <image id="logo" src="logo.png"/>
+  </resources>
+  <window id="main">
+    <layout type="grid"/>
+    <widget class="Label" id="a"><prop name="text" ref="logo"/><cell row="0" column="0"/></widget>
+  </window>
+</pyguibud-ui>

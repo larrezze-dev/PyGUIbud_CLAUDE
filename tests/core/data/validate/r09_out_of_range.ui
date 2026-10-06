@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<pyguibud-ui schema_version="1.0" xmlns="urn:pyguibud:ui:1">
+  <window id="main" min_width="-1">
+    <layout type="grid" padding="20000" gap="-3">
+      <column index="10000" weight="-1" minsize="10001"/>
+    </layout>
+    <widget class="Label" id="a">
+      <prop name="width">-5</prop>
+      <cell row="10000" column="0" rowspan="0" padx="20000" pady="-1"/>
+    </widget>
+    <widget class="Label" id="b"><cell row="9990" column="0" rowspan="20"/></widget>
+  </window>
+</pyguibud-ui>

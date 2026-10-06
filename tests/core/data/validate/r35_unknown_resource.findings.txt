@@ -1,0 +1,4 @@
+5:34: error: validate.unknown_resource: window[main]/widget[a]/prop[image]
+8:37: error: validate.unknown_resource: window[main]/widget[nbk]/widget[p1]/page
+10:34: warning: validate.unknown_prop: window[main]/widget[x]/prop[whatever]
+10:34: error: validate.unknown_resource: window[main]/widget[x]/prop[whatever]

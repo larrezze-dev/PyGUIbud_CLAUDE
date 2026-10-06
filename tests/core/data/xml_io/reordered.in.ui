@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<pyguibud-ui xmlns="urn:pyguibud:ui:1" schema_version="1.0" xmlns:tb="urn:pyguibud:ext:ttkbootstrap:1">
+  <window modal="false" id="main" kind="main" min_height="200">
+    <widget id="b2" class="Button">
+      <event handler="on_b" name="command"/>
+      <pack expand="false" fill="none" padx="0" pady="0"/>
+      <prop name="text">Two</prop>
+      <prop name="anchor">w</prop>
+    </widget>
+    <layout gap="0" padding="0" orient="vertical" type="pack"/>
+    <statusbar id="sb"><prop name="text">Ready</prop></statusbar>
+    <menubar/>
+    <prop name="title">Zed</prop>
+    <prop name="geometry">320x200</prop>
+  </window>
+  <variables>
+    <var default="" type="int" id="v1"/>
+  </variables>
+  <meta theme="" source_locale="de_DE"/>
+  <window id="dlg" kind="dialog" buttons="ok,cancel"/>
+</pyguibud-ui>

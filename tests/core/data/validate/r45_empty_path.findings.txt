@@ -1,0 +1,2 @@
+4:5: error: validate.empty_path: resources/image[logo]
+8:5: error: validate.empty_path: window[main]/include[inc]

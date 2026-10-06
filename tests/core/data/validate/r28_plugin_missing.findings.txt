@@ -1,0 +1,2 @@
+5:5: warning: validate.plugin_missing: window[main]/widget[a]
+6:5: warning: validate.plugin_missing: window[main]/widget[b]

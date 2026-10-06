@@ -1,0 +1,2 @@
+3:3: warning: validate.dialog_only: window[main]
+3:3: warning: validate.dialog_only: window[main]

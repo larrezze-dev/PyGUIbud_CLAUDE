@@ -1,0 +1,2 @@
+5:34: error: validate.image_needs_ref: window[main]/widget[a]/prop[image]
+6:34: error: validate.image_needs_ref: window[main]/widget[b]/prop[image]

@@ -1,0 +1,52 @@
+# German translations for the PyGUIbud hello example.
+# Hand-made for Step 10; Step 11's extraction is checked against it.
+msgid ""
+msgstr ""
+"Project-Id-Version: PyGUIbud hello example 0.1.0\n"
+"Language: de_DE\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgctxt "window title"
+msgid "Hello PyGUIbud"
+msgstr "Hallo PyGUIbud"
+
+#. The underscore marks the access key.
+msgid "_File"
+msgstr "_Datei"
+
+msgid "_Quit"
+msgstr "_Beenden"
+
+msgid "Ready"
+msgstr "Bereit"
+
+#. Title of the first tab.
+msgctxt "tab"
+msgid "Greeting"
+msgstr "Begrüßung"
+
+msgctxt "greeting form"
+msgid "Your name:"
+msgstr "Ihr Name:"
+
+msgid "Say hello"
+msgstr "Hallo sagen"
+
+msgctxt "tab"
+msgid "About"
+msgstr "Info"
+
+#. Shown on the About tab.
+msgid "PyGUIbud example: one window, two tabs."
+msgstr "PyGUIbud-Beispiel: ein Fenster, zwei Reiter."
+
+#: examples/run_hello.py
+msgid "Hello, {name}!"
+msgstr "Hallo, {name}!"
+
+#: examples/run_hello.py
+msgid "Please enter your name."
+msgstr "Bitte geben Sie Ihren Namen ein."

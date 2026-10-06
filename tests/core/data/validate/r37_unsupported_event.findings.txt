@@ -1,0 +1,2 @@
+5:34: error: validate.unsupported_event: window[main]/widget[a]/event[0]
+5:72: error: validate.unsupported_event: window[main]/widget[a]/event[1]

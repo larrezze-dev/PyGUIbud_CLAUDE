@@ -1,0 +1,1 @@
+7:3: error: validate.multiple_main: window[second]

@@ -1,0 +1,1 @@
+5:5: error: validate.bad_bind: window[main]/widget[a]
