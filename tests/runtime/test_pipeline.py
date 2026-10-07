@@ -344,7 +344,8 @@ def test_loaded_ui_delegates_and_destroys_once() -> None:
     with pytest.raises(UiError) as info:
         ui.show("nbk_main")
     assert info.value.code == "runtime.unknown_window"
-    for wrong in ([], None, 1):  # QA-11-12: not a bare TypeError for an unhashable id
+    wrong_ids: tuple[object, ...] = ([], None, 1)
+    for wrong in wrong_ids:  # QA-11-12: not a bare TypeError for an unhashable id
         with pytest.raises(UiError) as info:
             ui.show(wrong)  # type: ignore[arg-type]
         assert info.value.code == "runtime.unknown_window"

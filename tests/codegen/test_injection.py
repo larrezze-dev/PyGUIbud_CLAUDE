@@ -15,7 +15,7 @@ import tempfile
 import unicodedata
 from collections.abc import Iterator
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 from xml.sax.saxutils import escape, quoteattr
 
 import pytest
@@ -74,7 +74,8 @@ NASTY_TEXTS = (
     "f'{1}'",
     "${x}",
 )
-legal_char = st.characters(blacklist_categories=("Cs",), blacklist_characters=_ILLEGAL)
+_SURROGATES: tuple[Literal["Cs"], ...] = ("Cs",)
+legal_char = st.characters(blacklist_categories=_SURROGATES, blacklist_characters=_ILLEGAL)
 texts = st.one_of(
     st.text(legal_char, min_size=1, max_size=40),
     st.sampled_from(NASTY_TEXTS),

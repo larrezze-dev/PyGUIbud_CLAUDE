@@ -130,7 +130,10 @@ RESERVED_IDS: Final = frozenset(
 TRUNCATED_CODE: Final = "validate.truncated"
 
 #: Properties of a window (the model has no registry spec for windows).
-WINDOW_PROPERTIES: Final = (PropertyDef(name="title", type="string", translatable=True),)
+WINDOW_PROPERTIES: Final = (
+    # Translators: the property of a window that holds the text of its title bar.
+    PropertyDef(name="title", type="string", translatable=True, display_name=N_("Title")),
+)
 
 #: Variable types a core class can be bound to (spec section 5.1); an empty row means "none".
 BIND_TYPES: Final[Mapping[str, tuple[str, ...]]] = MappingProxyType(

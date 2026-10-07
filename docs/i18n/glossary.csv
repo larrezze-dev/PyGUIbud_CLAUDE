@@ -17,3 +17,9 @@ open,menu command (verb),open,abrir,abrir,abrir,Öffnen,apri,openen,ouvrir
 export,menu command (verb),export,exportar,exportar,exportar,Exportieren,esporta,exporteren,exporter
 undo,edit command,undo,deshacer,anular,desfazer,Rückgängig,annulla,ongedaan maken,annuler
 redo,edit command,redo,rehacer,refazer,refazer,Wiederholen,ripeti,opnieuw,rétablir
+delete,edit command (verb),delete,eliminar,eliminar,excluir,Löschen,elimina,verwijderen,supprimer
+menu bar,window element,menu bar,barra de menú,barra de menu,barra de menu,Menüleiste,barra dei menu,menubalk,barre de menus
+status bar,window element,status bar,barra de estado,barra de estado,barra de estado,Statusleiste,barra di stato,statusbalk,barre d'état
+menu editor,dialog,menu editor,editor de menú,editor de menu,editor de menu,Menü-Editor,editor di menu,menueditor,éditeur de menus
+insert,verb (UI action),insert,insertar,inserir,inserir,Einfügen,inserisci,invoegen,insérer
+title,window property (the text of its title bar),title,título,título,título,Titel,titolo,titel,titre

@@ -3,11 +3,13 @@
 Looks up the *current* gettext translation on every call, so the language can be switched at
 runtime. ``gettext.install()`` and builtins are deliberately not used.
 
-Designer wiring (Step 12): widgets keep their *msgids* (never the translated text) and expose a
-``retranslate()`` method that re-applies ``_()`` to every label. Each panel registers a bound
-method (taking the new code) with :func:`add_language_listener`; bound methods are held weakly,
-so destroyed Tk widgets drop out silently. Tk calls must stay on the main thread: call
-:func:`set_language` from the main thread only.
+Designer wiring (Step 12): the designer keeps *msgids* (never translated text) and re-applies
+``_()`` after a switch. The application registers ONE bound method with
+:func:`add_language_listener`; it retranslates the menus, the toolbar, each panel's
+``retranslate()``, the window title and the status bar, in that order, each step isolated so a
+failing panel never blocks the rest. Bound methods are held weakly, so a disposed application
+drops out silently. Tk calls must stay on the main thread: call :func:`set_language` from the
+main thread only.
 """
 
 from __future__ import annotations
@@ -155,7 +157,11 @@ _ACCENTS = str.maketrans(
 )
 # Tokens that must survive untouched: {{ }}, {name}, {0}, %(name)s, %s, %d, %%.
 _PRINTF = r"[#0\- +]*\d*(?:\.\d+)?[a-zA-Z]"
-_PROTECTED = re.compile(rf"\{{\{{|\}}\}}|\{{[^{{}}]*\}}|%%|%\([^)]*\){_PRINTF}|%{_PRINTF}")
+# Also protected: ``__`` and ``_x``, the mnemonic mark and the key it marks, so that Alt+key keeps
+# working in the pseudo-locale (an accented key would not match what the user types, QA-12-09).
+_PROTECTED = re.compile(
+    rf"\{{\{{|\}}\}}|\{{[^{{}}]*\}}|%%|%\([^)]*\){_PRINTF}|%{_PRINTF}|__|_[^_\s{{%]"
+)
 
 
 def _pseudo(message: str) -> str:

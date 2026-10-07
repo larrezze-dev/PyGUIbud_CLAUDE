@@ -77,7 +77,8 @@ def _generate(ui: Path) -> ModuleType:
     assert spec is not None and spec.loader is not None
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
-    module.class_name = generated.class_name
+    dynamic: Any = module  # the generated module gets one attribute from the harness
+    dynamic.class_name = generated.class_name
     return module
 
 
@@ -305,7 +306,7 @@ class Broken:
             raise RuntimeError("boom")
         return message.upper()
 
-    pgettext = None  # type: ignore[assignment]
+    pgettext: Any = None  # deliberately not callable
 
 
 @pytest.mark.parametrize("name", ("hello", "rich"))
@@ -398,3 +399,207 @@ def diff(a: Any, b: Any, path: str = "") -> list[str]:
             d for i, (x, y) in enumerate(zip(a, b, strict=True)) for d in diff(x, y, f"{path}[{i}]")
         ]
     return [] if a == b else [f"{path}: {a!r} != {b!r}"]
+
+
+# ---------------------------------------------------------------- embed mode (spec dnd-selection 4)
+#: The window-level keys an embedded window may not reproduce (a frame has no WM state and no
+#: window-level shortcut bindings). Pinned: a new deviation needs an ADR-010 addendum.
+EMBED_DEVIATIONS = ("minsize", "resizable", "bindings")
+
+
+class Embedded:
+    """``.ui`` built from the ``load_ui`` plan in embed mode, inside a frame of the shared root."""
+
+    def __init__(self, ui: Path, root: Any, lang: str | None = None) -> None:
+        from tkinter import ttk
+
+        from pyguibud.backends._tk import Embed
+        from pyguibud.backends.ttkbootstrap import TtkbootstrapBackend
+        from pyguibud.core.model import Window
+        from pyguibud_runtime._load import _handler_names, _prepare
+
+        self.host = ttk.Frame(root)
+        self.frames: dict[str, Any] = {}
+        self.titles: dict[str, str] = {}
+        self.nodes: list[tuple[object, Any, Any]] = []
+
+        def on_node(node: object, outer: Any, inner: Any) -> None:
+            self.nodes.append((node, outer, inner))
+            if isinstance(node, Window):
+                self.frames[node.id] = outer
+
+        def placeholder(node: object, parent: Any) -> Any:
+            raise AssertionError("a _prepare plan expands every include")
+
+        probe = _prepare(ui, None, strict=False, master=root)[1]
+        self.calls = Recorder(tuple(sorted(_handler_names(probe.top))))
+        self.ui, plan = _prepare(ui, self.calls, strict=True, master=root, lang=lang)
+        embed = Embed(
+            host=self.host,
+            on_node=on_node,
+            on_title=lambda window, text: self.titles.__setitem__(window.id, text),
+            placeholder=placeholder,
+        )
+        self.ui._session = TtkbootstrapBackend().build_embedded(plan, embed)
+
+    def windows(self) -> dict[str, Any]:
+        described: dict[str, Any] = {}
+        for key, frame in self.frames.items():
+            bars = [c for c in frame.winfo_children() if isinstance(c, tkinter.Menu)]
+            described[key] = {
+                "title": self.titles.get(key, UNTITLED),
+                "menubar": _menu(bars[0]) if bars else None,
+                "descendants": _descendants(frame),
+            }
+        return described
+
+    def close(self) -> None:
+        self.ui.destroy()
+        self.host.destroy()
+
+
+#: A window without a ``title`` property has no title slot: the toolkit's default title of a
+#: Toplevel is not document content, so both sides show this marker instead.
+UNTITLED = "<no title property>"
+
+
+def _runtime_windows(described: dict[str, Any], built: Embedded) -> dict[str, Any]:
+    windows = {
+        key: {k: v for k, v in window.items() if k not in EMBED_DEVIATIONS}
+        for key, window in described["windows"].items()
+    }
+    for key, window in windows.items():
+        if key not in built.titles:
+            window["title"] = UNTITLED
+    return windows
+
+
+def _widgets(described: dict[str, Any], ui: Any) -> dict[str, Any]:
+    """The widget descriptions without the windows themselves (a Toplevel is not a Frame)."""
+    return {k: v for k, v in described["widgets"].items() if k not in ui.windows}
+
+
+@pytest.fixture
+def embedded(
+    tk_root: Any, tmp_path: Path, data_copy: Path, caplog: pytest.LogCaptureFixture
+) -> Iterator[Callable[..., tuple[Embedded, Any, Path]]]:
+    made: list[Any] = []
+
+    def make(name: str, lang: str | None = None) -> tuple[Embedded, Any, Path]:
+        ui = _source(name, tmp_path, data_copy)
+        with caplog.at_level(logging.WARNING):
+            built = Embedded(ui, tk_root, lang)
+            loaded = load_ui(ui, built.calls, master=tk_root, lang=lang)
+        made.extend((built, loaded))
+        return built, loaded, ui
+
+    yield make
+    for item in made:
+        item.close() if isinstance(item, Embedded) else item.destroy()
+
+
+def test_embed_deviations_are_pinned() -> None:
+    assert EMBED_DEVIATIONS == ("minsize", "resizable", "bindings")
+
+
+@pytest.mark.parametrize("name", NAMES)
+def test_embedded_build_matches_runtime(embedded: Callable[..., Any], name: str) -> None:
+    built, loaded, ui = embedded(name)
+    variables = _variables(ui)
+    runtime, embed = describe(loaded, variables), describe_scope(built.ui, variables)
+    assert diff(_widgets(runtime, loaded), _widgets(embed, built.ui)) == []
+    assert runtime["vars"] == embed["vars"] and runtime["var_names"] == embed["var_names"]
+    assert len(_widgets(embed, built.ui)) >= 2
+
+
+@pytest.mark.parametrize("name", NAMES)
+def test_embedded_windows_match_runtime(embedded: Callable[..., Any], name: str) -> None:
+    built, loaded, ui = embedded(name)
+    runtime = _runtime_windows(describe(loaded, _variables(ui)), built)
+    assert diff(runtime, built.windows()) == []
+    assert set(built.frames) == set(loaded.windows)
+
+
+def test_embedded_retranslate_matches_runtime(embedded: Callable[..., Any]) -> None:
+    built, loaded, ui = embedded("hello")
+    for scope in (built.ui, loaded):
+        scope.retranslate("de_DE")
+    variables = _variables(ui)
+    runtime, embed = describe(loaded, variables), describe_scope(built.ui, variables)
+    assert diff(_widgets(runtime, loaded), _widgets(embed, built.ui)) == []
+    assert diff(_runtime_windows(runtime, built), built.windows()) == []
+    assert embed["widgets"]["btn_greet"]["text"] == "Hallo sagen"
+    assert built.titles["main"] == "Hallo PyGUIbud"
+
+
+def describe_scope(ui: Any, variables: list[tuple[str, str]]) -> dict[str, Any]:
+    """``describe`` without the window-level part (embedded windows are frames)."""
+    return {
+        "widgets": _scope(ui),
+        "vars": {
+            name: (type(getattr(ui.vars, name)).__name__, getattr(ui.vars, name).get())
+            for name, _kind in variables
+        },
+        "var_names": sorted(vars(ui.vars)),
+    }
+
+
+def _root_state(root: Any) -> dict[str, Any]:
+    return {
+        "children": set(root.winfo_children()),
+        "toplevels": [w for w in root.winfo_children() if isinstance(w, tkinter.Toplevel)],
+        "title": root.title(),
+        "menu": str(root.cget("menu")),
+        "bind": sorted(root.bind()),
+        "bindtags": root.bindtags(),
+        "notebook": sorted(root.bind_class("TNotebook")),
+        "all": sorted(root.bind_class("all")),
+    }
+
+
+@pytest.mark.parametrize("name", NAMES)
+def test_embed_creates_no_toplevel(
+    tk_root: Any, tmp_path: Path, data_copy: Path, caplog: pytest.LogCaptureFixture, name: str
+) -> None:
+    ui = _source(name, tmp_path, data_copy)
+    with caplog.at_level(logging.WARNING):
+        warm = Embedded(ui, tk_root)  # ttkbootstrap creates some styles lazily on first use
+        warm.close()
+        before = _root_state(tk_root)
+        built = Embedded(ui, tk_root)
+    try:
+        after = _root_state(tk_root)
+        assert after["children"] - before["children"] == {built.host}
+        assert after == {**before, "children": after["children"]}
+        assert not after["toplevels"]
+        assert all(frame.master is built.host for frame in built.frames.values())
+    finally:
+        built.close()
+    assert _root_state(tk_root) == before
+
+
+def test_embed_rebuild_leaks_nothing(
+    tk_root: Any, tmp_path: Path, data_copy: Path, caplog: pytest.LogCaptureFixture
+) -> None:
+    ui = _source("rich", tmp_path, data_copy)
+
+    def state() -> tuple[Any, ...]:
+        tk_root.update_idletasks()
+        return (
+            set(tk_root.winfo_children()),
+            len(tk_root.tk.call("image", "names")),
+            sorted(tk_root.bind()),
+        )
+
+    with caplog.at_level(logging.WARNING):
+        Embedded(ui, tk_root).close()  # warm-up: lazily created styles and images
+        before = state()
+        for _round in range(100):
+            Embedded(ui, tk_root).close()
+    assert state() == before
+
+
+def test_embed_none_is_unchanged(make_pair: Callable[..., Pair]) -> None:
+    """The runtime path (``embed=None``) still matches the generated module exactly."""
+    loaded, generated = make_pair("rich").both()
+    assert diff(loaded, generated) == []

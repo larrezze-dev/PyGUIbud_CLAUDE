@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import contextlib
 import sys
+from collections.abc import Callable
 from typing import NoReturn
 
 from .__about__ import __version__
@@ -88,11 +89,24 @@ def _print_languages() -> None:
     )
 
 
-def main(argv: list[str] | None = None) -> int:
+#: The ``--theme`` choices are fixed tokens (never translated), like option names.
+THEME_CHOICES = ("light", "dark", "high-contrast")
+
+
+def _default_launch(lang: str, theme: str) -> int:
+    """Open the designer; Tk is imported only here, so --version and --help never load it."""
+    from pyguibud.designer import launch
+
+    return launch(lang, theme)
+
+
+def main(argv: list[str] | None = None, *, launch: Callable[[str, str], int] | None = None) -> int:
     """Entry point for the PyGUIbud CLI.
 
     Args:
         argv: Command-line arguments; defaults to sys.argv[1:].
+        launch: Opens the designer as ``launch(language, theme)`` and returns the exit code;
+            tests inject a fake. Defaults to :func:`pyguibud.designer.launch`.
 
     Returns:
         Exit code (0 on success).
@@ -122,7 +136,13 @@ def main(argv: list[str] | None = None) -> int:
         help=_("list the available interface languages and exit"),
     )
 
-    # Designer UI launch and other subcommands come in Step 12.
+    parser.add_argument(
+        "--theme",
+        choices=THEME_CHOICES,
+        default="light",
+        help=_("designer colour theme (default: %(default)s)"),
+    )
+
     args = parser.parse_args(argv)
 
     if args.lang is not None and args.lang != get_language():
@@ -132,5 +152,4 @@ def main(argv: list[str] | None = None) -> int:
         _print_languages()
         return 0
 
-    print(_("The designer window is not available yet; it arrives in a later development step."))
-    return 0
+    return (launch or _default_launch)(get_language(), args.theme)

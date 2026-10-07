@@ -12,7 +12,7 @@
 | Custom widgets | **Full plugin widgets** via entry points (icon, properties, live rendering) | [004](./docs/adr/ADR-004-widget-plugins.md) |
 | Layouts | **grid + pack** (pack limited to one orientation per container); no `place` | [005](./docs/adr/ADR-005-layout-model.md) |
 | Windows | Main window, Dialog, Reusable component; **multiple windows per `.ui`** | 002 |
-| Theme | Theme name stored in `.ui`; SAPÉ light / dark / high-contrast shipped as ttkbootstrap themes | 002 |
+| Theme | SAPÉ light / dark / high-contrast theme the designer itself; `.ui` files store any ttkbootstrap theme name (D4, Step 12) | 002 |
 | Files | Single `.ui` files, recent files, autosave + crash recovery (no project folders in v1) | — |
 
 ## 2. MoSCoW

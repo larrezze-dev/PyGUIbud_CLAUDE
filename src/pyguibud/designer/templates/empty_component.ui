@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<pyguibud-ui schema_version="1.0" xmlns="urn:pyguibud:ui:1" xmlns:tb="urn:pyguibud:ext:ttkbootstrap:1">
+  <meta generator="pyguibud" source_locale="en_GB"/>
+  <window id="component" kind="component">
+    <layout type="grid" padding="6" gap="6"/>
+  </window>
+</pyguibud-ui>

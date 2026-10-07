@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<pyguibud-ui schema_version="1.0" xmlns="urn:pyguibud:ui:1" xmlns:tb="urn:pyguibud:ext:ttkbootstrap:1">
+  <meta generator="pyguibud" source_locale="en_GB"/>
+  <window id="main" kind="main" min_width="480" min_height="320">
+    <prop name="title" translatable="true" context="window title">Main window</prop>
+    <menubar>
+      <menu id="mnu_file">
+        <prop name="text" translatable="true" comment="The underscore marks the access key.">_File</prop>
+        <action id="act_quit" handler="on_quit" shortcut="Ctrl+Q">
+          <prop name="text" translatable="true">_Quit</prop>
+        </action>
+      </menu>
+    </menubar>
+    <statusbar id="sts_main">
+      <prop name="text" translatable="true">Ready</prop>
+    </statusbar>
+    <layout type="grid" padding="12" gap="6">
+      <column index="0" weight="1"/>
+      <row index="0" weight="1"/>
+    </layout>
+  </window>
+</pyguibud-ui>

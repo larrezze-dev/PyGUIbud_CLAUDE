@@ -78,6 +78,53 @@ def load_ui(
         TypeError, ValueError: API misuse (wrong argument types, a malformed ``lang``).
         UiError: the file, its includes, the handlers or the environment prevent loading.
     """
+    ui, plan = _prepare(
+        path,
+        handlers,
+        strict=strict,
+        backend=backend,
+        master=master,
+        lang=lang,
+        localedir=localedir,
+        translator=translator,
+    )
+    shown = plan.path
+    # P8-P9: backend (imports the toolkit; checks master and an existing root)
+    try:
+        chosen = load_backend(backend, plan.registry)()
+        chosen.prepare(master)
+    except RootExistsError as exc:
+        raise UiError("runtime.root_exists", _M_ROOT, path=shown) from exc
+    except Exception as exc:
+        raise UiError(
+            "runtime.backend_unavailable", _M_BACKEND, path=shown, name=backend, reason=_reason(exc)
+        ) from exc
+    try:
+        session: Session = chosen.build(plan, master)
+    except NoDisplayError as exc:
+        raise UiError("runtime.no_display", _M_DISPLAY, path=shown, reason=_reason(exc)) from exc
+    except Exception as exc:
+        raise UiError("runtime.build_failed", _M_BUILD, path=shown, reason=_reason(exc)) from exc
+    ui._session = session
+    return ui
+
+
+def _prepare(
+    path: str | os.PathLike[str],
+    handlers: object | Mapping[str, Handler] | None,
+    *,
+    strict: bool,
+    backend: str = "ttkbootstrap",
+    master: object | None = None,
+    lang: str | None = None,
+    localedir: str | os.PathLike[str] | None = None,
+    translator: Translator | None = None,
+) -> tuple[LoadedUi, BuildPlan]:
+    """P1-P7 of ``load_ui``: every check, and the toolkit-free plan (no Tk object yet).
+
+    The ``LoadedUi`` already holds its translators; ``load_ui`` adds the session. Private: the
+    parity tests build the same plan in embed mode (spec dnd-selection 4).
+    """
     # P1: arguments
     for name, value, kinds in (
         ("path", path, (str, os.PathLike)),
@@ -156,16 +203,6 @@ def load_ui(
         for key, plan in docs.items()
         for image in plan.document.resources.values()
     }
-    # P8-P9: backend (imports the toolkit; checks master and an existing root)
-    try:
-        chosen = load_backend(backend, registry)()
-        chosen.prepare(master)
-    except RootExistsError as exc:
-        raise UiError("runtime.root_exists", _M_ROOT, path=shown) from exc
-    except Exception as exc:
-        raise UiError(
-            "runtime.backend_unavailable", _M_BACKEND, path=shown, name=backend, reason=_reason(exc)
-        ) from exc
     plan = BuildPlan(
         path=shown,
         top=top,
@@ -177,14 +214,8 @@ def load_ui(
         runtime_text=texts.runtime_text,
         log=log,
     )
-    try:
-        session: Session = chosen.build(plan, master)
-    except NoDisplayError as exc:
-        raise UiError("runtime.no_display", _M_DISPLAY, path=shown, reason=_reason(exc)) from exc
-    except Exception as exc:
-        raise UiError("runtime.build_failed", _M_BUILD, path=shown, reason=_reason(exc)) from exc
-    ui._session, ui._texts = session, texts
-    return ui
+    ui._texts = texts
+    return ui, plan
 
 
 def _reason(exc: BaseException) -> str:

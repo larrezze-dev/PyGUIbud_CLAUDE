@@ -82,7 +82,7 @@ out["leaked"] = sorted(m for m in sys.modules if m.startswith("pyguibud")
 def _run(args: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
     env = {k: v for k, v in os.environ.items() if k not in {"PYTHONPATH", "VIRTUAL_ENV"}}
     env["PYTHONNOUSERSITE"] = "1"
-    return subprocess.run(
+    result: subprocess.CompletedProcess[str] = subprocess.run(
         args,
         capture_output=True,
         text=True,
@@ -90,6 +90,7 @@ def _run(args: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
         env=env,
         **kwargs,  # type: ignore[call-overload]
     )
+    return result
 
 
 @pytest.mark.slow

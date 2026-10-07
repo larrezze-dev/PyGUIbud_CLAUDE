@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<pyguibud-ui schema_version="1.0" xmlns="urn:pyguibud:ui:1" xmlns:tb="urn:pyguibud:ext:ttkbootstrap:1">
+  <meta generator="pyguibud" source_locale="en_GB"/>
+  <window id="dialog" kind="dialog" modal="true" buttons="ok,cancel">
+    <prop name="title" translatable="true" context="window title">Dialog</prop>
+    <layout type="grid" padding="12" gap="6">
+      <column index="0" weight="1"/>
+      <row index="0" weight="1"/>
+    </layout>
+    <widget class="Label" id="lbl_message">
+      <prop name="text" translatable="true">Your message goes here.</prop>
+      <cell row="0" column="0" sticky="nsew"/>
+    </widget>
+  </window>
+</pyguibud-ui>

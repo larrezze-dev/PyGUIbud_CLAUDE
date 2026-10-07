@@ -8,7 +8,7 @@ from __future__ import annotations
 import warnings
 from typing import Any, ClassVar, cast
 
-from pyguibud.backends._tk import Tk, TkSession
+from pyguibud.backends._tk import Embed, Tk, TkSession
 from pyguibud.backends._tkmap import _CLASSES, _RENAMED
 from pyguibud.backends.base import BuildPlan, NoDisplayError, RootExistsError
 from pyguibud.i18n import N_
@@ -88,6 +88,34 @@ class TtkbootstrapBackend:
             apply_theme=apply_theme,
             backend=self.name,
             bootstyle=True,
+        )
+        return session.build()
+
+    def build_embedded(self, plan: BuildPlan, embed: Embed) -> TkSession:
+        """Build every window of ``plan`` as a frame inside ``embed.host`` (the designer canvas).
+
+        An optional capability (ADR-010): no root is created, no theme is applied and no window
+        is shown; on any exception what was created is destroyed and the error re-raised.
+        """
+        import tkinter
+
+        import ttkbootstrap
+
+        classes = {name: getattr(ttkbootstrap, _RENAMED.get(name, name)) for name in _CLASSES}
+
+        def make_root() -> Tk:
+            raise RuntimeError("an embedded build never creates a root")
+
+        session = TkSession(
+            plan,
+            embed.host,
+            tk=tkinter,
+            classes=classes,
+            make_root=make_root,
+            apply_theme=lambda _root, _owns: None,
+            backend=self.name,
+            bootstyle=True,
+            embed=embed,
         )
         return session.build()
 

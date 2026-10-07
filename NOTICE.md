@@ -11,6 +11,8 @@ PyGUIbud source code is released under the [MIT Licence](./LICENSE). The followi
 The logos, design tokens and brand guidelines in `assets/brand/` belong to the SAPÉ corporate identity and are included only to theme the official designer.
 - They are **all rights reserved** and are not licensed under MIT.
 - Forks must replace them with their own assets.
+- This includes `src/pyguibud/designer/themes/sape.json`, which is generated from these tokens by `tools/gen_themes.py` and ships in the `pyguibud` wheel and sdist. Forks delete it; the designer then falls back to its built-in MIT neutral themes.
+- It also includes the application icon `src/pyguibud/designer/themes/pyguibud.png`, a copy of `assets/brand/logo/pyguibud.png` made by the same tool, shipped in the wheel and sdist. Forks delete it; the designer windows then show ttkbootstrap's default icon. Applications you build with PyGUIbud never receive this icon.
 - Fonts referenced by the brand (IBM Plex Sans, Inter, JetBrains Mono, Chakra Petch) are under the SIL Open Font Licence 1.1. Font files are not bundled.
 
 ## 3. Your files

@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<pyguibud-ui schema_version="1.0" xmlns="urn:pyguibud:ui:1" xmlns:tb="urn:pyguibud:ext:ttkbootstrap:1">
+  <meta generator="pyguibud" source_locale="en_GB"/>
+  <variables>
+    <var id="username" type="string"/>
+    <var id="password" type="string"/>
+  </variables>
+  <window id="login" kind="main" min_width="320">
+    <prop name="title" translatable="true" context="window title">Sign in</prop>
+    <layout type="grid" padding="12" gap="6">
+      <column index="1" weight="1"/>
+    </layout>
+    <widget class="Label" id="lbl_username">
+      <prop name="text" translatable="true">User name:</prop>
+      <cell row="0" column="0" sticky="w"/>
+    </widget>
+    <widget class="Entry" id="ent_username" bind="username">
+      <cell row="0" column="1" sticky="ew"/>
+    </widget>
+    <widget class="Label" id="lbl_password">
+      <prop name="text" translatable="true">Password:</prop>
+      <cell row="1" column="0" sticky="w"/>
+    </widget>
+    <widget class="Entry" id="ent_password" bind="password">
+      <prop name="show">*</prop>
+      <event name="activate" handler="on_login"/>
+      <cell row="1" column="1" sticky="ew"/>
+    </widget>
+    <widget class="Button" id="btn_login" tb:bootstyle="primary">
+      <prop name="text" translatable="true">Sign in</prop>
+      <event name="command" handler="on_login"/>
+      <cell row="2" column="1" sticky="e"/>
+    </widget>
+  </window>
+</pyguibud-ui>

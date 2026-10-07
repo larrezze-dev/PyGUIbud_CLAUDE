@@ -45,7 +45,7 @@ from pyguibud.core.model import (
 from pyguibud.core.validate import MAX_TEXT_LENGTH
 from pyguibud.i18n import N_
 
-__all__ = ["TkSession", "event_wiring"]
+__all__ = ["Embed", "TkSession", "event_wiring"]
 
 #: A toolkit object; typed loosely because ``tkinter`` is never imported here.
 Tk: TypeAlias = Any
@@ -66,6 +66,16 @@ def _call(fn: Callable[[], object], result: str | None = None) -> Callable[..., 
         return result
 
     return callback
+
+
+@dataclass(frozen=True, slots=True)
+class Embed:
+    """Designer canvas mode (ADR-010): each window is a frame in ``host``, never a toplevel."""
+
+    host: Any
+    on_node: Callable[[object, Any, Any], None]  # (model node, outer widget, inner widget)
+    on_title: Callable[[Window, str], None]  # the title slot's setter
+    placeholder: Callable[[Include, Any], Any]  # an unexpanded include -> a widget in parent
 
 
 @dataclass(frozen=True, slots=True)
@@ -90,8 +100,9 @@ class TkSession:
         apply_theme: Callable[[Any, bool], None],
         backend: str,
         bootstyle: bool,
+        embed: Embed | None = None,
     ) -> None:
-        self._backend = backend
+        self._backend, self._embed = backend, embed
         self._plan, self._master, self._tk, self._classes = plan, master, tk, classes
         self._make_root, self._apply_theme, self._bootstyle = make_root, apply_theme, bootstyle
         self._root: Any = None
@@ -125,7 +136,8 @@ class TkSession:
         else:
             self._root = self._master.winfo_toplevel()
         self._aqua = self._root.tk.call("tk", "windowingsystem") == "aqua"
-        self._apply_theme(self._root, self._master is None)
+        if self._embed is None:  # designer themes are chrome-only (ADR-009 D4)
+            self._apply_theme(self._root, self._master is None)
         self._make_vars(plan.top)
         for key, path in plan.images.items():
             self._images[key] = self._tk.PhotoImage(master=self._root, file=str(path))
@@ -135,7 +147,7 @@ class TkSession:
             main = main if window.kind != "main" else top
         self.apply_texts(plan.text, plan.runtime_text)
         self._after = self._root.after_idle(self._arm)
-        if main is not None:
+        if main is not None and self._embed is None:
             main.deiconify()
 
     def _arm(self) -> None:
@@ -172,7 +184,11 @@ class TkSession:
             self._slots.append(_Slot(TextSlot(doc, prop), setter, mnemonic, label))
 
     def _window(self, inst: Instance, window: Window, main: Tk) -> Tk:
-        if window.kind == "main" and self._master is None:
+        embed = self._embed
+        if embed is not None:
+            top = self._classes["Frame"](embed.host)
+            self._created.append(top)
+        elif window.kind == "main" and self._master is None:
             top = self._root
         else:
             top = self._classes["Toplevel"](master=self._root)
@@ -181,10 +197,11 @@ class TkSession:
         doc = inst.doc.key
         self._windows[window.id] = (top, window)
         inst.scope._attach(window.id, top, window=True)
-        self._slot(doc, window.id, window.props.get("title"), lambda t, _u: top.title(t), False)
-        if window.min_width or window.min_height:
+        title = self._title(top, window)
+        self._slot(doc, window.id, window.props.get("title"), title, False)
+        if (window.min_width or window.min_height) and embed is None:
             top.minsize(window.min_width or 0, window.min_height or 0)
-        if window.kind == "dialog":
+        if window.kind == "dialog" and embed is None:
             top.transient(main if main is not None else self._root)
             # Trim 1 (spec 0): the button bar and modality arrive in Step 14.
             top.protocol("WM_DELETE_WINDOW", top.withdraw)
@@ -193,9 +210,12 @@ class TkSession:
         layout = window.layout
         body = self._classes["Frame"](top, padding=layout.padding if layout else 0)
         body.grid(row=0, column=0, sticky="nsew")
+        if embed is not None:
+            embed.on_node(window, top, body)
         if window.menubar is not None:
             bar = self._classes["Menu"](top, tearoff=False)
-            top.configure(menu=bar)
+            if embed is None:  # embedded: built but not attached (the canvas draws a strip)
+                top.configure(menu=bar)
             seen: set[object] = set()
             for menu in window.menubar.children:
                 self._menu(inst, top, bar, menu, seen)
@@ -209,6 +229,8 @@ class TkSession:
             statusbar = window.statusbar
             self._slot(doc, statusbar.id, statusbar.props.get("text"), setter, False)
             inst.scope._attach(window.statusbar.id, label)
+            if embed is not None:
+                embed.on_node(statusbar, frame, label)
         self._container(inst, body, layout, "Frame", window.children)
         return top
 
@@ -247,7 +269,7 @@ class TkSession:
             options["command"] = handler
         image = node.props.get("image")
         if image is not None and image.ref:
-            options.update(image=self._images[(inst.doc.key, image.ref)], compound="left")
+            options.update(image=self._image(inst, image.ref), compound="left")
         if "state" in node.props:
             options["state"] = node.props["state"].value
         shortcut = tk_shortcut(node.shortcut, aqua=self._aqua) if node.shortcut else None
@@ -264,7 +286,7 @@ class TkSession:
             True,
         )
         chord = parse_chord(node.shortcut) if node.shortcut else None
-        if shortcut is None or chord is None:
+        if shortcut is None or chord is None or self._embed is not None:  # design runs no handler
             return
         if chord.identity in seen:
             self._plan.log(_M_SHORTCUT, shortcut=shortcut.accelerator, id=node.id)
@@ -322,7 +344,8 @@ class TkSession:
                     padx=(lead + place.padx, place.padx) if across else place.padx,
                     pady=place.pady if across else (lead + place.pady, place.pady),
                 )
-        if class_name == "Notebook":
+        if class_name == "Notebook" and self._embed is None:
+            # ttk::notebook::enableTraversal binds on [winfo toplevel]: the designer root.
             parent.enable_traversal()
 
     def _page(
@@ -338,13 +361,18 @@ class TkSession:
             notebook.add(child, weight=place.weight)
             return
         options: dict[str, Any] = {"text": ""}
-        if place.image:
-            options.update(image=self._images[(inst.doc.key, place.image)], compound="left")
+        image = self._image(inst, place.image) if place.image else None
+        if image is not None:  # ttk's tab options do not skip None
+            options.update(image=image, compound="left")
         notebook.add(child, **options)
         setter = lambda t, u: notebook.tab(child, text=t, underline=u)  # noqa: E731
         self._slot(inst.doc.key, label, place.text, setter, True)
 
     def _include(self, inst: Instance, node: Include, parent: Tk) -> Tk:
+        if self._embed is not None and id(node) not in inst.includes:
+            frame = self._embed.placeholder(node, parent)
+            self._embed.on_node(node, frame, frame)
+            return frame
         child = inst.include(node)
         component = child.windows[0]
         if child.host is None:
@@ -357,7 +385,21 @@ class TkSession:
         child.scope._attach(component.id, frame)
         self._container(child, frame, layout, "Frame", component.children)
         inst.scope._attach(node.id, child.scope)
+        if self._embed is not None:
+            self._embed.on_node(node, frame, frame)
         return frame
+
+    def _title(self, top: Tk, window: Window) -> Callable[[str, int], object]:
+        embed = self._embed
+        if embed is None:
+            return lambda t, _u: top.title(t)
+        return lambda t, _u: embed.on_title(window, t)
+
+    def _image(self, inst: Instance, ref: str) -> Tk:
+        """The image ``ref``; embedded (documents may be invalid): None, i.e. no option."""
+        if self._embed is not None and (inst.doc.key, ref) not in self._images:
+            return None
+        return self._images[(inst.doc.key, ref)]
 
     @staticmethod
     def _owner(inst: Instance) -> Instance:
@@ -389,13 +431,14 @@ class TkSession:
                 "int": int,
                 "float": float,
                 "bool": lambda v: v == "true",
-                "image": lambda v: self._images[(inst.doc.key, v)],
+                "image": lambda v: self._image(inst, v),
             }
             converted = converters.get(definition.type, str)(raw)
             options[_OPTION.get((name, definition.name), definition.name)] = converted
         var: Any = None
-        if node.bind:
-            var = self._owner(inst).vars[node.bind]
+        known = self._owner(inst).vars
+        if node.bind and (self._embed is None or node.bind in known):
+            var = known[node.bind]
         elif name in _TRACE_VAR and any(e.name == "change" for e in node.events):
             kind = {"string": "StringVar", "bool": "BooleanVar", "double": "DoubleVar"}[
                 _TRACE_VAR[name]
@@ -406,9 +449,12 @@ class TkSession:
             options[_VAR_OPTION[name]] = var
         if name == "Radiobutton":
             value = node.props["value"].value if "value" in node.props else ""
+            declared = self._owner(inst).doc.document.variables
             is_int = (
                 node.bind is not None
-                and self._owner(inst).doc.document.variables[node.bind].type == "int"
+                and (self._embed is None or node.bind in declared)
+                and declared[node.bind].type == "int"
+                and (self._embed is None or value.lstrip("-").isdigit())
             )
             options["value"] = int(value) if is_int else value
         if name in _PADDED and node.layout is not None:
@@ -426,7 +472,10 @@ class TkSession:
         inst.scope._attach(node.id, widget)
         if spec.container:
             self._container(inst, widget, node.layout, name, node.children)
-        return widget.container if name == "ScrolledFrame" else widget
+        outer = widget.container if name == "ScrolledFrame" else widget
+        if self._embed is not None:
+            self._embed.on_node(node, outer, widget)
+        return outer
 
     def _create(self, name: str, parent: Tk, options: dict[str, Any], node: Widget) -> Tk:
         factory = self._classes[name]
@@ -530,6 +579,8 @@ class TkSession:
 
     def show(self, window_id: str) -> str | None:
         """Show a window. Modality and the button result arrive in Step 14 (trim 1)."""
+        if self._embed is not None:  # an embedded window is always shown on its canvas
+            return None
         self._windows[window_id][0].deiconify()
         return None
 

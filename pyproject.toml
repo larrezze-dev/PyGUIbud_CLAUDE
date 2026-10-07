@@ -111,6 +111,11 @@ module = ["pyguibud_runtime", "pyguibud_runtime.*", "pyguibud.core.*", "pyguibud
 strict = true
 
 [[tool.mypy.overrides]]
+# The Tk views call ttkbootstrap, which ships no type information.
+module = ["pyguibud.designer.app", "pyguibud.designer.theme_tk"]
+disallow_untyped_calls = false
+
+[[tool.mypy.overrides]]
 module = ["babel", "babel.*"]
 ignore_missing_imports = true
 

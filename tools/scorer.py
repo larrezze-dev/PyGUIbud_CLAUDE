@@ -9,6 +9,7 @@ Usage: ``uv run python tools/scorer.py [--no-tests]``
 from __future__ import annotations
 
 import argparse
+import base64
 import html
 import json
 import re
@@ -323,6 +324,15 @@ def tile(label: str, value: str, note: str = "", cls: str = "") -> str:
     )
 
 
+def _favicon() -> str:
+    """The brand application icon as an inline favicon (nothing when a fork removed it)."""
+    icon = ROOT / "assets" / "brand" / "logo" / "pyguibud.png"
+    if not icon.is_file():
+        return ""
+    data = base64.b64encode(icon.read_bytes()).decode("ascii")
+    return f'\n<link rel="icon" type="image/png" href="data:image/png;base64,{data}">'
+
+
 def build_html(steps: list[Step], run: TestRun, commits: list[str], stamp: str) -> str:
     """Render the self-contained scoreboard.html."""
     total = len(steps)
@@ -373,7 +383,7 @@ def build_html(steps: list[Step], run: TestRun, commits: list[str], stamp: str) 
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="color-scheme" content="light dark">
-<title>PyGUIbud scoreboard</title>
+<title>PyGUIbud scoreboard</title>{_favicon()}
 <style>{CSS}</style>
 </head>
 <body>

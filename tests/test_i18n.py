@@ -161,6 +161,19 @@ def test_pseudo_properties(message: str) -> None:
     assert out.count("_") == message.count("_")
 
 
+@pytest.mark.parametrize(
+    ("message", "expected_key"),
+    [("_File", "F"), ("_New from template…", "N"), ("Previous pa_nel", "n"), ("_Quit", "Q")],
+)
+def test_pseudo_keeps_the_mnemonic_key_unaccented(message: str, expected_key: str) -> None:
+    """QA-12-09: Alt+key must still match the letter the menu underlines."""
+    from pyguibud.core.keys import split_mnemonic
+
+    text, at = split_mnemonic(_PSEUDO.gettext(message))
+    assert at >= 0 and text[at] == expected_key
+    assert _PSEUDO.gettext("a__b").count("__") == 1  # a literal underscore stays one
+
+
 def test_pseudo_empty_and_formatting() -> None:
     assert _PSEUDO.gettext("") == ""
     assert _PSEUDO.gettext("Hello {name}").format(name="Ann").startswith("[")

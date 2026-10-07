@@ -37,10 +37,67 @@ def test_main_version(capsys: pytest.CaptureFixture[str]) -> None:
     assert captured.out == f"pyguibud {pyguibud.__version__}\n"
 
 
+class _Launch:
+    """A fake designer launcher: records its arguments and returns a canned exit code."""
+
+    def __init__(self, code: int = 0) -> None:
+        self.code = code
+        self.calls: list[tuple[str, str]] = []
+
+    def __call__(self, lang: str, theme: str) -> int:
+        self.calls.append((lang, theme))
+        return self.code
+
+
 def test_main_no_args() -> None:
-    """Test that main with no arguments returns 0."""
-    result = main([])
-    assert result == 0
+    """No arguments launches the designer with the default language and theme."""
+    fake = _Launch()
+    assert main([], launch=fake) == 0
+    assert fake.calls == [("en_GB", "light")]
+
+
+@pytest.mark.parametrize("theme", ["light", "dark", "high-contrast"])
+def test_theme_option_is_passed_on(theme: str) -> None:
+    fake = _Launch()
+    assert main(["--theme", theme], launch=fake) == 0
+    assert fake.calls == [("en_GB", theme)]
+
+
+def test_launch_exit_code_is_returned() -> None:
+    assert main([], launch=_Launch(1)) == 1
+
+
+def test_invalid_theme_exits_2(capsys: pytest.CaptureFixture[str]) -> None:
+    fake = _Launch()
+    with pytest.raises(SystemExit) as exc_info:
+        main(["--theme", "neon"], launch=fake)
+    assert exc_info.value.code == 2
+    assert fake.calls == []
+    assert "Traceback" not in capsys.readouterr().err
+
+
+def test_info_options_never_launch(capsys: pytest.CaptureFixture[str]) -> None:
+    fake = _Launch()
+    assert main(["--list-languages"], launch=fake) == 0
+    with pytest.raises(SystemExit):
+        main(["--version"], launch=fake)
+    with pytest.raises(SystemExit):
+        main(["--help"], launch=fake)
+    capsys.readouterr()
+    assert fake.calls == []
+
+
+def test_info_options_do_not_load_tk() -> None:
+    code = (
+        "import sys; from pyguibud.cli import main; main(['--list-languages']);"
+        "bad = sorted(m for m in sys.modules if m.split('.')[0] in ('tkinter', 'ttkbootstrap')"
+        " or m.startswith('pyguibud.designer'));"
+        "print(bad); sys.exit(1 if bad else 0)"
+    )
+    result = subprocess.run(
+        [sys.executable, "-c", code], capture_output=True, text=True, timeout=30
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
 
 
 def test_runtime_version_sync() -> None:
@@ -78,8 +135,17 @@ def test_list_languages_marks_active(capsys: pytest.CaptureFixture[str]) -> None
     assert "  en_GB  English (United Kingdom)" in out
 
 
-def test_pseudo_no_args(capsys: pytest.CaptureFixture[str]) -> None:
-    assert main(["--lang", "en_XA"]) == 0
+def test_pseudo_no_args() -> None:
+    """--lang en_XA is active (and passed on) when the designer is launched."""
+    fake = _Launch()
+    assert main(["--lang", "en_XA"], launch=fake) == 0
+    assert fake.calls == [("en_XA", "light")]
+    assert i18n.get_language() == "en_XA"
+    assert i18n._("Ready").startswith("[")
+
+
+def test_pseudo_list_languages(capsys: pytest.CaptureFixture[str]) -> None:
+    assert main(["--lang", "en_XA", "--list-languages"]) == 0
     out = capsys.readouterr().out
     assert "[" in out
     assert any(ch in out for ch in "áéíóúñ")
@@ -112,7 +178,7 @@ def test_missing_lang_value_exits_2() -> None:
 def test_subprocess_pseudo_utf8() -> None:
     env = {**os.environ, "PYTHONIOENCODING": "utf-8"}
     result = subprocess.run(
-        [sys.executable, "-m", "pyguibud", "--lang", "en_XA"],
+        [sys.executable, "-m", "pyguibud", "--lang", "en_XA", "--list-languages"],
         capture_output=True,
         env=env,
         timeout=30,

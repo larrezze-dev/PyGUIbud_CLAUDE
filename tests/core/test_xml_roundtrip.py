@@ -613,7 +613,14 @@ def test_property_strategy_actually_exercises_the_interesting_cases() -> None:
     # Guard against a strategy that silently degenerates into trivial documents.
     seen: dict[str, int] = {"windows": 0, "widgets": 0, "raws": 0, "pages": 0, "menus": 0}
 
-    @settings(max_examples=40, deadline=None, suppress_health_check=list(HealthCheck))
+    # Derandomised: a coverage threshold over random draws is otherwise rarely flaky.
+    @settings(
+        max_examples=40,
+        deadline=None,
+        derandomize=True,
+        database=None,
+        suppress_health_check=list(HealthCheck),
+    )
     @given(_documents(undeclared=False))
     def run(document: Document) -> None:
         seen["windows"] += len(document.children)
