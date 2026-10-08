@@ -29,6 +29,16 @@ class Rect:
         """True when the point lies inside (left/top edges included, right/bottom excluded)."""
         return self.x <= x < self.x + self.w and self.y <= y < self.y + self.h
 
+    def covers(self, other: Rect) -> bool:
+        """True when ``other`` lies fully inside (the rubber band's rule, D5)."""
+        return (
+            not other.empty
+            and self.x <= other.x
+            and self.y <= other.y
+            and other.x + other.w <= self.x + self.w
+            and other.y + other.h <= self.y + self.h
+        )
+
     def intersects(self, other: Rect) -> bool:
         return not self.intersection(other).empty
 

@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PyGUIbud 0.1.0\n"
 "Report-Msgid-Bugs-To: https://github.com/larrezze/PyGUIbud/issues\n"
-"POT-Creation-Date: 2026-10-07 04:56+0200\n"
+"POT-Creation-Date: 2026-10-07 21:38+0200\n"
 "PO-Revision-Date: 2026-10-05 17:46+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: it_IT\n"
@@ -258,6 +258,7 @@ msgid "'{node}' has already been removed."
 msgstr ""
 
 #: src/pyguibud/core/commands.py:384 src/pyguibud/core/commands.py:805
+#: src/pyguibud/designer/editing.py:74
 msgid "Move element"
 msgstr ""
 
@@ -1218,7 +1219,7 @@ msgstr ""
 msgid "Scrollbar"
 msgstr ""
 
-#: src/pyguibud/core/widgets.py:296 src/pyguibud/designer/panels/canvas.py:69
+#: src/pyguibud/core/widgets.py:296 src/pyguibud/designer/panels/canvas.py:82
 msgid "Canvas"
 msgstr ""
 
@@ -1593,27 +1594,41 @@ msgstr ""
 
 #. Translators: {widget} is a palette item ("Button"), {container} the id of a
 #. window or frame.
-#: src/pyguibud/designer/canvas/drag.py:32
+#: src/pyguibud/designer/canvas/drag.py:51
 #, python-brace-format
 msgid "Release to insert '{widget}' into '{container}'."
 msgstr "Rilascia per inserire '{widget}' in '{container}'."
 
-#: src/pyguibud/designer/canvas/drag.py:33
+#. Translators: {id} is the element being moved, {container} the id of a window
+#. or frame.
+#: src/pyguibud/designer/canvas/drag.py:53
+#, python-brace-format
+msgid "Release to move '{id}' into '{container}'."
+msgstr "Rilascia per spostare '{id}' in '{container}'."
+
+#. Translators: {id} is the element being resized; {columns} and {rows} are
+#. cell counts.
+#: src/pyguibud/designer/canvas/drag.py:55
+#, python-brace-format
+msgid "Release to resize '{id}' to {columns} × {rows} cells."
+msgstr "Rilascia per ridimensionare '{id}' a {columns} × {rows} celle."
+
+#: src/pyguibud/designer/canvas/drag.py:56
 msgid "Release to cancel."
 msgstr "Rilascia per annullare."
 
-#: src/pyguibud/designer/canvas/drag.py:34
+#: src/pyguibud/designer/canvas/drag.py:57
 msgid "Drag cancelled."
 msgstr "Trascinamento annullato."
 
 #. Translators: {id} is the id of the element that was just added.
-#: src/pyguibud/designer/canvas/drag.py:36
+#: src/pyguibud/designer/canvas/drag.py:59
 #, python-brace-format
 msgid "Inserted '{id}'."
 msgstr "Inserito '{id}'."
 
 #. Translators: {widget} is a palette item ("Button").
-#: src/pyguibud/designer/canvas/drag.py:39
+#: src/pyguibud/designer/canvas/drag.py:62
 #, python-brace-format
 msgid ""
 "Drag '{widget}' onto the canvas, or press Enter to insert it into the "
@@ -1621,6 +1636,13 @@ msgid ""
 msgstr ""
 "Trascina '{widget}' sull'area di disegno, oppure premi Invio per "
 "inserirlo nel contenitore selezionato."
+
+#: src/pyguibud/designer/canvas/drag.py:465
+#, python-brace-format
+msgid "Release to move {count} element."
+msgid_plural "Release to move {count} elements."
+msgstr[0] "Rilascia per spostare {count} elemento."
+msgstr[1] "Rilascia per spostare {count} elementi."
 
 #. Translators: drawn on the canvas in place of an included component;
 #. {component} is its id.
@@ -1654,54 +1676,121 @@ msgstr ""
 msgid "Create"
 msgstr ""
 
-#: src/pyguibud/designer/dialogs/shortcuts.py:14
+#: src/pyguibud/designer/dialogs/shortcuts.py:15
 msgid "Keyboard shortcuts"
 msgstr ""
 
-#: src/pyguibud/designer/dialogs/shortcuts.py:15
+#: src/pyguibud/designer/dialogs/shortcuts.py:16
 msgid "Close"
 msgstr ""
 
-#: src/pyguibud/designer/dialogs/shortcuts.py:16
+#: src/pyguibud/designer/dialogs/shortcuts.py:17
 msgid "There are no keyboard shortcuts."
 msgstr ""
 
-#: src/pyguibud/designer/edit.py:27
+#: src/pyguibud/designer/edit.py:37
 msgid "Windows, menu bars and status bars cannot be deleted here."
-msgstr "Le finestre, le barre dei menu e le barre di stato non possono essere eliminate qui."
+msgstr ""
+"Le finestre, le barre dei menu e le barre di stato non possono essere "
+"eliminate qui."
 
-#: src/pyguibud/designer/canvas/drag.py:41 src/pyguibud/designer/edit.py:28
+#: src/pyguibud/designer/canvas/drag.py:64 src/pyguibud/designer/edit.py:38
 msgid "Menus and actions are edited in the menu editor."
 msgstr "I menu e le azioni vengono modificati nell'editor di menu."
 
-#: src/pyguibud/designer/edit.py:104
+#: src/pyguibud/designer/edit.py:153
 #, python-brace-format
 msgid "Delete '{id}' and its {count} element?"
 msgid_plural "Delete '{id}' and its {count} elements?"
 msgstr[0] "Eliminare '{id}' e il suo {count} elemento?"
 msgstr[1] "Eliminare '{id}' e i suoi {count} elementi?"
 
-#: src/pyguibud/designer/editing.py:30
+#. Translators: several selected elements are deleted with what they contain.
+#: src/pyguibud/designer/edit.py:160
+#, python-brace-format
+msgid "Delete {count} element and the elements inside it?"
+msgid_plural "Delete {count} elements and the elements inside them?"
+msgstr[0] "Eliminare {count} elemento e gli elementi al suo interno?"
+msgstr[1] "Eliminare {count} elementi e gli elementi al loro interno?"
+
+#: src/pyguibud/designer/editing.py:62
 msgid "This window already has a status bar."
 msgstr "Questa finestra ha già una barra di stato."
 
-#: src/pyguibud/designer/editing.py:31
+#: src/pyguibud/designer/editing.py:63
 msgid "This window already has a menu bar."
 msgstr "Questa finestra ha già una barra dei menu."
 
-#: src/pyguibud/designer/panels/canvas.py:35
+#: src/pyguibud/designer/editing.py:64
+msgid "A widget cannot be dropped into itself."
+msgstr "Un widget non può essere rilasciato dentro se stesso."
+
+#. Translators: a move or resize that would change nothing; {id} is the id of
+#. the element.
+#: src/pyguibud/designer/editing.py:66
+#, python-brace-format
+msgid "'{id}' is already there."
+msgstr "'{id}' è già lì."
+
+#: src/pyguibud/designer/editing.py:67
+msgid "That would put an element outside the grid."
+msgstr "Così un elemento finirebbe fuori dalla griglia."
+
+#: src/pyguibud/designer/editing.py:68
+msgid "An element must span at least one row and one column."
+msgstr "Un elemento deve occupare almeno una riga e una colonna."
+
+#: src/pyguibud/designer/editing.py:69
+msgid "Only elements of the same container can be moved together."
+msgstr "Solo gli elementi dello stesso contenitore possono essere spostati insieme."
+
+#: src/pyguibud/designer/editing.py:70
+msgid "Only widgets and included components can be moved."
+msgstr "Si possono spostare solo widget e componenti inclusi."
+
+#: src/pyguibud/designer/editing.py:71
+msgid "Only elements of a grid can be resized."
+msgstr "Si possono ridimensionare solo gli elementi di una griglia."
+
+#: src/pyguibud/designer/editing.py:72
+msgid "This container arranges its children side by side; use Left and Right."
+msgstr "Questo contenitore dispone i figli affiancati; usa Sinistra e Destra."
+
+#: src/pyguibud/designer/editing.py:73
+msgid "This container arranges its children top to bottom; use Up and Down."
+msgstr "Questo contenitore dispone i figli dall'alto in basso; usa Su e Giù."
+
+#: src/pyguibud/designer/editing.py:75
+msgid "Move elements"
+msgstr "Sposta elementi"
+
+#: src/pyguibud/designer/editing.py:76
+msgid "Resize element"
+msgstr "Ridimensiona elemento"
+
+#: src/pyguibud/designer/editing.py:77
+msgid "Delete elements"
+msgstr "Elimina elementi"
+
+#: src/pyguibud/designer/panels/canvas.py:38
 msgid "No document is open."
 msgstr ""
 
 #. Translators: shown on the canvas instead of a window that fails to render;
 #. {reason} is the
 #. technical cause (usually in English).
-#: src/pyguibud/designer/panels/canvas.py:38
+#: src/pyguibud/designer/panels/canvas.py:41
 #, python-brace-format
 msgid "This window cannot be drawn on the canvas: {reason}"
 msgstr "Questa finestra non può essere disegnata sull'area di disegno: {reason}"
 
-#: src/pyguibud/designer/panels/canvas.py:338
+#. Translators: shown in the status bar when the canvas gets the keyboard
+#. focus.
+#: src/pyguibud/designer/panels/canvas.py:44
+msgid "Tab selects the next widget; F6 moves to the next panel."
+msgstr "Tab seleziona il widget successivo; F6 passa al pannello successivo."
+
+#: src/pyguibud/designer/panels/canvas.py:452
 #: src/pyguibud/designer/present/status.py:31
 #, python-brace-format
 msgid "{count} error"
@@ -1709,9 +1798,15 @@ msgid_plural "{count} errors"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/pyguibud/designer/panels/inspector.py:21
+#: src/pyguibud/designer/panels/inspector.py:22
 msgid "Inspector"
 msgstr ""
+
+#. Translators: {id} is the element whose data the inspector shows.
+#: src/pyguibud/designer/panels/inspector.py:60
+#, python-brace-format
+msgid "{count} elements selected; showing '{id}'."
+msgstr "{count} elementi selezionati; viene mostrato '{id}'."
 
 #: src/pyguibud/designer/panels/palette.py:14
 #, python-brace-format
@@ -1722,7 +1817,7 @@ msgstr ""
 msgid "Palette"
 msgstr ""
 
-#: src/pyguibud/designer/panels/tree.py:27
+#: src/pyguibud/designer/panels/tree.py:30
 msgid "Object tree"
 msgstr ""
 
@@ -1931,19 +2026,26 @@ msgstr ""
 msgid "Status bar: {id}"
 msgstr ""
 
-#: src/pyguibud/designer/session.py:35
-msgid "Untitled"
-msgstr ""
-
 #: src/pyguibud/designer/session.py:36
-#, python-brace-format
-msgid "The template '{template}' is damaged and cannot be opened."
+msgid "Untitled"
 msgstr ""
 
 #: src/pyguibud/designer/session.py:37
 #, python-brace-format
+msgid "The template '{template}' is damaged and cannot be opened."
+msgstr ""
+
+#: src/pyguibud/designer/session.py:38
+#, python-brace-format
 msgid "There is no template called '{template}'."
 msgstr ""
+
+#: src/pyguibud/designer/shell.py:414
+#, python-brace-format
+msgid "{count} element selected"
+msgid_plural "{count} elements selected"
+msgstr[0] "{count} elemento selezionato"
+msgstr[1] "{count} elementi selezionati"
 
 #: src/pyguibud/designer/standard_actions.py:18
 msgid "_File"
@@ -1979,55 +2081,125 @@ msgid "_Delete"
 msgstr "_Elimina"
 
 #: src/pyguibud/designer/standard_actions.py:27
+msgid "Select nex_t widget"
+msgstr "Seleziona widget s_uccessivo"
+
+#: src/pyguibud/designer/standard_actions.py:28
+msgid "Select prev_ious widget"
+msgstr "Seleziona widget pre_cedente"
+
+#: src/pyguibud/designer/standard_actions.py:29
+msgid "Select _first child"
+msgstr "Seleziona _primo figlio"
+
+#: src/pyguibud/designer/standard_actions.py:30
+msgid "Select _parent"
+msgstr "Seleziona _genitore"
+
+#: src/pyguibud/designer/standard_actions.py:31
+msgid "Select all in _container"
+msgstr "Seleziona tutto nel c_ontenitore"
+
+#. Translators: a sub-menu of Edit: moving and sizing the selected elements on
+#. the canvas.
+#: src/pyguibud/designer/standard_actions.py:33
+msgid "_Move"
+msgstr "_Sposta"
+
+#: src/pyguibud/designer/standard_actions.py:34
+msgid "Move _left"
+msgstr "Sposta a si_nistra"
+
+#: src/pyguibud/designer/standard_actions.py:35
+msgid "Move _right"
+msgstr "Sposta a _destra"
+
+#: src/pyguibud/designer/standard_actions.py:36
+msgid "Move _up"
+msgstr "Sposta in _alto"
+
+#: src/pyguibud/designer/standard_actions.py:37
+msgid "Move _down"
+msgstr "Sposta in _basso"
+
+#. Translators: "Wider" to "Shorter" make a grid element span one more or one
+#. less column/row.
+#: src/pyguibud/designer/standard_actions.py:39
+msgid "_Wider"
+msgstr "Più _largo"
+
+#: src/pyguibud/designer/standard_actions.py:40
+msgid "_Narrower"
+msgstr "Più _stretto"
+
+#: src/pyguibud/designer/standard_actions.py:41
+msgid "_Taller"
+msgstr "Più al_to"
+
+#: src/pyguibud/designer/standard_actions.py:42
+msgid "_Shorter"
+msgstr "Più _corto"
+
+#. Translators: "Move earlier/later" change the order of an element among its
+#. siblings.
+#: src/pyguibud/designer/standard_actions.py:44
+msgid "Move _earlier"
+msgstr "Sposta pri_ma"
+
+#: src/pyguibud/designer/standard_actions.py:45
+msgid "Move l_ater"
+msgstr "Sposta do_po"
+
+#: src/pyguibud/designer/standard_actions.py:46
 msgid "_View"
 msgstr ""
 
-#: src/pyguibud/designer/standard_actions.py:28
+#: src/pyguibud/designer/standard_actions.py:47
 msgid "_Theme"
 msgstr ""
 
-#: src/pyguibud/designer/standard_actions.py:29
+#: src/pyguibud/designer/standard_actions.py:48
 msgid "_Language"
 msgstr ""
 
 #. Translators: the dots mean that a dialog opens; _ marks the access key.
-#: src/pyguibud/designer/standard_actions.py:31
+#: src/pyguibud/designer/standard_actions.py:50
 msgid "_New from template…"
 msgstr ""
 
-#: src/pyguibud/designer/standard_actions.py:32
+#: src/pyguibud/designer/standard_actions.py:51
 msgid "_Quit"
 msgstr ""
 
-#: src/pyguibud/designer/standard_actions.py:33
+#: src/pyguibud/designer/standard_actions.py:52
 msgid "_Help"
 msgstr ""
 
-#: src/pyguibud/designer/standard_actions.py:34
+#: src/pyguibud/designer/standard_actions.py:53
 msgid "_Keyboard shortcuts…"
 msgstr ""
 
-#: src/pyguibud/designer/standard_actions.py:35
+#: src/pyguibud/designer/standard_actions.py:54
 msgid "Next _panel"
 msgstr ""
 
-#: src/pyguibud/designer/standard_actions.py:36
+#: src/pyguibud/designer/standard_actions.py:55
 msgid "Previous pa_nel"
 msgstr ""
 
-#: src/pyguibud/designer/standard_actions.py:37
+#: src/pyguibud/designer/standard_actions.py:56
 msgid "Pseudo-locale (layout test)"
 msgstr ""
 
-#: src/pyguibud/designer/standard_actions.py:41
+#: src/pyguibud/designer/standard_actions.py:60
 msgid "_Light"
 msgstr ""
 
-#: src/pyguibud/designer/standard_actions.py:42
+#: src/pyguibud/designer/standard_actions.py:61
 msgid "_Dark"
 msgstr ""
 
-#: src/pyguibud/designer/standard_actions.py:43
+#: src/pyguibud/designer/standard_actions.py:62
 msgid "_High contrast"
 msgstr ""
 

@@ -1,15 +1,19 @@
-"""Edit actions (pure; spec dnd-selection 11): undo, redo and delete on the session's stack.
+"""Edit actions (pure; spec dnd-selection 7.3, 11): undo, redo, delete and the canvas keys.
 
 Every change goes through the command stack. Delete asks for confirmation (through the
-``confirm`` callback, which opens a dialog and returns at once) when the node has children.
+``confirm`` callback, which opens a dialog and returns at once) when a node has children. One
+key press is one command; while ``busy()`` (a canvas rebuild is pending) repeats of the arrow
+keys are dropped, so a held key moves at rebuild speed and never queues edits.
 """
 
 from __future__ import annotations
 
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
 
+from pyguibud.core.commands import Command
 from pyguibud.core.model import (
     Action,
+    GridCell,
     Include,
     Menu,
     Menubar,
@@ -18,11 +22,17 @@ from pyguibud.core.model import (
     Widget,
     Window,
 )
-from pyguibud.designer.editing import delete_command
+from pyguibud.designer.editing import (
+    delete_command,
+    nudge_command,
+    past_the_grid,
+    reorder_command,
+    resize_command,
+)
 from pyguibud.designer.session import DesignerSession
 from pyguibud.i18n import N_, _, ngettext
 
-__all__ = ["EditActions", "count_descendants"]
+__all__ = ["EditActions", "count_descendants", "tab_order"]
 
 _M_NOT_DELETABLE = N_("Windows, menu bars and status bars cannot be deleted here.")
 _M_MENU_EDITOR = N_("Menus and actions are edited in the menu editor.")
@@ -41,13 +51,51 @@ def count_descendants(node: object) -> int:
     return total
 
 
+def _preorder(node: object) -> Iterator[object]:
+    pending = list(reversed(getattr(node, "children", ())))
+    while pending:
+        current = pending.pop()
+        yield current
+        pending.extend(reversed(getattr(current, "children", ())))
+
+
+def tab_order(window: object) -> list[object]:
+    """The widgets and includes of ``window`` in document pre-order (the canvas Tab order)."""
+    return [n for n in _preorder(window) if isinstance(n, Widget | Include)]
+
+
+def _ancestors(node: object) -> Iterator[object]:
+    parent = getattr(node, "parent", None)
+    while parent is not None:
+        yield parent
+        parent = getattr(parent, "parent", None)
+
+
+def _roots(nodes: tuple[object, ...]) -> list[object]:
+    """The selected widgets and includes whose ancestors are not selected too."""
+    chosen = {id(n) for n in nodes}
+    return [
+        n
+        for n in nodes
+        if isinstance(n, Widget | Include) and not any(id(a) in chosen for a in _ancestors(n))
+    ]
+
+
+def _window(node: object) -> object | None:
+    return next((a for a in (node, *_ancestors(node)) if isinstance(a, Window)), None)
+
+
 class EditActions:
     """What the Edit menu calls; ``message`` shows a refusal in the status bar."""
 
     def __init__(
-        self, session: DesignerSession, confirm: Confirm, message: Callable[[str], None]
+        self,
+        session: DesignerSession,
+        confirm: Confirm,
+        message: Callable[[str], None],
+        busy: Callable[[], bool] = lambda: False,
     ) -> None:
-        self.session, self._confirm, self._message = session, confirm, message
+        self.session, self._confirm, self._message, self._busy = session, confirm, message, busy
 
     # ------------------------------------------------------------ undo and redo
     @property
@@ -92,28 +140,104 @@ class EditActions:
         return None
 
     def delete(self) -> None:
-        """Delete the selected node; a node with children asks first."""
-        node = self.session.selection.node
-        if not self.can_delete() or node is None:
+        """Delete the selected nodes as one step; any of them with children asks first."""
+        nodes = _roots(self.session.selection.nodes)
+        if not self.can_delete() or not nodes:
             return
-        count = count_descendants(node)
+        count = sum(count_descendants(node) for node in nodes)
         if count == 0:
-            self._remove(node)
+            self._remove(nodes)
             return
-        question = ngettext(
-            "Delete '{id}' and its {count} element?",
-            "Delete '{id}' and its {count} elements?",
-            count,
-        ).format(id=getattr(node, "id", ""), count=count)
-        self._confirm(question, lambda: self._remove(node))
+        if len(nodes) == 1:
+            question = ngettext(
+                "Delete '{id}' and its {count} element?",
+                "Delete '{id}' and its {count} elements?",
+                count,
+            ).format(id=getattr(nodes[0], "id", ""), count=count)
+        else:
+            # Translators: several selected elements are deleted with what they contain.
+            question = ngettext(
+                "Delete {count} element and the elements inside it?",
+                "Delete {count} elements and the elements inside them?",
+                len(nodes),
+            ).format(count=len(nodes))
+        self._confirm(question, lambda: self._remove(nodes))
 
-    def _remove(self, node: object) -> None:
-        stack, parent = self.session.stack, getattr(node, "parent", None)
-        if stack is None or parent is None:  # the document changed while the dialog was open
-            return
-        stack.break_merge()  # one gesture = one undo step
-        outcome = stack.execute(delete_command(node))
+    def _remove(self, nodes: list[object]) -> None:
+        parent = getattr(nodes[-1], "parent", None)
+        if any(getattr(n, "parent", None) is None for n in nodes):
+            return  # the document changed while the dialog was open
+        if self._run(delete_command(*nodes)):
+            self.session.select(parent, origin="session")
+
+    def _run(self, built: Command | str) -> bool:
+        """Execute ``built`` as one undo step; a refusal goes to the status bar."""
+        stack = self.session.stack
+        if stack is None or isinstance(built, str):
+            self._message(built if isinstance(built, str) else "")
+            return False
+        stack.break_merge()  # one key press or gesture = one undo step
+        outcome = stack.execute(built)
         if not outcome.accepted:
             self._message(outcome.message)
+        return outcome.accepted
+
+    # ------------------------------------------------------------ canvas keys (spec 7.3)
+    def has_selection(self) -> bool:
+        return self.session.stack is not None and self.session.selection.node is not None
+
+    def select_step(self, delta: int) -> None:
+        """Tab / Shift+Tab: the next or previous widget of the window, wrapping."""
+        primary = self.session.selection.node
+        order = tab_order(_window(primary))
+        if order:
+            at = next((k for k, n in enumerate(order) if n is primary), -1 if delta > 0 else 0)
+            self.session.select(order[(at + delta) % len(order)], origin="canvas")
+
+    def select_child(self) -> None:
+        """Enter: the first child of the selected container."""
+        kids = getattr(self.session.selection.node, "children", ())
+        if kids:
+            self.session.select(kids[0], origin="canvas")
+
+    def select_parent(self) -> None:
+        """Esc: the parent of the primary node; a window stays selected."""
+        node = self.session.selection.node
+        if node is not None and not isinstance(node, Window):
+            self.session.select(getattr(node, "parent", None), origin="canvas")
+
+    def select_all(self) -> None:
+        """Ctrl+A: every child of the primary node's container (of a window: its children)."""
+        primary = self.session.selection.node
+        container = primary if isinstance(primary, Window) else getattr(primary, "parent", None)
+        kids = [n for n in getattr(container, "children", ()) if isinstance(n, Widget | Include)]
+        if kids:  # the primary stays the primary (the last occurrence decides)
+            last = primary if any(primary is k for k in kids) else kids[-1]
+            self.session.select_many([*kids, last], origin="canvas")
+
+    def nudge(self, rows: int, columns: int) -> None:
+        """Arrows: the selection one cell, or one place along a pack/pages orient."""
+        if not self._busy():
+            self._moved(nudge_command(self.session.selection.nodes, rows, columns))
+
+    def reorder(self, step: int) -> None:
+        """Alt+Up/Down in the tree: the selection one sibling earlier or later."""
+        if not self._busy():
+            self._moved(reorder_command(self.session.selection.nodes, step))
+
+    def span(self, rows: int, columns: int) -> None:
+        """Shift+Arrows: the primary grid child's rowspan/columnspan +-1 (minimum 1)."""
+        node = self.session.selection.node
+        if self._busy() or not isinstance(node, Widget | Include):
             return
-        self.session.select(parent, origin="session")
+        if not isinstance(cell := node.placement, GridCell):
+            self._run(resize_command(node, 0, 0, 1, 1))  # says: only a grid child
+            return
+        rowspan, columnspan = max(cell.rowspan, 1) + rows, max(cell.columnspan, 1) + columns
+        stop = past_the_grid([node], rows, columns)  # QA-13b-02: never past the append cell
+        self._run(stop or resize_command(node, cell.row, cell.column, rowspan, columnspan))
+
+    def _moved(self, built: Command | str) -> None:
+        nodes = self.session.selection.nodes
+        if self._run(built):
+            self.session.select_many(nodes, origin="canvas")

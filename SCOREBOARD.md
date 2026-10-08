@@ -1,12 +1,12 @@
 # PyGUIbud scoreboard
 
-_Last updated: 2026-10-07 06:24:42 UTC+0200_
+_Last updated: 2026-10-08 11:22:05 UTC+0200_
 
-- **Steps done:** 12/21
-- **Current step:** 13 Drag-and-drop & selection (13a + 13b) (🧪)
-- **Tests:** 3046/3054 passed (tests run now)
-- **Coverage:** 93.4 %
-- **Test detail:** 3054 collected, 0 failed, 0 errors, 8 skipped, 283.32 s
+- **Steps done:** 13/21
+- **Current step:** 14 Properties, undo/redo, save/load (⏳)
+- **Tests:** 3164/3172 passed (tests run now)
+- **Coverage:** 93.5 %
+- **Test detail:** 3172 collected, 0 failed, 0 errors, 8 skipped, 270.45 s
 
 ## Quality gates
 
@@ -32,7 +32,7 @@ _Last updated: 2026-10-07 06:24:42 UTC+0200_
 | 10 | Runtime loader + ttkbootstrap backend | BACKEND | ✅ done |
 | 11 | Code generator pyguibud-uic | BACKEND | ✅ done |
 | 12 | Designer shell | FRONTEND | ✅ done |
-| 13 | Drag-and-drop & selection (13a + 13b) | FRONTEND (opus) | 🧪 awaiting UAT |
+| 13 | Drag-and-drop & selection (13a + 13b) | FRONTEND (opus) | ✅ done |
 | 14 | Properties, undo/redo, save/load | FRONTEND + BACKEND | ⏳ pending |
 | 15 | Preview & export | FRONTEND | ⏳ pending |
 | 16 | tkinter + PySide6 backends | BACKEND | ⏳ pending |
@@ -44,6 +44,7 @@ _Last updated: 2026-10-07 06:24:42 UTC+0200_
 
 ## Recent commits
 
+- `6d3a99c 003`
 - `a865a0c 002`
 - `ea6c1e6 InitialCommmit`
 - `42b6356 Step 01: project concept, stack, development plan, brand assets`

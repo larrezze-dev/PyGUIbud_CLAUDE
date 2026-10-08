@@ -7,6 +7,7 @@ from typing import Any
 
 from pyguibud.designer.actions import ActionRegistry
 from pyguibud.designer.dialogs.base import ModalDialog
+from pyguibud.designer.panels.canvas import FOCUS_HINT
 from pyguibud.i18n import N_, _
 
 __all__ = ["ShortcutsDialog"]
@@ -58,4 +59,8 @@ class ShortcutsDialog(ModalDialog):
                 row=row, column=1, sticky="e"
             )
             row += 1
+        # The canvas keeps Tab for itself; F6 is the way out (spec 7.4, no keyboard trap).
+        ttk.Label(self.rows, text=_(FOCUS_HINT), anchor="w").grid(
+            row=row, column=0, columnspan=2, sticky="w", pady=(12, 0)
+        )
         super().retranslate()

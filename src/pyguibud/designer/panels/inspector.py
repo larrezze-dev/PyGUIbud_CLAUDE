@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from tkinter import ttk
 from typing import Any
 
 from pyguibud.core import ValidationReport
@@ -9,7 +10,7 @@ from pyguibud.designer.panels.base import PanelBase
 from pyguibud.designer.present.inspector import display_value, inspector_rows
 from pyguibud.designer.session import DesignerSession, Selection
 from pyguibud.designer.theme import ThemeSpec, tag_colours
-from pyguibud.i18n import N_
+from pyguibud.i18n import N_, _
 
 __all__ = ["InspectorPanel"]
 
@@ -28,7 +29,15 @@ class InspectorPanel(PanelBase):
         ring_px: int = 2,
     ) -> None:
         super().__init__(parent, session, ring_px=ring_px)
-        self._new_tree(("value",))
+        self._new_tree(("value",), row=2)
+        self.frame.rowconfigure(1, weight=0)
+        self.frame.rowconfigure(2, weight=1)
+        # Spec 7.2: with several elements selected, a header line above the tree (QA-13b-09)
+        # names the one that is shown.
+        self.header = ttk.Label(self.frame, anchor="w", justify="left")
+        self.frame.bind(
+            "<Configure>", lambda e: self.header.configure(wraplength=e.width - 12), add="+"
+        )
         self._connect(session.selection_changed, self._on_selection)
         self._connect(session.report_changed, self._on_report)
         self._render()
@@ -45,6 +54,16 @@ class InspectorPanel(PanelBase):
             return
         scroll = self._scroll_state()
         tree.delete(*tree.get_children())
+        nodes = self.session.selection.nodes
+        if len(nodes) > 1:
+            # Translators: {id} is the element whose data the inspector shows.
+            text = _("{count} elements selected; showing '{id}'.")
+            self.header.configure(
+                text=text.format(count=len(nodes), id=getattr(nodes[-1], "id", ""))
+            )
+            self.header.grid(row=1, column=0, columnspan=2, sticky="ew", padx=6, pady=(0, 4))
+        else:
+            self.header.grid_remove()
         rows = inspector_rows(
             self.session.selection.node, self.session.registry, self.session.report()
         )

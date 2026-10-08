@@ -27,7 +27,7 @@
 | `tb:` attribute editing, plugin diagnostics | 17 |
 | Subtree-only rebuild, scoped validation for faster hover | 19 (only if §13 budgets fail) |
 
-**Budget:** ≤ 1,800 lines of production code, tests excluded.
+**Budget:** ≤ 1,800 lines of production code, tests excluded. **Raised to ≤ 3,200 by the user at 13b kickoff (2026-10-07)**, so 13b ships in full, left/top handles included; the trim order below applies only beyond 3,200.
 - `_tk.py` grows by ≤ 60 lines; every new line sits in an `if embed` branch or in a hook call.
 - **Trim order if over budget:** (1) rubber band; (2) left/top resize handles (keep right/bottom/corner); (3) the cell-grid overlay during a drag; (4) multi-selection moves (keep multi-select delete).
 
@@ -69,10 +69,10 @@ src/pyguibud/designer/
 ```python
 @dataclass(frozen=True, slots=True)
 class Embed:
-    host: Any                                            # every window frame is created in it
-    on_node: Callable[[object, Any, Any], None]          # (model node, outer widget, inner widget)
-    on_title: Callable[[Window, str], None]              # the title slot's setter in embed mode
-    placeholder: Callable[[Include, Any], Any]           # unexpanded include -> a widget in parent
+    host: Any  # every window frame is created in it
+    on_node: Callable[[object, Any, Any], None]  # (model node, outer widget, inner widget)
+    on_title: Callable[[Window, str], None]  # the title slot's setter in embed mode
+    placeholder: Callable[[Include, Any], Any]  # unexpanded include -> a widget in parent
 ```
 | Runtime behaviour (`_tk.py`) | Embed mode |
 |---|---|
@@ -292,6 +292,12 @@ This is an implementation clarification within **D3** (snap to cells and pack sl
 
 **Rule R-C: append pane of a non-empty PanedWindow (QA-13a-03 reopened; ADR-010 Addendum 2, `paned-append-pane`).** A ttk Panedwindow has no `padding` and hands any extra size to its last pane, so instead of R-B the engine adds a trailing empty `ttk.Frame` pane of `P` px along the orient axis (`weight=0`; the last real pane gets `weight=1` when all real weights are 0, so it keeps the slack as at runtime), and `_map_owners` runs after it so a press on it selects the PanedWindow.
 
+**Rule R-D: design-only outline of an empty container (QA-13a-14; user decision at 13b kickoff, 2026-10-07).**
+- **Applies to:** the same nodes as R-A (empty layout or page containers, windows excluded), while they are **not** selected.
+- **What it does:** the overlay draws a 1 px dashed rectangle (the theme's `border` colour when it reaches at least 3:1 against `bg` in all three themes per `theme.contrast()`, otherwise `fg`; drawn with the overlay's existing dashed-strip pool). Window bodies are excluded: the window chrome already frames them. `"empty-container-outline"` is appended to `DESIGN_AFFORDANCES` and its pin test is updated around the container's rect. It is redrawn with the other overlay items after every build and scroll.
+- **Never** written to `.ui`, never seen by codegen, runtime, `_tk.py`, `targets.py` or the parity tests. It does not take hits: the overlay items stay non-interactive.
+- **Acceptance:** an empty Frame dropped into a grid cell has a visible outline; it disappears once the Frame gets a child, and is replaced by the selection outline while selected.
+
 **What is not added:**
 - no pixel grid;
 - no extra overlay drawing: the normal hover indicator (cell rect or slot bar) shows the zone;
@@ -369,7 +375,7 @@ def select_many(self, nodes: Iterable[object], *, origin: str) -> None  # foreig
 | Shift+click | add to the selection |
 | click on empty stage | select the window |
 
-**Rubber band (D5):** a press on a container's empty area followed by a drag of more than 4 px selects the **direct children of that container** whose rect lies **fully inside** the band. With Ctrl held, the band adds to the selection.
+**Rubber band (D5):** a press on a container's empty area followed by a drag of more than 4 px selects the **direct children of that container** whose rect lies **fully inside** the band. With Ctrl held, the band adds to the selection. A press-drag inside a container that is already selected moves the container; a band starts when the press is on a container that was not selected, on a window body (windows never move), or with Ctrl (Cmd on aqua) or Shift held (ruling QA-13b-06).
 
 **Tree:** `selectmode="extended"`, with native Ctrl/Shift range selection. `<<TreeviewSelect>>` goes to `select_many`. Rows of another window, or window and bar rows, follow the rules of §7.1. The tree then re-renders its selection from the session, so it never disagrees with it.
 
@@ -391,6 +397,7 @@ The canvas panel's focusable widget is the scroll-host `tk.Canvas` (`takefocus=1
 | Delete | Edit ▸ Delete (§11) |
 | Ctrl+A | select all children of the primary node's parent container |
 
+- **Grid bound:** a keyboard move or span change may reach at most **one** row/column past the highest row/column used by the other children of that grid parent (the append cell, as the §5.4 append zone); beyond it the key is denied with the reason in the status bar, like the clamp at 0, and nothing is recorded (ruling QA-13b-02).
 - **One key press = one command** (`break_merge()` first). Auto-repeat runs as separate commands, each validated, and a denial stops the motion with its reason.
 - **Tree:** Alt+Up and Alt+Down reorder the selected node (`MoveNode`, same parent) with the same builders (D8).
 
@@ -432,6 +439,13 @@ The keys in §7.3 would clash with `Treeview` navigation if they were bound with
   - The handle snaps to cell boundaries, with a minimum span of 1. Collisions are denied with the reason (live `check()`, as in §6).
   - Pack and page children show no handles. Their size is `fill`/`expand` and `width`/`height`, which are edited in the Step 14 inspector.
 - **Snapping (D3 = A):** cell and slot snapping is inherent. There is no pixel grid size and no alignment guides, because there is no `place` (ADR-005). The cell-grid overlay (§3) shows the snap lines during a drag.
+
+**Multi-move (D4 clarification; orchestrator ruling at 13b, refines the §5.3 "pointer's cell delta" row).**
+- All moved nodes share one parent (otherwise the builder denies with `Only elements of the same container can be moved together.`); the primary node is the **anchor**.
+- **Grid → grid:** every node keeps its row/column offset from the anchor, and the anchor lands on the target cell. If any node would land on a negative cell (or beyond 9,999), the **whole** move is denied with the reason; a collision with a cell that is not being moved is denied by `check()` with the validator's reason.
+- **Pack/pages:** the nodes move as one contiguous block, in their current sibling order, to the target slot.
+- **Reparent of several:** the same rules, applied in the target container. Grid→grid keeps sticky/padding and spans; a span that would cover a taken cell is clipped to 1. From pack/pages into a grid, the block is laid out in one row, in sibling order, with the anchor on the target cell.
+- Always **one** compound command (`Macro`, `Move elements`), all or nothing. Dropping on the current place is denied (`'{id}' is already there.`) and never recorded.
 
 ## 9. Palette: hint and keyboard insertion (QA-12-13, D7)
 **Hint.** Selecting a widget item by mouse or keyboard shows a transient status message (5 s, existing `show_message`):
@@ -480,6 +494,7 @@ The keys in §7.3 would clash with `Treeview` navigation if they were bound with
   - **Confirmation:** a selection containing a container with children asks for confirmation through the `ModalDialog` base (designer-ui rule), with `_("Delete '{id}' and its {count} elements?")` (`ngettext`).
   - **After the delete**, the parent becomes the selection.
   - **Guards:** windows, menubars and statusbars are not deleted in Step 13; their removal belongs to the Step 14 editors.
+  - **Once per press (QA-13b-04):** the Delete key acts at most once per physical key press, in every scope. Auto-repeat presses are swallowed until the KeyRelease or a focus change, so a held key never cascades onto the parent it has just selected. Menu clicks are unaffected. Any future destructive key joins the same rule (`shell._ONCE_PER_PRESS`).
 - **Undo/Redo** go through the stack. Undo/redo inside a text editor is Step 14's concern, since there are no editors yet.
 - **Ctrl+Y on aqua:** the Ctrl+Y chord stays and Cmd+Shift+Z is added, via `core.keys` `aqua` handling.
 

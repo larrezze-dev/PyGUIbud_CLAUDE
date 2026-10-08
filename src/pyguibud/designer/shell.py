@@ -25,7 +25,7 @@ from pyguibud.designer.present.focus import cycle
 from pyguibud.designer.present.status import findings_summary, selection_path
 from pyguibud.designer.session import DesignerSession
 from pyguibud.designer.theme import ThemeSpec
-from pyguibud.i18n import _
+from pyguibud.i18n import _, ngettext
 
 __all__ = ["MESSAGE_MS", "Shell"]
 
@@ -37,6 +37,8 @@ MESSAGE_MS = 5000
 #: Text-input classes keep their own keys: the document's undo must not steal a typed Ctrl+Z.
 _TEXT_CLASSES = frozenset({"TEntry", "Entry", "Text", "TCombobox", "TSpinbox", "Spinbox"})
 _TEXT_OWNED = frozenset({"edit.undo", "edit.redo"})
+#: Act once per physical key press: a held Delete must not cascade onto the parent (QA-13b-04).
+_ONCE_PER_PRESS = frozenset({"edit.delete"})
 
 _Entry = tuple[tkinter.Menu, int, "ActionDef | MenuDef"]
 
@@ -68,8 +70,10 @@ class Shell:
         self._radio: dict[str, tkinter.StringVar] = {}
         self._buttons: list[tuple[ttk.Button, ActionDef]] = []
         self._bound: list[str] = []
+        self._held: tuple[str, str, int] | None = None  # (keysym, widget, release time or -1)
         self._active = -1  # index in ``panels`` of the panel that holds the focus, or -1
         self._message = ""
+        self._in_command = False  # a command's own selection change keeps its message
         self._message_id: str | None = None
         self._clamp_id: str | None = None
         self._disposed = False
@@ -94,6 +98,8 @@ class Shell:
         self.body.grid(row=1, column=0, sticky="nsew")
         self.drag = DragController(self.canvas, status=self.show_message, source=self.palette.tree)
         self.palette.drag = self.drag
+        self.canvas.drag = self.drag
+        self.canvas.status = self.show_message
 
         bar = ttk.Frame(root, padding=(6, 2))
         bar.columnconfigure(0, weight=1)
@@ -105,12 +111,15 @@ class Shell:
         self.statusbar = bar
 
         self._disconnects = [
-            session.selection_changed.connect(lambda _s: self._refresh_status()),
+            # A new selection supersedes a transient message about the old one (QA-13b-11),
+            # except the selection a command makes itself (QA-13b-12: "Drag cancelled.").
+            session.selection_changed.connect(lambda _s: self._on_selection()),
             session.report_changed.connect(lambda _r: self._on_report()),
             session.document_changed.connect(lambda _d: self._refresh_status()),
         ]
         self._bind_shortcuts()
         root.bind_all("<FocusIn>", self._on_focus_in, add="+")
+        root.bind_all("<KeyRelease>", self._on_key_release, add="+")
         self._keep_panels_visible()
         self.refresh_states()
         self._refresh_status()
@@ -150,7 +159,7 @@ class Shell:
         options: dict[str, Any] = {
             "label": text,
             "underline": underline,
-            "command": lambda: self.registry.invoke(action.id),
+            "command": self._invoker(action.id),
         }
         if action.shortcut is not None:
             options["accelerator"] = tk_shortcut(action.shortcut, aqua=self.aqua).accelerator
@@ -210,23 +219,36 @@ class Shell:
 
     # ------------------------------------------------------------ keys
     def _bind_shortcuts(self) -> None:
-        scoped = {"canvas": self.canvas.notebook, "tree": self.tree.tree}
+        tree = self.tree.tree
+        assert tree is not None
+        scoped: dict[str, Callable[[str, Any], object]] = {
+            "canvas": self.canvas.bind_key,  # every stage's focus proxy, also after a re-render
+            "tree": lambda sequence, handler: tree.bind(sequence, handler, add="+"),
+        }
         for action in self.registry.actions():
             handler = self._key_handler(action.id)
-            widgets = [scoped[name] for name in action.scope]  # empty: every widget (bind_all)
+            binders = [scoped[name] for name in action.scope]  # empty: every widget (bind_all)
             for chord in action.chords:
                 for sequence in tk_shortcut(chord, aqua=self.aqua).sequences:
-                    for widget in widgets:
-                        widget.bind(sequence, handler, add="+")
-                    if not widgets:
+                    for bind in binders:
+                        bind(sequence, handler)
+                    if not binders:
                         self.root.bind_all(sequence, handler)
                         self._bound.append(sequence)
 
     def _invoker(self, action_id: str) -> Callable[[], None]:
         def run() -> None:
-            self.registry.invoke(action_id)
+            self.clear_message()  # a new command supersedes an earlier refusal (QA-13b-11)
+            self._invoke(action_id)
 
         return run
+
+    def _invoke(self, action_id: str) -> bool:
+        self._in_command = True
+        try:
+            return self.registry.invoke(action_id)
+        finally:
+            self._in_command = False
 
     def _key_handler(self, action_id: str) -> Any:  # noqa: ANN401 - a Tk callback
         def handler(event: object) -> str | None:
@@ -235,11 +257,32 @@ class Shell:
                 return None  # a dialog is open: its keys are its own
             if action_id in _TEXT_OWNED and _is_text_input(widget):
                 return None
-            if not self.registry.invoke(action_id):  # disabled: say why, when it can
+            if action_id in _ONCE_PER_PRESS and self._repeated(event):
+                return "break"
+            # A new command supersedes an earlier refusal (QA-13b-11). Cleared before it runs,
+            # so what the command itself posts (its refusal, a drag it cancels) still shows.
+            self.clear_message()
+            if not self._invoke(action_id):  # disabled: say why, when it can
                 self._explain_refusal(action_id)
+            elif action_id in _ONCE_PER_PRESS:
+                self._held = (str(getattr(event, "keysym", "")), str(widget), -1)
             return "break"
 
         return handler
+
+    def _repeated(self, event: Any) -> bool:  # noqa: ANN401 - a Tk event
+        """An auto-repeat of the press that acted: the same key on the same widget with no
+        KeyRelease since (Windows, aqua) or one at the very same time (X11 repeat pairs)."""
+        key = (str(getattr(event, "keysym", "")), str(getattr(event, "widget", None)))
+        released = self._held[2] if self._held is not None and self._held[:2] == key else None
+        time = int(getattr(event, "time", 0) or 0)
+        repeated = released == -1 or (released == time != 0)
+        self._held = (*key, -1) if repeated else None
+        return repeated
+
+    def _on_key_release(self, event: Any) -> None:  # noqa: ANN401 - a Tk event
+        if self._held is not None and self._held[0] == getattr(event, "keysym", None):
+            self._held = (*self._held[:2], int(getattr(event, "time", 0) or 0))
 
     def _explain_refusal(self, action_id: str) -> None:
         action = self.registry.get(action_id)
@@ -269,6 +312,7 @@ class Shell:
         return -1
 
     def _on_focus_in(self, event: Any) -> None:  # noqa: ANN401 - a Tk event
+        self._held = None  # a focus change ends a held key (QA-13b-04)
         if self._disposed or not self._in_main_window(event.widget):
             return
         index = self._panel_index_of(event.widget)
@@ -362,6 +406,10 @@ class Shell:
         self._refresh_status()
         self._message_id = self.root.after(MESSAGE_MS, self.clear_message)
 
+    def _on_selection(self) -> None:
+        if not self._in_command:
+            self.clear_message()
+
     def clear_message(self) -> None:
         """Drop the transient message (also on a language switch: it would stay untranslated)."""
         self._cancel_message_timer()
@@ -378,8 +426,13 @@ class Shell:
             self._message_id = None
 
     def _refresh_status(self) -> None:
-        text = self._message or selection_path(self.session.selection.node, self.session.document)
-        self._status.configure(text=text)
+        count = len(self.session.selection.nodes)
+        path = selection_path(self.session.selection.node, self.session.document)
+        if count > 1:
+            path = ngettext("{count} element selected", "{count} elements selected", count).format(
+                count=count
+            )
+        self._status.configure(text=self._message or path)
 
     def _on_report(self) -> None:
         self._refresh_summary()
@@ -429,7 +482,7 @@ class Shell:
         for panel in self.panels:
             panel.dispose()
         try:
-            for sequence in (*self._bound, "<FocusIn>"):
+            for sequence in (*self._bound, "<FocusIn>", "<KeyRelease>"):
                 self.root.unbind_all(sequence)
             self.root.configure(menu="")
             for widget in (self.menubar, self.toolbar, self.body, self.statusbar):

@@ -16,8 +16,10 @@ uv run pybabel extract -F babel.cfg -o src/pyguibud/locale/pyguibud.pot \
   --add-comments=Translators: \
   --project=PyGUIbud --version=0.1.0 --copyright-holder="Luciano Arrezze" \
   --msgid-bugs-address=https://github.com/larrezze/PyGUIbud/issues --sort-by-file src
-# 2. Merge new/changed strings into every catalogue
-uv run pybabel update -i src/pyguibud/locale/pyguibud.pot -d src/pyguibud/locale -D pyguibud
+# 2. Merge new/changed strings into every catalogue. --no-fuzzy-matching: a new msgid starts
+#    empty instead of inheriting a similar string's translation as a (wrong) fuzzy guess
+uv run pybabel update --no-fuzzy-matching -i src/pyguibud/locale/pyguibud.pot \
+  -d src/pyguibud/locale -D pyguibud
 # 3. Translate the .po files (resolve every fuzzy entry), then compile
 uv run pybabel compile -d src/pyguibud/locale -D pyguibud --statistics
 ```

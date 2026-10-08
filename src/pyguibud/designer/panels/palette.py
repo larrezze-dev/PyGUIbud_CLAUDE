@@ -25,6 +25,8 @@ class DragSink(Protocol):
     def cancel(self) -> None: ...
     def insert_widget(self, spec_name: str) -> None: ...
     def hint(self, spec_name: str) -> None: ...
+    @property
+    def moving(self) -> bool: ...
 
 
 class PalettePanel(PanelBase):
@@ -47,7 +49,7 @@ class PalettePanel(PanelBase):
         tree.bind("<B1-Motion>", lambda e: self._forward("motion", e), add="+")
         tree.bind("<ButtonRelease-1>", lambda e: self._forward("release", e), add="+")
         for sequence in ("<Escape>", "<FocusOut>"):
-            tree.bind(sequence, lambda _e: self.drag.cancel() if self.drag else None, add="+")
+            tree.bind(sequence, lambda _e: self._cancel_insert(), add="+")
         tree.bind("<<TreeviewSelect>>", lambda _e: self._on_select(), add="+")
         for sequence in ("<Return>", "<KP_Enter>"):
             tree.bind(sequence, lambda _e: self._activate(tree.focus()), add="+")
@@ -78,6 +80,15 @@ class PalettePanel(PanelBase):
         row = self.tree.identify_row(event.y) if self.tree is not None else ""
         if self.drag is not None and row.startswith("w:"):
             self.drag.press(row[2:], event.x_root, event.y_root)
+
+    def _cancel_insert(self) -> None:
+        """Esc or the focus leaving cancels only a palette drag, never a canvas gesture.
+
+        A canvas press takes the focus from the palette after arming its move, band or resize;
+        cancelling here would undo that press at once (QA-13b-10). The canvas cancels its own.
+        """
+        if self.drag is not None and not self.drag.moving:
+            self.drag.cancel()
 
     def _forward(self, gesture: str, event: Any) -> None:  # noqa: ANN401 - a Tk event
         if self.drag is not None:

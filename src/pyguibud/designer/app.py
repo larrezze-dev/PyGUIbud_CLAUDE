@@ -89,7 +89,12 @@ class DesignerApp:
                 current_theme=lambda: self._pending or self.role,
                 set_language=self.set_language,
                 current_language=get_language,
-                edit=EditActions(self.session, self._confirm, self.message.emit),
+                edit=EditActions(
+                    self.session,
+                    self._confirm,
+                    self.message.emit,
+                    busy=lambda: self.shell.canvas.rebuild_pending,  # drops key repeats
+                ),
             ),
         )
         self.shell = Shell(

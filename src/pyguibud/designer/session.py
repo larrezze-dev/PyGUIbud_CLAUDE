@@ -8,7 +8,7 @@ change goes through the :class:`~pyguibud.core.CommandStack` (Step 13 onwards). 
 from __future__ import annotations
 
 import logging
-from collections.abc import Callable
+from collections.abc import Callable, Iterable
 from dataclasses import dataclass
 
 from pyguibud.core import (
@@ -23,6 +23,7 @@ from pyguibud.core import (
     validate_read,
 )
 from pyguibud.core.errors import PyGUIbudError
+from pyguibud.core.model import Include, Widget, Window
 from pyguibud.designer.signals import Signal
 from pyguibud.designer.templates import template_bytes, template_info
 from pyguibud.i18n import N_, _
@@ -41,6 +42,14 @@ _MAX_SELECT_WALK = 1_000_000
 
 def _nothing() -> None:
     return None
+
+
+def _window_of(node: object) -> object | None:
+    """The window above ``node`` (``Include`` has no ``window`` property)."""
+    current: object | None = node
+    while current is not None and not isinstance(current, Window):
+        current = getattr(current, "parent", None)
+    return current
 
 
 class TemplateError(PyGUIbudError):
@@ -135,6 +144,33 @@ class DesignerSession:
         if node is not None and id(node) not in self._members():
             return
         self.selection = Selection(nodes, origin)
+        self.selection_changed.emit(self.selection)
+
+    def select_many(self, nodes: Iterable[object], *, origin: str) -> None:
+        """Select several nodes (gesture order; the last one is the primary), in one walk.
+
+        Foreign nodes are dropped; a repeated node counts once, at its LAST occurrence, so a
+        re-added node becomes the primary. Only widgets and includes of the primary's window
+        are kept together; any other primary (a window, a bar) stands alone (spec 7.1).
+        """
+        members, unique = self._members(), dict[int, object]()
+        for node in nodes:
+            if id(node) in members:
+                unique.pop(id(node), None)  # re-inserted at the end: the last one decides
+                unique[id(node)] = node
+        picked = list(unique.values())
+        if picked and isinstance(picked[-1], Widget | Include):
+            window = _window_of(picked[-1])
+            picked = [
+                n for n in picked if isinstance(n, Widget | Include) and _window_of(n) is window
+            ]
+        elif picked:
+            picked = picked[-1:]
+        current = self.selection.nodes
+        same = len(picked) == len(current)
+        if same and all(a is b for a, b in zip(picked, current, strict=True)):
+            return
+        self.selection = Selection(tuple(picked), origin)
         self.selection_changed.emit(self.selection)
 
     def _members(self) -> set[int]:

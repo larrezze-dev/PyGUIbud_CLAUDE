@@ -896,7 +896,7 @@ def test_a_click_on_the_window_body_gives_the_keys_to_the_canvas(
     app.session.new_from_template("main_window")
     _settle(designer_root)
     calls: list[int] = []
-    monkeypatch.setattr(app.shell.canvas.notebook, "focus_set", lambda: calls.append(1))
+    monkeypatch.setattr(app.shell.canvas.focus_widget, "focus_set", lambda: calls.append(1))
     stage = app.shell.canvas.stages[0]
     assert stage.view is not None
     stage.view.inner[id(_window(app))].event_generate("<ButtonPress-1>", x=5, y=5)
@@ -912,7 +912,7 @@ def test_a_click_on_canvas_chrome_gives_the_keys_to_the_canvas(
     app.session.new_from_template("main_window")
     _settle(designer_root)
     calls: list[int] = []
-    monkeypatch.setattr(app.shell.canvas.notebook, "focus_set", lambda: calls.append(1))
+    monkeypatch.setattr(app.shell.canvas.focus_widget, "focus_set", lambda: calls.append(1))
     stage = app.shell.canvas.stages[0]
     widget = {
         "title": stage.title,

@@ -96,8 +96,14 @@ _EMPTY_W, _EMPTY_H = 120, 64
 #: Design-time append zone (px at 96 dpi) added to a non-empty container's right/bottom padding.
 _ZONE = 20
 
-#: ADR-010 Addendum 2: the only design-only geometry deviations from the runtime output.
-DESIGN_AFFORDANCES = ("empty-minimum-size", "append-zone-padding", "paned-append-pane")
+#: ADR-010 Addenda 2-3: every design-only deviation from the runtime output (the last one is
+#: a drawing of the overlay, not a geometry change).
+DESIGN_AFFORDANCES = (
+    "empty-minimum-size",
+    "append-zone-padding",
+    "paned-append-pane",
+    "empty-container-outline",
+)
 
 
 def _padding(inner: Any) -> tuple[int, int, int, int]:  # noqa: ANN401 - a Tk widget

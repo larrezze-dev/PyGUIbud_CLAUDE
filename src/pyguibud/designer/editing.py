@@ -1,34 +1,80 @@
 """Turning insertion targets into commands (pure; spec dnd-selection 5.3).
 
 The canvas and the palette build commands here and hand them to the ``CommandStack``; nothing
-in this module mutates a document. Move, resize and nudge builders arrive in Step 13b.
+in this module mutates a document. A move, nudge or resize builder returns a command, or the
+translated reason it is denied (a no-op is denied too: it would not be recorded).
 """
 
 from __future__ import annotations
 
 import keyword
 import re
+from collections.abc import Sequence
+from dataclasses import replace
+from typing import Literal
 
-from pyguibud.core.commands import DEFAULT_LAYOUT, Command, InsertNode, RemoveNode, SetField
+from pyguibud.core.commands import (
+    DEFAULT_LAYOUT,
+    Command,
+    InsertNode,
+    Macro,
+    MoveNode,
+    RemoveNode,
+    SetField,
+)
 from pyguibud.core.model import (
     Document,
     GridCell,
+    Include,
     Menubar,
     PackPlacement,
     PagePlacement,
+    Placement,
     Prop,
     Statusbar,
     Widget,
     WidgetSpec,
+    Window,
 )
 from pyguibud.core.validate import RESERVED_IDS
-from pyguibud.designer.targets import Target
+from pyguibud.designer.geometry import Rect
+from pyguibud.designer.targets import MAX_INDEX, Target
 from pyguibud.i18n import N_, _
 
-__all__ = ["delete_command", "insert_command", "new_node", "refusal", "unique_id"]
+__all__ = [
+    "Built",
+    "Edge",
+    "delete_command",
+    "insert_command",
+    "move_command",
+    "move_index",
+    "new_node",
+    "nudge_command",
+    "past_the_grid",
+    "refusal",
+    "reorder_command",
+    "resize_cell",
+    "resize_command",
+    "span_rect",
+    "unique_id",
+]
 
 _M_STATUSBAR_EXISTS = N_("This window already has a status bar.")
 _M_MENUBAR_EXISTS = N_("This window already has a menu bar.")
+_M_INTO_ITSELF = N_("A widget cannot be dropped into itself.")
+# Translators: a move or resize that would change nothing; {id} is the id of the element.
+_M_ALREADY_THERE = N_("'{id}' is already there.")
+_M_OFF_GRID = N_("That would put an element outside the grid.")
+_M_MIN_SPAN = N_("An element must span at least one row and one column.")
+_M_ONE_CONTAINER = N_("Only elements of the same container can be moved together.")
+_M_NOT_MOVABLE = N_("Only widgets and included components can be moved.")
+_M_NOT_GRID = N_("Only elements of a grid can be resized.")
+_M_SIDE_BY_SIDE = N_("This container arranges its children side by side; use Left and Right.")
+_M_TOP_TO_BOTTOM = N_("This container arranges its children top to bottom; use Up and Down.")
+_M_MOVE_ONE = N_("Move element")
+_M_MOVE_MANY = N_("Move elements")
+_M_RESIZE = N_("Resize element")
+_M_DELETE_MANY = N_("Delete elements")
 _STEM_MAX = 58  # leaves room for a 6-digit counter within the 64-character id limit
 _CAMEL = re.compile(r"(?<=[a-z0-9])(?=[A-Z])")
 
@@ -100,18 +146,313 @@ def insert_command(target: Target, node: NewNode) -> Command:
     """
     if not isinstance(node, Widget):
         return SetField(target.container, _bar_name(node), node)
-    container = target.container
+    node.placement = _default_placement(target, node.id)
+    return InsertNode(target.container, node, target.index)
+
+
+def _is_notebook(node: object) -> bool:
+    return isinstance(node, Widget) and "Notebook" in (node.class_name, node.fallback)
+
+
+def _default_placement(target: Target, node_id: str) -> Placement:
+    """The placement a node gets at ``target`` when it brings none that fits."""
     if target.kind == "grid":
-        node.placement = GridCell(row=target.row, column=target.column)
-    elif target.kind == "slot":
-        node.placement = PackPlacement()
-    elif isinstance(container, Widget) and "Notebook" in (container.class_name, container.fallback):
-        node.placement = PagePlacement(text=Prop(name="text", value=node.id, translatable=True))
+        return GridCell(row=target.row, column=target.column)
+    if target.kind == "slot":
+        return PackPlacement()
+    if _is_notebook(target.container):
+        return PagePlacement(text=Prop(name="text", value=node_id, translatable=True))
+    return PagePlacement()
+
+
+def delete_command(*nodes: object) -> Command:
+    """Remove widgets or includes; several are one ``Delete elements`` step (spec 11)."""
+    if len(nodes) == 1:
+        return RemoveNode(nodes[0])
+    return Macro(_M_DELETE_MANY, [RemoveNode(node) for node in nodes])
+
+
+# ---------------------------------------------------------------- move, nudge, resize
+#: A command, or the translated reason why there is none.
+Built = Command | str
+_Movable = Widget | Include
+
+
+def move_index(old: int, gap: int) -> int:
+    """The ``MoveNode`` index that puts the child at ``old`` into ``gap`` (same parent)."""
+    return gap if gap <= old else gap - 1
+
+
+def _block(nodes: Sequence[object]) -> tuple[list[_Movable], Window | Widget, _Movable] | str:
+    """(the nodes in sibling order, their one parent, the anchor = the last node) or a reason."""
+    moving = [n for n in nodes if isinstance(n, _Movable)]
+    if not moving or len(moving) != len(nodes):
+        return _(_M_NOT_MOVABLE)
+    anchor = moving[-1]
+    parent = anchor.parent
+    if parent is None or any(n.parent is not parent for n in moving):
+        return _(_M_ONE_CONTAINER)
+    order = {id(child): k for k, child in enumerate(parent.children)}
+    return sorted(moving, key=lambda n: order[id(n)]), parent, anchor
+
+
+def _is_grid(container: Window | Widget) -> bool:
+    return container.layout is not None and container.layout.type == "grid"
+
+
+def _orient(container: Window | Widget) -> str:
+    if container.layout is not None:
+        return container.layout.orient
+    if _is_notebook(container):
+        return "horizontal"
+    orient = container.props.get("orient") if isinstance(container, Widget) else None
+    return str(orient.value) if orient is not None else "vertical"
+
+
+def _cell(node: _Movable) -> GridCell:
+    placement = node.placement
+    return placement if isinstance(placement, GridCell) else GridCell(row=0, column=0)
+
+
+def _area(cell: GridCell) -> set[tuple[int, int]]:
+    rows = range(cell.row, cell.row + max(cell.rowspan, 1))
+    return {(r, c) for r in rows for c in range(cell.column, cell.column + max(cell.columnspan, 1))}
+
+
+def _grid_cells(block: list[_Movable], anchor: _Movable, target: Target) -> list[GridCell] | str:
+    """The new cells: each node keeps its offset from the anchor, which lands on the target.
+
+    From a grid, the offsets come from the cells, and sticky, padding and spans are kept; a
+    reparented span that would cover a taken cell is clipped to 1 (spec 5.3). From pack or
+    pages the nodes are laid out in one row, in sibling order. Collisions are left to the
+    validator, whose reason the stack's ``check()`` reports.
+    """
+    container = target.container
+    taken: set[tuple[int, int]] = set()
+    if container is not anchor.parent:
+        for child in getattr(container, "children", ()):
+            if isinstance(child.placement, GridCell):
+                taken |= _area(child.placement)
+    from_grid, first, rank = (
+        isinstance(anchor.placement, GridCell),
+        _cell(anchor),
+        block.index(anchor),
+    )
+    cells: list[GridCell] = []
+    for k, node in enumerate(block):
+        old = _cell(node)
+        dr, dc = (old.row - first.row, old.column - first.column) if from_grid else (0, k - rank)
+        row, column = target.row + dr, target.column + dc
+        if min(row, column) < 0 or max(row, column) > MAX_INDEX:
+            return _(_M_OFF_GRID)
+        if not isinstance(node.placement, GridCell):
+            cells.append(GridCell(row=row, column=column))
+            continue
+        new = replace(old, row=row, column=column)
+        cells.append(replace(new, rowspan=1, columnspan=1) if _area(new) & taken else new)
+    return cells
+
+
+def _reorder(children: list[_Movable], block: list[_Movable], gap: int) -> list[_Movable]:
+    """``children`` with ``block`` taken out and put back, contiguous, at the ``gap``."""
+    moving = {id(n) for n in block}
+    rest = [c for c in children if id(c) not in moving]
+    at = gap - sum(1 for c in children[:gap] if id(c) in moving)
+    return rest[:at] + block + rest[at:]
+
+
+def _realise(parent: object, current: list[_Movable], final: list[_Movable]) -> list[Command]:
+    """``MoveNode`` commands that turn ``current`` into ``final`` when applied in order."""
+    sim, commands = list(current), list[Command]()
+    for index, node in enumerate(final):
+        if sim[index] is not node:
+            sim.pop(next(k for k, child in enumerate(sim) if child is node))
+            sim.insert(index, node)
+            commands.append(MoveNode(node, parent, index))
+    return commands
+
+
+def move_command(nodes: Sequence[object], target: Target) -> Built:
+    """Move ``nodes`` (one parent; the last one is the anchor) to ``target`` as one command.
+
+    Same grid: new cells, spans kept. Same pack/pages: the nodes become one contiguous block
+    at the gap, in sibling order. Another container: a reparent with placement conversion.
+    All or nothing (spec 8, multi-move).
+    """
+    checked = _block(nodes)
+    if isinstance(checked, str):
+        return checked
+    block, parent, anchor = checked
+    ancestor: object | None = target.container
+    while ancestor is not None:
+        if any(ancestor is n for n in block):
+            return _(_M_INTO_ITSELF)
+        ancestor = getattr(ancestor, "parent", None)
+    container = target.container
+    if target.kind == "bar" or not isinstance(container, Window | Widget):
+        return _(_M_NOT_MOVABLE)
+    same, commands = container is parent, list[Command]()
+    if target.kind == "grid":
+        cells = _grid_cells(block, anchor, target)
+        if isinstance(cells, str):
+            return cells
+        if same and all(c == n.placement for n, c in zip(block, cells, strict=True)):
+            return _(_M_ALREADY_THERE).format(id=anchor.id)
+        end = len(container.children)
+        for k, (node, cell) in enumerate(zip(block, cells, strict=True)):
+            if not same:
+                commands.append(MoveNode(node, container, end + k))
+            commands.append(SetField(node, "placement", cell))
+    elif same:
+        children = list(parent.children)
+        gap = len(children) if target.index is None else target.index
+        commands = _realise(parent, children, _reorder(children, block, gap))
+        if not commands:
+            return _(_M_ALREADY_THERE).format(id=anchor.id)
     else:
-        node.placement = PagePlacement()
-    return InsertNode(container, node, target.index)
+        gap = len(container.children) if target.index is None else target.index
+        for k, node in enumerate(block):
+            # A page keeps its tab text between containers of one kind only (ruling 13b-i).
+            keep = isinstance(
+                node.placement, PackPlacement if target.kind == "slot" else PagePlacement
+            ) and (target.kind == "slot" or _is_notebook(parent) == _is_notebook(container))
+            placement = node.placement if keep else _default_placement(target, node.id)
+            commands.append(MoveNode(node, container, gap + k))
+            commands.append(SetField(node, "placement", placement))
+    return Macro(_M_MOVE_ONE if len(block) == 1 else _M_MOVE_MANY, commands)
 
 
-def delete_command(node: object) -> Command:
-    """Remove one widget or include (multi-delete is Step 13b)."""
-    return RemoveNode(node)
+def past_the_grid(block: Sequence[_Movable], rows: int, columns: int) -> str | None:
+    """Why a keyboard step (move or span +1) may not take the far edge of ``block`` beyond the
+    append cell, one row/column past the last one the other children use (spec 7.3), or None."""
+
+    def far(node: _Movable) -> tuple[int, int]:
+        cell = _cell(node)
+        return cell.row + max(cell.rowspan, 1), cell.column + max(cell.columnspan, 1)
+
+    moving = {id(n) for n in block}
+    kids = [far(c) for c in getattr(block[0].parent, "children", ()) if id(c) not in moving]
+    mine = [far(n) for n in block]
+    beyond = any(
+        step > 0 and max(m[k] for m in mine) + step > max((o[k] for o in kids), default=0) + 1
+        for k, step in enumerate((rows, columns))
+    )
+    return _(_M_OFF_GRID) if beyond else None
+
+
+def nudge_command(nodes: Sequence[object], rows: int, columns: int) -> Built:
+    """Arrow keys: the grid cell +-1, or the index +-1 along a pack/pages orient (spec 7.3)."""
+    checked = _block(nodes)
+    if isinstance(checked, str):
+        return checked
+    block, parent, anchor = checked
+    if _is_grid(parent):
+        if reason := past_the_grid(block, rows, columns):
+            return reason
+        cell = _cell(anchor)
+        moved = Target(parent, "grid", None, cell.row + rows, cell.column + columns)
+        return move_command(nodes, moved)
+    horizontal = _orient(parent) == "horizontal"
+    step = columns if horizontal else rows
+    if step == 0:
+        return _(_M_SIDE_BY_SIDE if horizontal else _M_TOP_TO_BOTTOM)
+    return reorder_command(nodes, step)
+
+
+def reorder_command(nodes: Sequence[object], step: int) -> Built:
+    """The nodes one sibling earlier (``step`` < 0) or later, as one block (Alt+Up/Down, D8)."""
+    checked = _block(nodes)
+    if isinstance(checked, str):
+        return checked
+    block, parent, anchor = checked
+    kids = parent.children
+    places = [k for k, child in enumerate(kids) if any(child is n for n in block)]
+    gap = places[0] - 1 if step < 0 else places[-1] + 2
+    if not 0 <= gap <= len(kids):
+        return _(_M_ALREADY_THERE).format(id=anchor.id)
+    return move_command(nodes, Target(parent, "page" if parent.layout is None else "slot", gap))
+
+
+def resize_command(node: object, row: int, column: int, rowspan: int, columnspan: int) -> Built:
+    """A grid child's new cell and spans (resize handles, Shift+Arrow; spec 8)."""
+    if not isinstance(node, _Movable) or not isinstance(node.placement, GridCell):
+        return _(_M_NOT_GRID)
+    if rowspan < 1 or columnspan < 1:
+        return _(_M_MIN_SPAN)
+    if min(row, column) < 0 or max(row + rowspan, column + columnspan) > MAX_INDEX + 1:
+        return _(_M_OFF_GRID)
+    cell = node.placement
+    new = replace(cell, row=row, column=column, rowspan=rowspan, columnspan=columnspan)
+    if new == cell:
+        return _(_M_ALREADY_THERE).format(id=node.id)
+    return Macro(_M_RESIZE, [SetField(node, "placement", new)])
+
+
+#: A resize handle: the edges it moves (n/s change the rows, w/e the columns).
+Edge = Literal["n", "s", "w", "e", "nw", "ne", "sw", "se"]
+
+
+def _snap(lines: Sequence[int], p: int, current: int) -> int:
+    """The index of the line nearest to ``p``; a tie (empty, zero-width cells) stays nearest
+    to ``current``, so a pointer that has not left the edge changes nothing."""
+    return min(range(len(lines)), key=lambda k: (abs(lines[k] - p), abs(k - current)))
+
+
+def _drag_edge(
+    lines: Sequence[int], start: int, span: int, p: int, *, far: bool, pitch: int
+) -> tuple[int, int]:
+    """(start, span) with the near (``far=False``) or far edge snapped to ``p``.
+
+    The other edge stays put and the span never drops below 1. The far edge may also land on
+    one append line, ``pitch`` px past the last boundary (like the move's append row/column).
+    """
+    end = start + span
+    if len(lines) < 2:
+        return start, span
+    if far:
+        extended = (*lines, lines[-1] + max(pitch, 1))
+        return start, max(_snap(extended, p, end), start + 1) - start
+    first = max(min(_snap(lines, p, start), end - 1), 0)
+    return first, end - first
+
+
+def resize_cell(
+    cell: GridCell,
+    edge: Edge,
+    columns: Sequence[int],
+    rows: Sequence[int],
+    x: int,
+    y: int,
+    *,
+    pitch: int = 16,
+) -> tuple[int, int, int, int]:
+    """``(row, column, rowspan, columnspan)`` after dragging ``edge`` to (x, y) (spec 8).
+
+    ``columns``/``rows`` are the parent's cell boundaries (``grid_bbox``, stage coordinates).
+    Right/bottom edges change the span; left/top edges move the cell and keep the far edge.
+    """
+    row, rowspan = cell.row, max(cell.rowspan, 1)
+    column, columnspan = cell.column, max(cell.columnspan, 1)
+    if "w" in edge or "e" in edge:
+        column, columnspan = _drag_edge(
+            columns, column, columnspan, x, far="e" in edge, pitch=pitch
+        )
+    if "n" in edge or "s" in edge:
+        row, rowspan = _drag_edge(rows, row, rowspan, y, far="s" in edge, pitch=pitch)
+    return row, column, rowspan, columnspan
+
+
+def span_rect(
+    columns: Sequence[int], rows: Sequence[int], area: tuple[int, int, int, int], *, pitch: int = 16
+) -> Rect:
+    """The stage rectangle of ``area`` = (row, column, rowspan, columnspan); a line past the
+    last boundary lies ``pitch`` px further on per index (the resize indicator)."""
+
+    def line(bounds: Sequence[int], k: int) -> int:
+        if not bounds:
+            return 0
+        return bounds[k] if k < len(bounds) else bounds[-1] + (k - len(bounds) + 1) * pitch
+
+    row, column, rowspan, columnspan = area
+    x, y = line(columns, column), line(rows, row)
+    return Rect(x, y, line(columns, column + columnspan) - x, line(rows, row + rowspan) - y)

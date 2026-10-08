@@ -24,6 +24,25 @@ _M_REDO = N_("_Redo")
 # Translators: {action} is the step that is redone, e.g. "Add element".
 _M_REDO_ACTION = N_("_Redo {action}")
 _M_DELETE = N_("_Delete")
+_M_SELECT_NEXT = N_("Select nex_t widget")
+_M_SELECT_PREVIOUS = N_("Select prev_ious widget")
+_M_SELECT_CHILD = N_("Select _first child")
+_M_SELECT_PARENT = N_("Select _parent")
+_M_SELECT_ALL = N_("Select all in _container")
+# Translators: a sub-menu of Edit: moving and sizing the selected elements on the canvas.
+_M_MOVE = N_("_Move")
+_M_LEFT = N_("Move _left")
+_M_RIGHT = N_("Move _right")
+_M_UP = N_("Move _up")
+_M_DOWN = N_("Move _down")
+# Translators: "Wider" to "Shorter" make a grid element span one more or one less column/row.
+_M_WIDER = N_("_Wider")
+_M_NARROWER = N_("_Narrower")
+_M_TALLER = N_("_Taller")
+_M_SHORTER = N_("_Shorter")
+# Translators: "Move earlier/later" change the order of an element among its siblings.
+_M_EARLIER = N_("Move _earlier")
+_M_LATER = N_("Move l_ater")
 _M_VIEW = N_("_View")
 _M_THEME = N_("_Theme")
 _M_LANGUAGE = N_("_Language")
@@ -162,6 +181,33 @@ def _register_edit(registry: ActionRegistry, edit: EditActions) -> None:
             refusal=edit.delete_refusal,
         )
     )
+    registry.add_separator("edit")
+    registry.add_menu(MenuDef("edit.move", _M_MOVE, parent="edit"))
+    # Keys of the canvas focus proxy and the tree (spec 7.3): scoped, so a Treeview keeps Tab,
+    # Enter and the arrows. (id, menu, label, chord, scope, handler)
+    keys: tuple[tuple[str, str, str, str, str, Callable[[], None]], ...] = (
+        ("select_next", "edit", _M_SELECT_NEXT, "Tab", "canvas", lambda: edit.select_step(1)),
+        ("select_previous", "edit", _M_SELECT_PREVIOUS, "Shift+Tab", "canvas",
+         lambda: edit.select_step(-1)),
+        ("select_child", "edit", _M_SELECT_CHILD, "Enter", "canvas", edit.select_child),
+        ("select_parent", "edit", _M_SELECT_PARENT, "Escape", "canvas", edit.select_parent),
+        ("select_all", "edit", _M_SELECT_ALL, "Ctrl+A", "canvas", edit.select_all),
+        ("left", "edit.move", _M_LEFT, "Left", "canvas", lambda: edit.nudge(0, -1)),
+        ("right", "edit.move", _M_RIGHT, "Right", "canvas", lambda: edit.nudge(0, 1)),
+        ("up", "edit.move", _M_UP, "Up", "canvas", lambda: edit.nudge(-1, 0)),
+        ("down", "edit.move", _M_DOWN, "Down", "canvas", lambda: edit.nudge(1, 0)),
+        ("wider", "edit.move", _M_WIDER, "Shift+Right", "canvas", lambda: edit.span(0, 1)),
+        ("narrower", "edit.move", _M_NARROWER, "Shift+Left", "canvas", lambda: edit.span(0, -1)),
+        ("taller", "edit.move", _M_TALLER, "Shift+Down", "canvas", lambda: edit.span(1, 0)),
+        ("shorter", "edit.move", _M_SHORTER, "Shift+Up", "canvas", lambda: edit.span(-1, 0)),
+        ("earlier", "edit.move", _M_EARLIER, "Alt+Up", "tree", lambda: edit.reorder(-1)),
+        ("later", "edit.move", _M_LATER, "Alt+Down", "tree", lambda: edit.reorder(1)),
+    )  # fmt: skip
+    for name, menu, label, chord, scope, handler in keys:
+        enabled = edit.has_selection
+        registry.add(
+            ActionDef(f"edit.{name}", menu, label, handler, chord, enabled, scope=(scope,))
+        )
 
 
 def _theme_handler(callbacks: ShellCallbacks, role: str) -> Callable[[], None]:

@@ -8,6 +8,7 @@ mark windows stale and schedule one ``after_idle`` rebuild (they run inside the 
 
 from __future__ import annotations
 
+import contextlib
 import logging
 import tkinter
 from collections.abc import Callable
@@ -16,10 +17,12 @@ from tkinter import ttk
 from typing import Any
 
 from pyguibud.core import StackEvent
-from pyguibud.core.model import Widget, Window
+from pyguibud.core.model import GridCell, Include, Widget, Window
 from pyguibud.designer.canvas import design
 from pyguibud.designer.canvas.engine import CanvasEngine, WindowView, reveal, widget_rect
 from pyguibud.designer.canvas.overlay import Overlay
+from pyguibud.designer.editing import Edge
+from pyguibud.designer.geometry import Rect
 from pyguibud.designer.panels.base import PanelBase
 from pyguibud.designer.present.canvas import canvas_tabs, kind_label, window_of
 from pyguibud.designer.session import DesignerSession, Selection
@@ -37,10 +40,20 @@ _M_EMPTY = N_("No document is open.")
 # technical cause (usually in English).
 _M_CANNOT_DRAW = N_("This window cannot be drawn on the canvas: {reason}")
 _STAGE_PAD = 12  # px at 96 dpi around the window on its stage
+# Translators: shown in the status bar when the canvas gets the keyboard focus.
+FOCUS_HINT = N_("Tab selects the next widget; F6 moves to the next panel.")
 
 
 def _nothing() -> None:
     return None
+
+
+def _resizable(node: object) -> bool:
+    """True for a grid child: it gets resize handles (pack and page children never do)."""
+    if not isinstance(node, Widget | Include) or not isinstance(node.placement, GridCell):
+        return False
+    layout = node.parent.layout if node.parent is not None else None
+    return layout is not None and layout.type == "grid"
 
 
 @dataclass(eq=False, slots=True)
@@ -76,7 +89,8 @@ class CanvasPanel(PanelBase):
         ring_px: int = 2,
     ) -> None:
         super().__init__(parent, session, ring_px=ring_px)
-        self.notebook: Any = ttk.Notebook(self.frame, takefocus=True)
+        # The focus proxy is each stage's scroll host (spec 7.3): one tab stop, the F6 target.
+        self.notebook: Any = ttk.Notebook(self.frame, takefocus=False)
         self.notebook.grid(row=1, column=0, columnspan=2, sticky="nsew", padx=2, pady=2)
         self.empty = ttk.Label(self.frame, anchor="center")
         self.engine = CanvasEngine(session.registry, scale=self._scaled)
@@ -90,11 +104,19 @@ class CanvasPanel(PanelBase):
         # The tab that our own code selected: Tk reports that switch later, as an event, and it
         # must not be taken for a click of the user.
         self._expected = ""
+        #: The shell's ``DragController``: a press on a selected widget can start a move.
+        self.drag: Any = None
+        self.status: Callable[[str], None] = lambda _text: None  # the shell's status bar
+        self._keys: list[tuple[str, Callable[[Any], object]]] = []  # scoped chords (spec 7.4)
+        self._aqua = str(self.frame.tk.call("tk", "windowingsystem")) == "aqua"
         self.notebook.bind("<<NotebookTabChanged>>", self._on_tab)
         design.install(
             self.frame,
             {
                 "<ButtonPress-1>": self._on_press,
+                "<Double-Button-1>": self._on_press,  # a quick 2nd press still selects/drags
+                "<B1-Motion>": self._on_motion,
+                "<ButtonRelease-1>": self._on_release,
                 "<MouseWheel>": self._on_wheel,
                 "<Button-4>": lambda e: self._scroll(e, -1),
                 "<Button-5>": lambda e: self._scroll(e, 1),
@@ -121,6 +143,23 @@ class CanvasPanel(PanelBase):
     def stage_of(self, window: object) -> _Stage | None:
         """The stage of ``window`` (tests and the later drag controller use it)."""
         return next((s for s in self.stages if s.window is window), None)
+
+    @property
+    def focus_widget(self) -> Any:  # noqa: ANN401 - a Tk widget
+        """The keyboard focus proxy: the shown stage's scroll host (else the notebook)."""
+        stage = self.current_stage()
+        return stage.scroll if stage is not None else self.notebook
+
+    @property
+    def rebuild_pending(self) -> bool:
+        """True while an ``after_idle`` rebuild is scheduled (arrow-key repeats are dropped)."""
+        return self._idle is not None
+
+    def bind_key(self, sequence: str, handler: Callable[[Any], object]) -> None:
+        """Bind a canvas-scoped chord on every stage's focus proxy, now and after re-renders."""
+        self._keys.append((sequence, handler))
+        for stage in self.stages:
+            stage.scroll.bind(sequence, handler, add="+")
 
     # ------------------------------------------------------------ signals
     def _on_document(self, _session: DesignerSession) -> None:
@@ -183,16 +222,85 @@ class CanvasPanel(PanelBase):
         return None
 
     def _on_press(self, event: Any) -> None:  # noqa: ANN401 - a Tk event
+        """Click selects, Ctrl+click toggles, Shift+click adds (spec 7.2); a press on a
+        container's empty area arms a rubber band, on a selected widget a move."""
         stage = self._stage_at(event.widget)
         if stage is None or stage.view is None:
             return
-        self.notebook.focus_set()  # design widgets take no focus: the keys (Delete) go here
+        stage.scroll.focus_set()  # design widgets take no focus: the keys go to the proxy
         node = stage.view.node_of(event.widget)
         if node is None:
             return
         if isinstance(node, Widget) and event.widget is stage.view.inner.get(id(node)):
             self._select_tab(event)
-        self.session.select(node, origin="canvas")
+        state = event.state if isinstance(event.state, int) else 0
+        toggle = bool(state & (0x8 if self._aqua else 0x4))  # Cmd on aqua (0x8 = NumLock on Win)
+        modified = toggle or bool(state & 0x1)
+        selected = any(node is n for n in self.session.selection.nodes)
+        band = modified or not selected or isinstance(node, Window)
+        if self.drag is not None and self._container(node) and band:
+            if not modified:
+                self.session.select(node, origin="canvas")
+            base = self.session.selection.nodes if modified else ()
+            click = (lambda: self._click(node, toggle)) if modified else None
+            self.drag.press_band(node, base, click, event.x_root, event.y_root)
+        elif modified:
+            self._click(node, toggle)
+        elif not selected or isinstance(node, Window):
+            self.session.select(node, origin="canvas")
+        nodes = self.session.selection.nodes
+        movable = isinstance(node, Widget | Include) and any(node is n for n in nodes)
+        if not modified and self.drag is not None and movable and not self.drag.moving:
+            self.drag.press_move(nodes, node, event.x_root, event.y_root, event.widget)
+
+    def _container(self, node: object) -> bool:
+        """A window body, or a layout or page container (where a rubber band can start)."""
+        if isinstance(node, Window):
+            return True
+        spec = self.session.registry.get(node.class_name) if isinstance(node, Widget) else None
+        pages = spec is not None and spec.children == "pages"
+        return isinstance(node, Widget) and (node.layout is not None or pages)
+
+    def _click(self, node: object, toggle: bool) -> None:
+        """A Ctrl+click toggles ``node`` in the selection; a Shift+click adds it."""
+        nodes = self.session.selection.nodes
+        if toggle and any(node is n for n in nodes):
+            rest = [n for n in nodes if n is not node]
+            if rest:
+                self.session.select_many(rest, origin="canvas")
+            else:
+                self.session.select(window_of(node, self.session.document), origin="canvas")
+            return
+        self.session.select_many([*nodes, node], origin="canvas")
+
+    def _on_motion(self, event: Any) -> None:  # noqa: ANN401 - a Tk event
+        if self.drag is not None:
+            self.drag.motion(event.x_root, event.y_root)
+
+    def _on_release(self, event: Any) -> None:  # noqa: ANN401 - a Tk event
+        if self.drag is not None:
+            self.drag.release(event.x_root, event.y_root)
+
+    def _cancel_move(self, event: Any) -> str | None:  # noqa: ANN401 - a Tk event
+        """Esc (or the focus leaving) cancels a canvas move; a palette drag is not ours.
+
+        Only Esc is consumed: a focus loss still reaches the other FocusOut bindings.
+        """
+        if self.drag is None or not self.drag.moving:
+            return None
+        self.drag.cancel()
+        return "break" if getattr(event, "keysym", "") == "Escape" else None
+
+    def _on_handle(self, edge: Edge, phase: str, event: Any) -> str:  # noqa: ANN401 - a Tk event
+        """A resize handle of the primary grid child: press, drag and release (spec 8)."""
+        if self.drag is not None and phase == "press":
+            self.focus_widget.focus_set()  # Esc reaches _cancel_move
+            node = self.session.selection.node
+            self.drag.press_resize(node, edge, event.x_root, event.y_root, event.widget)
+        elif self.drag is not None:
+            relay = self.drag.motion if phase == "motion" else self.drag.release
+            relay(event.x_root, event.y_root)
+        return "break"
 
     @staticmethod
     def _select_tab(event: Any) -> None:  # noqa: ANN401 - a Tk event
@@ -264,7 +372,13 @@ class CanvasPanel(PanelBase):
         page = ttk.Frame(self.notebook)
         page.rowconfigure(0, weight=1)
         page.columnconfigure(0, weight=1)
-        scroll = tkinter.Canvas(page, highlightthickness=0, borderwidth=0, takefocus=0)
+        scroll = tkinter.Canvas(page, highlightthickness=0, borderwidth=0, takefocus=1)
+        # Esc cancels a move or band first ("break"); only then is it Select parent.
+        for sequence in ("<Escape>", "<FocusOut>"):
+            scroll.bind(sequence, self._cancel_move, add="+")
+        scroll.bind("<FocusIn>", lambda _e: self.status(_(FOCUS_HINT)), add="+")
+        for sequence, handler in self._keys:
+            scroll.bind(sequence, handler, add="+")
         vbar = ttk.Scrollbar(page, orient="vertical", command=scroll.yview)
         hbar = ttk.Scrollbar(page, orient="horizontal", command=scroll.xview)
         scroll.configure(xscrollcommand=hbar.set, yscrollcommand=vbar.set)
@@ -282,7 +396,7 @@ class CanvasPanel(PanelBase):
         strip = ttk.Frame(stage)
         stage.columnconfigure(0, minsize=window.min_width or 0)
         stage.rowconfigure(2, minsize=window.min_height or 0)
-        overlay = Overlay(stage, scale=self._scaled)
+        overlay = Overlay(stage, scale=self._scaled, on_handle=self._on_handle)
         built = _Stage(window, page, scroll, stage, title, kind, strip, ttk.Frame(stage), overlay)
         stage.bind("<Configure>", lambda _e: self._on_stage_configure(built))
         for widget in (scroll, stage, caption, title, kind, strip):
@@ -339,7 +453,8 @@ class CanvasPanel(PanelBase):
         ttk.Label(stage.card, text=errors, anchor="w").grid(sticky="w")
         stage.card.grid(row=2, column=0, sticky="nw")
         stage.strip.grid_remove()
-        stage.overlay.show_selection(None)
+        stage.overlay.show_selection(())
+        stage.overlay.show_empty(())
 
     def _fill_strip(self, stage: _Stage, view: WindowView) -> None:
         """One label per top-level menu of the hidden menu bar; a click selects that menu."""
@@ -370,7 +485,7 @@ class CanvasPanel(PanelBase):
         """A click handler of chrome: select ``node`` and take the keys, as a body click does."""
 
         def select(_event: object) -> None:
-            self.notebook.focus_set()
+            self.focus_widget.focus_set()
             self.session.select(node, origin="canvas")
 
         return select
@@ -387,18 +502,58 @@ class CanvasPanel(PanelBase):
                 self._outline(stage, reveal_node=reveal_node)
 
     def _outline(self, stage: _Stage, *, reveal_node: bool) -> None:
-        node, view = self.session.selection.node, stage.view
-        widget = None
-        if node is not None and view is not None:
+        """Outline every selected node shown on ``stage``; only the primary's page is revealed."""
+        primary, view = self.session.selection.node, stage.view
+        if view is None:
+            stage.overlay.show_selection(())
+            stage.overlay.show_empty(())
+            return
+        if primary is not None and reveal_node and id(primary) in view.outer:
+            reveal(view, primary)
+            stage.stage.update_idletasks()
+        chosen, empty = {id(n) for n in self.session.selection.nodes}, list[Rect]()
+        for key, node in view.nodes.items():  # R-D: empty, unselected, never a window body
+            if key in chosen or not isinstance(node, Widget) or node.children:
+                continue
+            with contextlib.suppress(tkinter.TclError):  # the widget is being destroyed
+                rect = widget_rect(view.outer[key], stage.stage) if self._container(node) else None
+                empty += [rect] if rect is not None else []
+        stage.overlay.show_empty(empty)
+        rects, primary_rect = [], None
+        for node in self.session.selection.nodes:
             widget = stage.chrome.get(id(node), view.outer.get(id(node)))
-            if widget is not None and reveal_node:
-                reveal(view, node)
-                stage.stage.update_idletasks()
-        try:
-            rect = widget_rect(widget, stage.stage) if widget is not None else None
-        except tkinter.TclError:  # the widget is being destroyed
-            rect = None
-        stage.overlay.show_selection(rect)
+            try:
+                rect = widget_rect(widget, stage.stage) if widget is not None else None
+            except tkinter.TclError:  # the widget is being destroyed
+                rect = None
+            if rect is not None:
+                rects.append(rect)
+                primary_rect = rect if node is primary else primary_rect
+        # Handles only for a grid child: pack and page children are sized in the inspector.
+        stage.overlay.show_selection(rects, primary=primary_rect, handles=_resizable(primary))
+        if reveal_node and primary_rect is not None and not isinstance(primary, Window):
+            self._see(stage, primary_rect)
+
+    @staticmethod
+    def _see(stage: _Stage, rect: Rect) -> None:
+        """Scroll an off-screen ``rect`` (stage coordinates) into view (Tab, spec 7.3).
+
+        A partly visible one stays put: whatever the pointer picked never scrolls the stage
+        (a jump under the pointer would also shift a rubber band that is starting).
+        """
+        canvas, body = stage.scroll, stage.stage
+        left, top = int(canvas.canvasx(0)), int(canvas.canvasy(0))
+        if Rect(left, top, canvas.winfo_width(), canvas.winfo_height()).intersects(rect):
+            return
+        for move, first, start, size, view, total in (
+            (canvas.xview_moveto, canvas.canvasx(0), rect.x, rect.w, canvas.winfo_width(),
+             body.winfo_width()),
+            (canvas.yview_moveto, canvas.canvasy(0), rect.y, rect.h, canvas.winfo_height(),
+             body.winfo_height()),
+        ):  # fmt: skip
+            if total > 1 and (start < first or start + size > first + view):
+                target = start if start < first else min(start, start + size - view)
+                move(max(0, target) / total)
 
     # ------------------------------------------------------------ Panel protocol
     def restyle(self, spec: ThemeSpec) -> None:
@@ -417,7 +572,7 @@ class CanvasPanel(PanelBase):
         stage.overlay.restyle(spec)
 
     def focus_first(self) -> None:
-        self.notebook.focus_set()
+        self.focus_widget.focus_set()
 
     def dispose(self) -> None:
         if self._idle is not None:

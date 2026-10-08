@@ -1,25 +1,44 @@
-"""Palette -> canvas drag-and-drop (spec dnd-selection 6; Step 13a: insertion only).
+"""Drag-and-drop onto the canvas (spec dnd-selection 6, 8): palette inserts, moves and resizes.
 
-``idle --press on a widget item--> armed --motion > 4 px--> dragging --release--> drop | cancel``.
-The palette Treeview keeps the implicit pointer grab, so its motion and release events carry the
-root coordinates; they are mapped onto the shown stage and hit-tested on a snapshot taken once
+``idle --press on a palette item / a canvas widget--> armed --motion > 4 px--> dragging
+--release--> drop | cancel``. The pressed widget (the palette Treeview, or a design-mode canvas
+widget) keeps the implicit pointer grab, so its motion and release events carry the root
+coordinates; they are mapped onto the shown stage and hit-tested on a snapshot taken once
 per drag. A target is checked with ``CommandStack.check`` after the pointer rested on it for
 60 ms (cached per drag); the drop runs a fresh ``execute``. None of this runs inside a stack
 listener, so calling the stack here is safe.
+
+A resize starts on a handle of the primary grid child: the dragged edge snaps to the parent's
+cell lines (shown as the snap guide, as during a drag over a grid) and gets the same checks.
+A rubber band (D5) starts on a container's empty area and selects the container's direct
+children that lie fully inside it.
 """
 
 from __future__ import annotations
 
+import contextlib
 import logging
 import tkinter
 from collections.abc import Callable
 from typing import TYPE_CHECKING, Any, Literal
 
-from pyguibud.designer.editing import NewNode, insert_command, new_node, refusal
-from pyguibud.designer.geometry import Snapshot
-from pyguibud.designer.targets import NewWidget, Target, hit_test, keyboard_target
+from pyguibud.core.commands import Command
+from pyguibud.core.model import GridCell, Include, Widget
+from pyguibud.designer.editing import (
+    Edge,
+    NewNode,
+    insert_command,
+    move_command,
+    new_node,
+    refusal,
+    resize_cell,
+    resize_command,
+    span_rect,
+)
+from pyguibud.designer.geometry import ContainerBox, Rect, Snapshot
+from pyguibud.designer.targets import Moving, NewWidget, Target, hit_test, keyboard_target
 from pyguibud.designer.theme_tk import scaled
-from pyguibud.i18n import N_, _
+from pyguibud.i18n import N_, _, ngettext
 
 if TYPE_CHECKING:
     from pyguibud.designer.panels.canvas import CanvasPanel, _Stage
@@ -30,6 +49,10 @@ _log = logging.getLogger(__name__)
 
 # Translators: {widget} is a palette item ("Button"), {container} the id of a window or frame.
 _M_RELEASE_INSERT = N_("Release to insert '{widget}' into '{container}'.")
+# Translators: {id} is the element being moved, {container} the id of a window or frame.
+_M_RELEASE_MOVE = N_("Release to move '{id}' into '{container}'.")
+# Translators: {id} is the element being resized; {columns} and {rows} are cell counts.
+_M_RELEASE_RESIZE = N_("Release to resize '{id}' to {columns} × {rows} cells.")  # noqa: RUF001 - the sign is meant
 _M_RELEASE_CANCEL = N_("Release to cancel.")
 _M_CANCELLED = N_("Drag cancelled.")
 # Translators: {id} is the id of the element that was just added.
@@ -41,10 +64,11 @@ _M_HINT = N_(
 _M_MENU_EDITOR = N_("Menus and actions are edited in the menu editor.")
 _THRESHOLD = 4  # px at 96 dpi before a press becomes a drag
 _REST_MS = 60  # the pointer rests this long on a target before it is checked
+_PITCH = 16  # px at 96 dpi: where the one append line lies past a grid's last boundary
 
 
 class DragController:
-    """Drives one palette drag at a time over the canvas panel's shown stage."""
+    """Drives one drag at a time (a palette insert or a canvas move) over the shown stage."""
 
     def __init__(
         self,
@@ -57,16 +81,27 @@ class DragController:
         self.session = canvas.session
         self._status = status
         self._source = source
-        self.state: Literal["idle", "armed", "dragging"] = "idle"
+        self.state: Literal["idle", "armed", "dragging", "resizing", "banding"] = "idle"
         self._start = (0, 0)
-        self._payload: NewWidget | None = None
+        self._payload: NewWidget | Moving | None = None
+        self._cursor: Any = source  # the widget holding the grab shows the cursor
+        self._pressed: object | None = None  # the canvas node a move press landed on
         self._label = ""
         self._node: NewNode | None = None
         self._stage: _Stage | None = None
         self._snapshot: Snapshot | None = None
         self._target: Target | None = None
-        self._checked: dict[tuple[int, str, int, int, int], tuple[bool, str]] = {}
+        self._checked: dict[tuple[object, ...], tuple[bool, str]] = {}
+        self._ok_cursor = "plus"  # the cursor over an accepted target
+        # A resize: (the node, the dragged edge, its parent's box), and the area under the
+        # pointer as (row, column, rowspan, columnspan) with its indicator rectangle.
+        self._resize: tuple[Widget | Include, Edge, ContainerBox] | None = None
+        self._area: tuple[tuple[int, int, int, int], Rect] | None = None
         self._timer: str | None = None
+        # A rubber band: (its container, the selection it adds to) and the action of a press
+        # released without a drag (a Ctrl+click on a container toggles it).
+        self._band: tuple[object, tuple[object, ...]] | None = None
+        self._click: Callable[[], None] | None = None
         # A new document or any stack change (an undo mid-drag) makes the snapshot stale. Safe in
         # a stack listener: cancelling never calls the stack. Hover checks emit no event. A
         # re-render (new document, language switch) destroys the held stage: the canvas warns
@@ -85,33 +120,145 @@ class DragController:
             self.state, self._start = "armed", (x_root, y_root)
             self._payload = NewWidget(spec_name)
 
+    def press_move(
+        self,
+        nodes: tuple[object, ...],
+        pressed: object,
+        x_root: int,
+        y_root: int,
+        widget: Any,  # noqa: ANN401 - the pressed canvas widget (holds the grab)
+    ) -> None:
+        """A press on a selected canvas widget arms a move of ``nodes`` (spec 8)."""
+        self._end()
+        if any(pressed is n for n in nodes):
+            self.state, self._start = "armed", (x_root, y_root)
+            self._payload, self._pressed, self._cursor = Moving(nodes), pressed, widget
+
+    def press_resize(
+        self,
+        node: object,
+        edge: Edge,
+        x_root: int,
+        y_root: int,
+        handle: Any,  # noqa: ANN401 - the pressed handle (holds the grab; shows the cursor)
+    ) -> None:
+        """A press on a resize handle of ``node``, a grid child, starts a resize (spec 8)."""
+        self._end()
+        stage = self.canvas.current_stage()
+        if stage is None or stage.view is None or not isinstance(node, Widget | Include):
+            return
+        if not isinstance(node.placement, GridCell):
+            return
+        snapshot = self.canvas.engine.snapshot(stage.view, stage.stage, stage.scroll)
+        box = next((c for c in snapshot.containers if c.node is node.parent), None)
+        if box is None or box.kind != "grid":
+            return
+        self.state, self._resize, self._stage, self._snapshot = (
+            "resizing",
+            (node, edge, box),
+            stage,
+            snapshot,
+        )
+        self._cursor, self._ok_cursor = handle, str(handle.cget("cursor"))
+        stage.overlay.show_grid(box)
+        self._resize_hover(x_root, y_root)
+
+    def press_band(
+        self,
+        container: object,
+        base: tuple[object, ...],
+        click: Callable[[], None] | None,
+        x_root: int,
+        y_root: int,
+    ) -> None:
+        """A press on ``container``'s empty area arms a rubber band that adds to ``base``."""
+        self._end()
+        self.state, self._start = "armed", (x_root, y_root)
+        self._band, self._click = (container, base), click
+
+    @property
+    def moving(self) -> bool:
+        """True while a canvas move or rubber band is armed or dragging, or a resize runs."""
+        return isinstance(self._payload, Moving) or self.state == "resizing" or bool(self._band)
+
     def motion(self, x_root: int, y_root: int) -> None:
+        if self.state == "resizing":
+            self._resize_hover(x_root, y_root)
+        if self.state == "banding":
+            self._band_rect(x_root, y_root)
+        if self.state == "armed" and self._payload is None and self._band is not None:
+            self._start_band(x_root, y_root)
         if self.state == "armed" and self._payload is not None:
             dx, dy = x_root - self._start[0], y_root - self._start[1]
             if max(abs(dx), abs(dy)) <= scaled(self._source, _THRESHOLD):
                 return
-            spec = self.session.registry.require(self._payload.spec_name)
-            self._payload, self._label = NewWidget.of(spec), spec.label()
-            self._node = (
-                None if self._payload.role == "menu" else new_node(spec, self.session.document)
-            )
+            if isinstance(self._payload, Moving):
+                # The grabbed member becomes the anchor, so it is what follows the pointer.
+                pressed = self._pressed
+                nodes = (*(n for n in self._payload.nodes if n is not pressed), pressed)
+                self._payload, self._label = Moving(nodes), str(getattr(pressed, "id", ""))
+                self.session.select_many(nodes, origin="canvas")
+            else:
+                spec = self.session.registry.require(self._payload.spec_name)
+                self._payload, self._label = NewWidget.of(spec), spec.label()
+                menu = self._payload.role == "menu"
+                self._node = None if menu else new_node(spec, self.session.document)
             self.state = "dragging"
         if self.state == "dragging":
             self._hover(x_root, y_root)
 
     def release(self, x_root: int, y_root: int) -> None:
         """Drop on the current target (a fresh, validated execute), else cancel."""
-        if self.state != "dragging":
+        if self._band is not None:
+            picked = self._band_pick(x_root, y_root) if self.state == "banding" else None
+            click = self._click if self.state == "armed" else None
             self._end()
+            if picked:
+                self.session.select_many(picked, origin="canvas")
+            elif click is not None:
+                click()
+            return
+        if self.state == "resizing" and self._resize is not None:
+            self._resize_hover(x_root, y_root)
+            resized, area = self._resize[0], self._area
+            self._end()
+            if area is not None and area[0] != _area_of(resized):  # a no-op is never recorded
+                self._execute(resize_command(resized, *area[0]))
+            return
+        if self.state != "dragging":
+            pressed = self._pressed if self.state == "armed" else None
+            self._end()
+            if pressed is not None:  # a plain click on a member selects just that one
+                self.session.select(pressed, origin="canvas")
             return
         self._hover(x_root, y_root)
-        target, node = self._target, self._node
-        menu = self._payload is not None and self._payload.role == "menu"
+        target, node, payload = self._target, self._node, self._payload
         self._end()
-        if target is None or node is None:
+        if isinstance(payload, Moving) and target is not None:
+            self.move(target, payload.nodes)
+        elif target is None or node is None:
+            menu = isinstance(payload, NewWidget) and payload.role == "menu"
             self._status(_(_M_MENU_EDITOR if menu else _M_CANCELLED))
-            return
-        self.insert(target, node, label=self._label)
+        else:
+            self.insert(target, node, label=self._label)
+
+    def move(self, target: Target, nodes: tuple[object, ...]) -> bool:
+        """Move ``nodes`` to ``target`` as one undo step; they stay selected."""
+        if not self._execute(move_command(nodes, target)):
+            return False
+        self.session.select_many(nodes, origin="canvas")
+        return True
+
+    def _execute(self, built: Command | str) -> bool:
+        """Run ``built`` as one undo step; a refusal shows its reason in the status bar."""
+        stack = self.session.stack
+        if stack is None or isinstance(built, str):
+            self._status(built if isinstance(built, str) else "")
+            return False
+        stack.break_merge()  # one gesture = one undo step
+        outcome = stack.execute(built)
+        self._status("" if outcome.accepted else outcome.message)
+        return outcome.accepted
 
     def insert(self, target: Target, node: NewNode, *, label: str) -> bool:
         """Insert ``node`` at ``target`` as one undo step, select it and report in the status bar.
@@ -157,7 +304,7 @@ class DragController:
 
     def cancel(self) -> None:
         """Esc, focus loss or a new document: drop the drag; nothing changes."""
-        dragging = self.state == "dragging"
+        dragging = self.state in ("dragging", "resizing", "banding")
         self._end()
         if dragging:
             self._status(_(_M_CANCELLED))
@@ -166,6 +313,35 @@ class DragController:
         self._end()
         for disconnect in self._disconnects:
             disconnect()
+
+    # ------------------------------------------------------------ rubber band
+    def _start_band(self, x_root: int, y_root: int) -> None:
+        dx, dy = x_root - self._start[0], y_root - self._start[1]
+        if max(abs(dx), abs(dy)) > scaled(self._source, _THRESHOLD):
+            self.state, self._stage = "banding", self.canvas.current_stage()
+            self._band_rect(x_root, y_root)
+
+    def _band_rect(self, x_root: int, y_root: int) -> Rect | None:
+        """Draw the band from the press to the pointer; returns it in stage coordinates."""
+        stage = self._stage
+        if stage is None:
+            return None
+        left, top = stage.stage.winfo_rootx(), stage.stage.winfo_rooty()
+        (x0, y0), x1, y1 = self._start, x_root, y_root
+        rect = Rect(min(x0, x1) - left, min(y0, y1) - top, abs(x1 - x0), abs(y1 - y0))
+        stage.overlay.show_band(rect)
+        return rect
+
+    def _band_pick(self, x_root: int, y_root: int) -> list[object]:
+        """The selection after the band: its base plus the children fully inside."""
+        band, stage = self._band_rect(x_root, y_root), self._stage
+        if band is None or stage is None or stage.view is None or self._band is None:
+            return []
+        container, base = self._band
+        snapshot = self.canvas.engine.snapshot(stage.view, stage.stage, stage.scroll)
+        box = next((c for c in snapshot.containers if c.node is container), None)
+        inside = [c.node for c in box.children if band.covers(c.rect)] if box else []
+        return [*base, *inside] if inside else []
 
     # ------------------------------------------------------------ hover
     def _hover(self, x_root: int, y_root: int) -> None:
@@ -176,6 +352,7 @@ class DragController:
         if stage is None or stage.view is None or self._payload is None:
             self._show(None)
             return
+        menu = isinstance(self._payload, NewWidget) and self._payload.role == "menu"
         if self._snapshot is None:
             self._snapshot = self.canvas.engine.snapshot(stage.view, stage.stage, stage.scroll)
         x, y = x_root - stage.stage.winfo_rootx(), y_root - stage.stage.winfo_rooty()
@@ -183,18 +360,44 @@ class DragController:
         target = hit_test(self._snapshot, x, y, self._payload, band=6 * px, bar=3 * px)
         if target is None:
             self._show(None)
-            menu = self._payload.role == "menu"
             self._status(_(_M_MENU_EDITOR if menu else _M_RELEASE_CANCEL))
             return
         if self._target is not None and target.key == self._target.key:
             return
         self._show(target)
-        cached = self._checked.get(target.key)
+        grid = target.kind == "grid"
+        boxes = self._snapshot.containers if grid else ()
+        stage.overlay.show_grid(next((b for b in boxes if b.node is target.container), None))
+        self._pend(target.key, target.rect, target.bar)
+
+    def _resize_hover(self, x_root: int, y_root: int) -> None:
+        """Snap the dragged edge to the pointer; check the new area after a rest."""
+        if self._resize is None or self._stage is None:
+            return
+        node, edge, box = self._resize
+        stage, pitch = self._stage.stage, scaled(self._source, _PITCH)
+        x, y = x_root - stage.winfo_rootx(), y_root - stage.winfo_rooty()
+        assert isinstance(node.placement, GridCell)  # checked by press_resize
+        area = resize_cell(node.placement, edge, box.columns, box.rows, x, y, pitch=pitch)
+        if self._area is not None and area == self._area[0]:
+            return
+        self._area = area, span_rect(box.columns, box.rows, area, pitch=pitch)
+        self._cancel_timer()
+        if area == _area_of(node):  # back where it started: nothing to check
+            self._stage.overlay.show_target(self._area[1], "pending")
+            self._set_cursor(self._ok_cursor)
+            self._status(_(_M_RELEASE_CANCEL))
+            return
+        self._pend(area, self._area[1], False)
+
+    def _pend(self, key: tuple[object, ...], rect: Rect, bar: bool) -> None:
+        """Draw a cached result for ``key``, or a neutral indicator and check after a rest."""
+        cached = self._checked.get(key)
         if cached is not None:
-            self._draw(target, *cached)
-        else:
-            stage.overlay.show_target(target.rect, "pending", bar=target.bar)
-            self._source.configure(cursor="plus")
+            self._draw(rect, bar, *cached)
+        elif self._stage is not None:
+            self._stage.overlay.show_target(rect, "pending", bar=bar)
+            self._set_cursor(self._ok_cursor)
             self._timer = self._source.after(_REST_MS, self._check)
 
     def _show(self, target: Target | None) -> None:
@@ -202,34 +405,69 @@ class DragController:
         self._target = target
         self._cancel_timer()
         if target is None:
-            self._source.configure(cursor="")
+            self._set_cursor("")
             if self._stage is not None:
                 self._stage.overlay.show_target(None, "pending")
+                self._stage.overlay.show_grid(None)
 
     def _check(self) -> None:
         self._timer = None
-        target, node, stack = self._target, self._node, self.session.stack
-        if self.state != "dragging" or target is None or node is None or stack is None:
+        pending, stack = self._pending(), self.session.stack
+        if pending is None or stack is None:
             return
-        reason = refusal(target, node)
-        if reason is None:
-            outcome = stack.check(insert_command(target, node))
-            container = getattr(target.container, "id", "")
-            text = _(_M_RELEASE_INSERT).format(widget=self._label, container=container)
+        key, built, text, rect, bar = pending
+        if isinstance(built, Command):
+            outcome = stack.check(built)
             if outcome.accepted and outcome.findings:
                 text = f"{text} {outcome.message}"
             result = (outcome.accepted, text if outcome.accepted else outcome.message)
         else:
-            result = (False, reason)
-        self._checked[target.key] = result
-        self._draw(target, *result)
+            result = (False, built)
+        self._checked[key] = result
+        self._draw(rect, bar, *result)
 
-    def _draw(self, target: Target, accepted: bool, message: str) -> None:
+    def _pending(self) -> tuple[tuple[object, ...], Command | str, str, Rect, bool] | None:
+        """(cache key, command, release text, indicator, bar) of what a release would do."""
+        if self.state == "resizing" and self._resize is not None and self._area is not None:
+            node, (area, rect) = self._resize[0], self._area
+            text = _(_M_RELEASE_RESIZE).format(id=node.id, columns=area[3], rows=area[2])
+            return area, resize_command(node, *area), text, rect, False
+        target = self._target
+        if self.state != "dragging" or target is None:
+            return None
+        built = self._command(target)
+        return target.key, built, self._release_text(target), target.rect, target.bar
+
+    def _draw(self, rect: Rect, bar: bool, accepted: bool, message: str) -> None:
         if self._stage is not None:
             state: Literal["allowed", "denied"] = "allowed" if accepted else "denied"
-            self._stage.overlay.show_target(target.rect, state, bar=target.bar)
-        self._source.configure(cursor="plus" if accepted else "X_cursor")
+            self._stage.overlay.show_target(rect, state, bar=bar)
+        self._set_cursor(self._ok_cursor if accepted else "X_cursor")
         self._status(message)
+
+    def _command(self, target: Target) -> Command | str:
+        """The command a drop on ``target`` would execute, or why there is none."""
+        if isinstance(self._payload, Moving):
+            return move_command(self._payload.nodes, target)
+        if self._node is None:
+            return _(_M_MENU_EDITOR)
+        reason = refusal(target, self._node)
+        return insert_command(target, self._node) if reason is None else reason
+
+    def _release_text(self, target: Target) -> str:
+        container = getattr(target.container, "id", "")
+        if not isinstance(self._payload, Moving):
+            return _(_M_RELEASE_INSERT).format(widget=self._label, container=container)
+        count = len(self._payload.nodes)
+        if count == 1:
+            return _(_M_RELEASE_MOVE).format(id=self._label, container=container)
+        return ngettext(
+            "Release to move {count} element.", "Release to move {count} elements.", count
+        ).format(count=count)
+
+    def _set_cursor(self, cursor: str) -> None:
+        with contextlib.suppress(tkinter.TclError):  # a canvas widget may be gone already
+            self._cursor.configure(cursor=cursor)
 
     # ------------------------------------------------------------ helpers
     def _cancel_timer(self) -> None:
@@ -247,10 +485,23 @@ class DragController:
         the controller stuck in "dragging" (every later gesture would fail on it).
         """
         try:
-            if self.state == "dragging":
+            if self.state in ("dragging", "resizing"):
                 self._show(None)
+            if self.state == "banding" and self._stage is not None:
+                self._stage.overlay.show_band(None)
+            if self.state == "resizing":
+                self._set_cursor(self._ok_cursor)  # the handle's own resize cursor
             self._cancel_timer()
         finally:
             self.state, self._payload, self._node = "idle", None, None
+            self._cursor, self._pressed, self._ok_cursor = self._source, None, "plus"
+            self._resize, self._area, self._band, self._click = None, None, None, None
             self._stage, self._snapshot, self._target = None, None, None
             self._checked.clear()
+
+
+def _area_of(node: Widget | Include) -> tuple[int, int, int, int]:
+    """(row, column, rowspan, columnspan) of a grid child."""
+    cell = node.placement
+    assert isinstance(cell, GridCell)
+    return cell.row, cell.column, max(cell.rowspan, 1), max(cell.columnspan, 1)

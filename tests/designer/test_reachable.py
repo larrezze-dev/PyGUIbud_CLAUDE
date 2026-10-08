@@ -23,11 +23,12 @@ from tests.designer.test_qa13a_abuse import (  # noqa: F401 - fixtures and helpe
 
 
 def test_design_affordances_are_pinned() -> None:
-    """A third design-only deviation needs an addendum to ADR-010 (Addendum 2)."""
+    """Another design-only deviation needs an addendum to ADR-010 (Addenda 2 and 3)."""
     assert engine_module.DESIGN_AFFORDANCES == (
         "empty-minimum-size",
         "append-zone-padding",
         "paned-append-pane",
+        "empty-container-outline",
     )
 
 

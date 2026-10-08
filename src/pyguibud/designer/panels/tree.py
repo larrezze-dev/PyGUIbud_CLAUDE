@@ -39,6 +39,7 @@ class TreePanel(PanelBase):
     ) -> None:
         super().__init__(parent, session, ring_px=ring_px)
         tree = self._new_tree(("detail", "status"))
+        tree.configure(selectmode="extended")  # Ctrl/Shift multi-selection (spec 7.2)
         self._on_full_text = on_full_text
         self._full: dict[str, tuple[str, str]] = {}  # key -> untruncated (detail, status)
         self._fit_job: str | None = None
@@ -66,15 +67,26 @@ class TreePanel(PanelBase):
             self._render()
 
     def _on_selection(self, selection: Selection) -> None:
-        if selection.origin != "tree" or selection.node is None:
-            self._show(selection.node)
+        self._show(selection.node)
 
     def _on_pick(self, _event: object) -> None:
-        picked = self.tree.selection() if self.tree is not None else ()
-        if picked:
-            if not self._muted:  # only a pick of the user offers the row text (QA-13a-12)
-                self._announce_full_text(picked[0])
-            self.session.select(self._nodes.get(picked[0]), origin="tree")
+        """Extended selection (Ctrl/Shift): the focused row is the primary (spec 7.2)."""
+        tree = self.tree
+        picked = tree.selection() if tree is not None else ()
+        if tree is None or not picked:
+            return
+        focus = tree.focus() if tree.focus() in picked else picked[-1]
+        user = not self._muted  # only a pick of the user offers the row text (QA-13a-12)
+        nodes = [self._nodes[k] for k in (*picked, focus) if k in self._nodes]
+        current = self.session.selection
+        if {id(n) for n in nodes} == {id(n) for n in current.nodes} and nodes[-1] is current.node:
+            if user:
+                self._announce_full_text(focus)
+            return  # the echo of a re-render: keep the gesture order
+        self.session.select_many(nodes, origin="tree")
+        self._show(self.session.selection.node)  # rows it dropped emit nothing (QA-13b-03)
+        if user:  # after the pick: a selection change clears the status message (QA-13b-11)
+            self._announce_full_text(focus)
 
     def _mute(self) -> None:
         """Mark the <<TreeviewSelect>> events just queued as no pick of the user."""
@@ -161,18 +173,18 @@ class TreePanel(PanelBase):
                     tree.set(key, column, fit_text(full[index], width, font.measure))
 
     def _show(self, node: object | None) -> None:
+        """Show the session's selection; ``node`` (the primary) gets the focus and is seen."""
         tree = self.tree
-        key = self._keys.get(id(node)) if node is not None else None
         if tree is None:
             return
-        if key is None:
-            tree.selection_remove(*tree.selection())
-            return
-        if tree.selection() != (key,):
-            tree.selection_set(key)
+        keys = [k for n in self.session.selection.nodes if (k := self._keys.get(id(n)))]
+        key = self._keys.get(id(node)) if node is not None else None
+        if set(tree.selection()) != set(keys):
+            tree.selection_set(keys)
             self._mute()
-        tree.see(key)
-        tree.focus(key)
+        if key is not None:
+            tree.see(key)
+            tree.focus(key)
 
     def dispose(self) -> None:
         # A queued re-fit would call a Tcl command deleted with the tree ("invalid command name").

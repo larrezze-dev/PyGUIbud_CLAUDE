@@ -145,7 +145,7 @@ def test_windows_cannot_be_deleted_and_a_stale_confirmation_is_ignored() -> None
     assert not edit.can_delete()
     edit.delete()  # nothing happens
     assert list(session.document.children[0].children) == [frame]
-    edit._remove(object())  # a node that never was in the document: no parent, no crash
+    edit._remove([object()])  # a node that never was in the document: no parent, no crash
 
 
 def test_delete_explains_why_a_window_or_bar_stays() -> None:
@@ -242,7 +242,7 @@ def test_ctrl_z_still_undoes_after_a_click_on_a_canvas_widget(
     shown.update()
     assert shell.session.selection.node is frame
     focused = shown.focus_get()
-    assert focused is shell.shell.canvas.notebook
+    assert focused is shell.shell.canvas.focus_widget  # the stage's scroll host (spec 7.3)
     stack = shell.session.stack
     assert stack is not None
     depth = stack.index
@@ -288,9 +288,9 @@ def test_delete_key_on_the_canvas_and_the_tree_but_not_elsewhere(
     assert frame not in window.children and session.selection.node is window
     shell.registry.invoke("edit.undo")
     session.select(frame, origin="canvas")
-    notebook = shell.shell.canvas.notebook
-    notebook.focus_force()
-    notebook.event_generate("<Delete>")
+    proxy = shell.shell.canvas.focus_widget
+    proxy.focus_force()
+    proxy.event_generate("<Delete>")
     assert frame not in window.children
     shell.registry.invoke("edit.undo")
     session.select(frame, origin="tree")

@@ -47,8 +47,8 @@ class PanelBase:
         self._disconnects: list[Callable[[], None]] = []
 
     # ------------------------------------------------------------ building blocks
-    def _new_tree(self, columns: tuple[str, ...] = ()) -> ttk.Treeview:
-        """A browse-mode ``Treeview`` with a vertical scrollbar, in the body row."""
+    def _new_tree(self, columns: tuple[str, ...] = (), *, row: int = 1) -> ttk.Treeview:
+        """A browse-mode ``Treeview`` with a vertical scrollbar, in the body ``row``."""
         tree = ttk.Treeview(
             self.frame,
             columns=columns,
@@ -62,8 +62,8 @@ class PanelBase:
             tree.column(column, stretch=True, minwidth=40, width=100)
         scroll = ttk.Scrollbar(self.frame, orient="vertical", command=tree.yview)
         tree.configure(yscrollcommand=scroll.set)
-        tree.grid(row=1, column=0, sticky="nsew")
-        scroll.grid(row=1, column=1, sticky="ns")
+        tree.grid(row=row, column=0, sticky="nsew")
+        scroll.grid(row=row, column=1, sticky="ns")
         self.tree = tree
         return tree
 
