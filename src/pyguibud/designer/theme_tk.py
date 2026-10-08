@@ -15,12 +15,30 @@ from typing import Any
 
 from ttkbootstrap import Fonts, Style
 from ttkbootstrap.style import Colors, ThemeDefinition
+from ttkbootstrap.style.bootstyle import Bootstyle
 
 from pyguibud.designer.theme import ThemeSpec, pick_family, selection_colours
 
-__all__ = ["TREE_STYLE", "apply_fonts", "apply_theme", "install_themes", "scaled", "use_theme"]
+__all__ = [
+    "DESIGNER_STYLES",
+    "TREE_STYLE",
+    "apply_fonts",
+    "apply_theme",
+    "install_themes",
+    "scaled",
+    "use_theme",
+]
 
 _log = logging.getLogger(__name__)
+
+#: The base styles of the plain ``tkinter.ttk`` widgets the designer builds. ttkbootstrap builds a
+#: style for a theme only when one of its own widgets asks, or when a theme switch walks the live
+#: widgets; the inspector's editors are created after the start-up switch, so without this their
+#: fields keep clam's white background under a dark theme (QA-14a1-03).
+DESIGNER_STYLES = (
+    "TButton", "TCheckbutton", "TCombobox", "TEntry", "TFrame", "TLabel", "TLabelframe",
+    "TNotebook", "TSpinbox", "Treeview", "Horizontal.TScrollbar", "Vertical.TScrollbar",
+)  # fmt: skip
 
 
 def install_themes(
@@ -39,6 +57,8 @@ def use_theme(root: tkinter.Misc, spec: ThemeSpec) -> None:
         raise RuntimeError("no ttkbootstrap Style: the root was not created with ttkbootstrap")
     if style.theme_use() != spec.name:
         style.theme_use(spec.name)
+    for name in DESIGNER_STYLES:  # idempotent: a style built for this theme is kept
+        Bootstyle.update_ttk_widget_style(style_string=name)
     apply_theme(root, spec)
 
 

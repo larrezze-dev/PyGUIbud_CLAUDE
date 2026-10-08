@@ -39,6 +39,10 @@ PURE_MODULES = (
     "pyguibud.designer.present.status",
     "pyguibud.designer.present.focus",
     "pyguibud.designer.present.new_file",
+    "pyguibud.designer.settings",
+    "pyguibud.designer.files",
+    "pyguibud.designer.recovery",
+    "pyguibud.designer.properties",
 )
 
 
@@ -91,7 +95,6 @@ def _open_hello(session: DesignerSession) -> None:
 def test_new_session_is_empty(session: DesignerSession) -> None:
     assert session.document is None and session.stack is None
     assert session.report().findings == ()
-    assert session.can_discard()
     assert session.selection == Selection((), "session")
 
 

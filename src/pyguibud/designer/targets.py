@@ -13,11 +13,12 @@ from typing import Literal
 
 from pyguibud.core.model import GridCell, Include, Widget, WidgetSpec, Window
 from pyguibud.core.registry import Registry
+from pyguibud.core.validate import MAX_GRID_INDEX
 from pyguibud.designer.geometry import ContainerBox, Rect, Snapshot
 
 __all__ = ["MAX_INDEX", "Moving", "NewWidget", "Payload", "Target", "hit_test", "keyboard_target"]
 
-MAX_INDEX = 9999  # Tk's grid limit (validator R-range)
+MAX_INDEX = MAX_GRID_INDEX  # Tk's grid limit (one source: the validator)
 Role = Literal["widget", "statusbar", "menubar", "menu"]
 
 

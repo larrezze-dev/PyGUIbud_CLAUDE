@@ -240,9 +240,9 @@ def test_the_multi_selection_line_is_the_inspector_header(
     app.session.select_many([first, second], origin="canvas")
     _settle(designer_root)
     panel = app.shell.inspector
-    assert panel.tree is not None and panel.header.winfo_manager() == "grid"
+    assert panel.header.winfo_manager() == "grid"
     row = int(panel.header.grid_info()["row"])
-    assert int(panel.heading.grid_info()["row"]) < row < int(panel.tree.grid_info()["row"])
+    assert int(panel.heading.grid_info()["row"]) < row < int(panel.notebook.grid_info()["row"])
     assert tk_errors == []
 
 
@@ -266,7 +266,7 @@ _NEW_13B = (
     "Resize element",
     "Delete elements",
     "Tab selects the next widget; F6 moves to the next panel.",
-    "{count} elements selected; showing '{id}'.",
+    # "{count} elements selected; showing '{id}'." was replaced in 14a (spec 3.4).
     "{count} element selected",
     "Select nex_t widget",
     "Select prev_ious widget",

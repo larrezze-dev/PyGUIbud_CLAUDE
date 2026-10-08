@@ -75,14 +75,8 @@ def test_dragging_a_button_into_a_grid_frame_inserts_selects_and_undoes(
     assert stage.overlay.selection.shown()  # the outline follows the rebuild
     tree = shell.shell.tree
     assert tree.tree is not None and tree.tree.selection() == (tree.key_of(button),)
-    inspector = shell.shell.inspector.tree
-    assert inspector is not None
-    values = [
-        str(inspector.item(row, "values"))
-        for s in inspector.get_children()
-        for row in inspector.get_children(s)
-    ]
-    assert any("button1" in value for value in values)
+    designer_root.update()
+    assert shell.shell.inspector.value_of("field:id") == "button1"  # the 14a editable form
     session.stack.undo()
     assert list(frame.children) == []
     assert not session.selection.nodes  # pruned

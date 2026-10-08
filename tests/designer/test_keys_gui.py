@@ -300,7 +300,7 @@ def test_tree_extended_selection_syncs_canvas_status_and_inspector(
     assert app.shell._status.cget("text") == "2 elements selected"
     header = app.shell.inspector.header
     assert header.winfo_manager() == "grid"
-    assert header.cget("text") == f"2 elements selected; showing '{first.id}'."
+    assert header.cget("text") == "2 elements selected; editing shared properties."
     # A window row with a widget row: the widget (primary) stands alone; the tree follows.
     tree.selection_set([str(panel.key_of(window)), keys[1]])
     tree.focus(keys[1])

@@ -7,6 +7,7 @@ import os
 import subprocess
 import sys
 from collections.abc import Iterator
+from pathlib import Path
 
 import pytest
 
@@ -42,25 +43,27 @@ class _Launch:
 
     def __init__(self, code: int = 0) -> None:
         self.code = code
-        self.calls: list[tuple[str, str]] = []
+        self.calls: list[tuple[str | None, str | None]] = []
+        self.keywords: list[dict[str, object]] = []
 
-    def __call__(self, lang: str, theme: str) -> int:
+    def __call__(self, lang: str | None, theme: str | None, **keywords: object) -> int:
         self.calls.append((lang, theme))
+        self.keywords.append(keywords)
         return self.code
 
 
 def test_main_no_args() -> None:
-    """No arguments launches the designer with the default language and theme."""
+    """No arguments: language and theme are "not given" (None), so the settings decide."""
     fake = _Launch()
     assert main([], launch=fake) == 0
-    assert fake.calls == [("en_GB", "light")]
+    assert fake.calls == [(None, None)]
 
 
 @pytest.mark.parametrize("theme", ["light", "dark", "high-contrast"])
 def test_theme_option_is_passed_on(theme: str) -> None:
     fake = _Launch()
     assert main(["--theme", theme], launch=fake) == 0
-    assert fake.calls == [("en_GB", theme)]
+    assert fake.calls == [(None, theme)]
 
 
 def test_launch_exit_code_is_returned() -> None:
@@ -139,7 +142,7 @@ def test_pseudo_no_args() -> None:
     """--lang en_XA is active (and passed on) when the designer is launched."""
     fake = _Launch()
     assert main(["--lang", "en_XA"], launch=fake) == 0
-    assert fake.calls == [("en_XA", "light")]
+    assert fake.calls == [("en_XA", None)]
     assert i18n.get_language() == "en_XA"
     assert i18n._("Ready").startswith("[")
 
@@ -197,3 +200,41 @@ def test_subprocess_survives_narrow_encoding() -> None:
     )
     assert result.returncode == 0
     assert b"es_ES" in result.stdout
+
+
+def test_without_a_file_launch_gets_no_path_keyword() -> None:
+    # Two-argument fakes keep working: ``path=`` is passed only with a FILE (spec 9.2).
+    fake = _Launch()
+    assert main([], launch=fake) == 0
+    assert fake.keywords == [{}]
+
+
+def test_a_file_argument_is_passed_as_an_absolute_path(tmp_path: Path) -> None:
+    source = tmp_path / "form.ui"
+    source.write_text("<ui/>", encoding="utf-8")
+    fake = _Launch()
+    assert main([str(source)], launch=fake) == 0
+    assert fake.keywords == [{"path": source.resolve()}]
+
+
+def test_a_missing_file_exits_2_before_any_window(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    fake = _Launch()
+    missing = tmp_path / "foo.ui"
+    with pytest.raises(SystemExit) as info:
+        main([str(missing)], launch=fake)
+    assert info.value.code == 2
+    assert f"The file '{missing}' does not exist." in capsys.readouterr().err
+    assert fake.calls == []
+
+
+def test_a_network_file_is_refused_without_touching_it(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    fake = _Launch()
+    with pytest.raises(SystemExit) as info:
+        main(["//server/share/form.ui"], launch=fake)
+    assert info.value.code == 2
+    assert "Network and device paths cannot be opened." in capsys.readouterr().err
+    assert fake.calls == []

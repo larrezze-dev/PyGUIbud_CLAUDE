@@ -79,7 +79,7 @@ EMPTY_SOURCE_MAP: Final = SourceMap()
 ## 4. Validator API (`validate.py`)
 ```python
 MAX_FINDINGS: Final = 1000
-MAX_GRID_INDEX: Final = 9999          # Tk's grid limit is 10 000 rows/columns
+MAX_GRID_INDEX: Final = 9998          # Tk 8.6 grids rows/columns 0..9998 (row + span <= 9999; QA-14a1-01)
 MAX_PIXELS: Final = 10_000            # padding, gap, padx/pady, minsize, min_width/min_height
 MAX_WEIGHT: Final = 10_000            # grid line weight, page weight
 MAX_ID_LENGTH: Final = 64

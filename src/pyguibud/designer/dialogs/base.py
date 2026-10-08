@@ -4,9 +4,12 @@ from __future__ import annotations
 
 import logging
 import tkinter
+from collections.abc import Sequence
 from tkinter import ttk
 from typing import Any
 
+from pyguibud.core.keys import split_mnemonic
+from pyguibud.designer import screen
 from pyguibud.i18n import _
 
 __all__ = ["ModalDialog"]
@@ -32,6 +35,9 @@ class ModalDialog:
         self.window.title("")
         self.window.protocol("WM_DELETE_WINDOW", self.close)
         self.window.bind("<Escape>", self._on_escape)
+        #: ``(button, msgid)``: Alt plus the letter marked with ``_`` presses the button (16).
+        self.access_keys: Sequence[tuple[Any, str]] = ()
+        self.window.bind("<Alt-KeyPress>", self._on_alt)
         self.body = ttk.Frame(self.window, padding=12)
         self.body.pack(fill="both", expand=True)
         self.restyle()
@@ -101,17 +107,40 @@ class ModalDialog:
         try:
             if target is not None and target.winfo_exists():
                 target.focus_set()
+                top = target.winfo_toplevel()
+                if str(top) != str(self.root.winfo_toplevel()):
+                    top.grab_set()  # back to the dialog under a nested one: still modal
                 return
         except tkinter.TclError:
             _log.debug("The widget that had the focus is gone", exc_info=True)
         self.root.focus_set()
+
+    def label_buttons(self) -> None:
+        """Show the translated labels of :attr:`access_keys` with their access key underlined."""
+        for button, msgid in self.access_keys:
+            text, underline = split_mnemonic(_(msgid))
+            button.configure(text=text, underline=underline)
+
+    def _on_alt(self, event: Any) -> str | None:  # noqa: ANN401 - a Tk event
+        key = str(getattr(event, "char", "") or "").lower()
+        for button, msgid in self.access_keys:
+            text, underline = split_mnemonic(_(msgid))
+            if key and underline >= 0 and text[underline].lower() == key:
+                button.invoke()  # a disabled button does nothing
+                return "break"
+        return None
 
     def _on_escape(self, _event: object) -> str:
         self.close()
         return "break"
 
     def _centre(self) -> None:
+        """Over the main window, kept on the virtual desktop (a monitor left of or above the
+        primary one has negative coordinates, which Tk writes as ``+-1500``)."""
         width, height = self.window.winfo_reqwidth(), self.window.winfo_reqheight()
         left = self.root.winfo_rootx() + (self.root.winfo_width() - width) // 2
         top = self.root.winfo_rooty() + (self.root.winfo_height() - height) // 3
-        self.window.geometry(f"+{max(0, left)}+{max(0, top)}")
+        area_width, area_height, area_left, area_top = screen.desktop_bounds(self.root)
+        left = max(area_left, min(left, area_left + area_width - width))
+        top = max(area_top, min(top, area_top + area_height - height))
+        self.window.geometry(f"+{left}+{top}")

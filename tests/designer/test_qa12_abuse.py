@@ -9,6 +9,7 @@ from __future__ import annotations
 import subprocess
 import sys
 import time
+from tkinter import ttk
 from typing import Any
 
 import pytest
@@ -56,10 +57,10 @@ def test_panels_paint_the_readable_tag_colours(shell: DesignerApp, role: str) ->
     spec = spec_for_role(shell.specs, role)
     assert spec is not None
     expected = tag_colours(spec)
-    inspector, tree = shell.shell.inspector.tree, shell.shell.tree.tree
-    assert inspector is not None
+    tree = shell.shell.tree.tree
     assert tree is not None
-    assert str(inspector.tag_configure("muted", "foreground")).upper() == expected["muted"]
+    muted = ttk.Style().lookup("Muted.TLabel", "foreground")  # the inspector's default rows
+    assert str(muted).upper() == expected["muted"]
     assert str(tree.tag_configure("error", "foreground")).upper() == expected["error"]
 
 

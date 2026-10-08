@@ -449,7 +449,7 @@ def test_an_inserted_empty_container_can_take_the_next_drop(shell: DesignerApp, 
 
 @pytest.mark.gui
 def test_the_designer_lists_use_their_own_selection_style(shell: DesignerApp) -> None:
-    for panel in (shell.shell.palette, shell.shell.tree, shell.shell.inspector):
+    for panel in (shell.shell.palette, shell.shell.tree, shell.shell.variables):
         assert panel.tree is not None and str(panel.tree.cget("style")) == "Designer.Treeview"
     style = ttk.Style()
     assert style.map("Designer.Treeview", "background")  # the solid selected row

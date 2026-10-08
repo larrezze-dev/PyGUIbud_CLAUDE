@@ -14,8 +14,10 @@ __all__ = ["NewFileDialog"]
 
 _M_TITLE = N_("New from template")
 _M_PROMPT = N_("Choose a template for the new document.")
-_M_CREATE = N_("Create")
-_M_CANCEL = N_("Cancel")
+# Translators: the buttons of the template wizard; _ marks the access key (Alt+letter) and must
+# differ between the two.
+_M_CREATE = N_("C_reate")
+_M_CANCEL = N_("_Cancel")
 
 
 class NewFileDialog(ModalDialog):
@@ -48,6 +50,7 @@ class NewFileDialog(ModalDialog):
         self.cancel_button = ttk.Button(buttons, command=self.close)
         self.create_button.pack(side="left", padx=(0, 6))
         self.cancel_button.pack(side="left")
+        self.access_keys = [(self.create_button, _M_CREATE), (self.cancel_button, _M_CANCEL)]
         self.list.bind("<<TreeviewSelect>>", self._on_select)
         self.list.bind("<Double-1>", lambda _e: self.choose())
         self.window.bind("<Return>", self._on_return)
@@ -63,8 +66,7 @@ class NewFileDialog(ModalDialog):
         self._rows = template_rows()
         self.window.title(_(self.TITLE))
         self.prompt.configure(text=_(_M_PROMPT))
-        self.create_button.configure(text=_(_M_CREATE))
-        self.cancel_button.configure(text=_(_M_CANCEL))
+        self.label_buttons()
         self.list.delete(*self.list.get_children())
         for row in self._rows:
             self.list.insert("", "end", iid=row.id, text=row.title)

@@ -340,8 +340,12 @@ class Emitter:
             self._out, self._seen = saved, saved_seen
         return "frame"
 
-    def _resolve(self, node: Widget) -> tuple[str, list[tuple[str, object, str]]]:
-        """The core class to build and its property definitions ``(name, raw, type)``."""
+    def _resolve(self, node: Widget) -> tuple[str, list[tuple[str, object, str]], set[str]]:
+        """The core class to build, its options ``(name, raw, type)`` and its property names.
+
+        Any other property of the node (an unknown name, or one of an extension shown as its
+        fallback) is kept in the model but ignored, exactly as the Tk builder does (parity).
+        """
         resolved = self.registry.resolve(node.class_name, "ttkbootstrap", node.fallback)
         spec = resolved.spec
         is_fallback = resolved.is_fallback
@@ -369,7 +373,7 @@ class Emitter:
             ):
                 continue
             props.append((definition.name, raw, definition.type))
-        return spec.name, props
+        return spec.name, props, {definition.name for definition in spec.properties}
 
     def _warn(self, node: Widget, code: str, msgid: str, **params: object) -> None:
         self.plan.warnings.append(
@@ -380,7 +384,7 @@ class Emitter:
 
     def _widget(self, doc: DocInfo, node: Widget, parent: str) -> str:
         name_id = ident(node.id)
-        name, props = self._resolve(node)
+        name, props, defined = self._resolve(node)
         options: list[tuple[str, str]] = []
         for prop_name, raw, kind in props:
             text = str(raw)
@@ -412,7 +416,7 @@ class Emitter:
             options.append(("value", lit(int(value) if is_int else value)))
         if name in _PADDED and node.layout is not None:
             options.append(("padding", lit(node.layout.padding)))
-        text_prop = node.props.get("text")
+        text_prop = node.props.get("text") if "text" in defined else None
         if any(key == "image" for key, _code in options) and text_prop is not None:
             options.append(("compound", lit("left")))
         style = node.extra_attrs.get(_BOOTSTYLE)
@@ -425,7 +429,7 @@ class Emitter:
             f"w = self._create({_TB[name]}, {parent}, {_dict(options)}, {lit(style)}, "
             f"{lit(name_id)})"
         )
-        if "state" in node.props:
+        if "state" in defined and "state" in node.props:
             self._line(f"w.configure(state={lit(node.props['state'].value)})")
         if text_prop is not None and not (name == "Label" and node.bind):
             mnemonic = name in _MNEMONIC

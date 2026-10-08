@@ -10,6 +10,8 @@ from __future__ import annotations
 import logging
 from collections.abc import Callable, Iterable
 from dataclasses import dataclass
+from pathlib import Path
+from typing import TYPE_CHECKING
 
 from pyguibud.core import (
     CommandStack,
@@ -24,9 +26,14 @@ from pyguibud.core import (
 )
 from pyguibud.core.errors import PyGUIbudError
 from pyguibud.core.model import Include, Widget, Window
+from pyguibud.designer.files import M_GONE, M_WRITE_PROTECTED, FileStamp, write_protected
+from pyguibud.designer.files import read_only_reason as read_only_reason_of
 from pyguibud.designer.signals import Signal
 from pyguibud.designer.templates import template_bytes, template_info
 from pyguibud.i18n import N_, _
+
+if TYPE_CHECKING:
+    from pyguibud.designer.recovery import RecoverySession
 
 __all__ = ["UNTITLED", "DesignerSession", "Selection", "TemplateError"]
 
@@ -36,6 +43,8 @@ _log = logging.getLogger(__name__)
 UNTITLED = N_("Untitled")
 _M_BAD_TEMPLATE = N_("The template '{template}' is damaged and cannot be opened.")
 _M_UNKNOWN_TEMPLATE = N_("There is no template called '{template}'.")
+# Translators: appended to the window title of a document that cannot be saved in place.
+_M_READ_ONLY_MARK = N_("(read-only)")
 #: A bound on the membership walk of ``select`` (far above any real document; QA-12-06).
 _MAX_SELECT_WALK = 1_000_000
 
@@ -87,7 +96,19 @@ class DesignerSession:
         self.document_changed: Signal[DesignerSession] = Signal()
         self.selection_changed: Signal[Selection] = Signal()
         self.report_changed: Signal[ValidationReport] = Signal()
+        #: Emitted when the file, the read-only reason or the dirty flag may have changed.
+        self.file_changed: Signal[DesignerSession] = Signal()
+        #: The file of the document (None = untitled), its stamp and why it cannot be saved in
+        #: place (a msgid; ``stack.read_only`` tells a newer schema from a write-protected file).
+        self.path: Path | None = None
+        self.stamp: FileStamp | None = None
+        self.read_only_reason: str | None = None
+        #: Increases on every open, close and stack event: "changed since the last snapshot".
+        self.revision = 0
+        #: Set by the app; its snapshot is dropped whenever the document is replaced or closed.
+        self.recovery: RecoverySession | None = None
         self._report: ValidationReport | None = None
+        self._was_dirty = False
         self._unsubscribe: Callable[[], None] = _nothing
 
     @property
@@ -95,19 +116,107 @@ class DesignerSession:
         """The document name in the current language (only the untitled name is translated)."""
         return _(self.name) if self.name == UNTITLED else self.name
 
+    @property
+    def dirty(self) -> bool:
+        """True when the open document has unsaved changes (False with no document)."""
+        return self.stack is not None and self.stack.is_dirty
+
+    @property
+    def title(self) -> str:
+        """The main-window title: ``"{name}{star} — PyGUIbud"`` plus a read-only marker."""
+        star = "*" if self.dirty else ""
+        title = f"{self.display_name}{star} — PyGUIbud"
+        # A vanished file locks nothing: only a real read-only reason is marked (QA-14a1-19).
+        if not self.read_only_reason or self.read_only_reason == M_GONE:
+            return title
+        mark = _(_M_READ_ONLY_MARK)
+        return f"{title} {mark}"
+
     # ------------------------------------------------------------ documents
     def open_result(self, result: ReadResult, *, name: str) -> None:
-        """Make ``result.document`` the open document (new stack, selection cleared)."""
+        """Make ``result.document`` the open, untitled document (new stack, selection cleared)."""
+        self._install(result, name=name, path=None, dirty=False, stamp=None, reason=None)
+
+    def open_document(
+        self,
+        result: ReadResult,
+        *,
+        path: Path | None,
+        dirty: bool = False,
+        stamp: FileStamp | None = None,
+        read_only_reason: str | None = None,
+    ) -> None:
+        """Make ``result.document`` the open document of ``path`` (spec section 2).
+
+        ``stamp`` and ``read_only_reason`` default to what ``path`` looks like now; pass the
+        values of :class:`~pyguibud.designer.files.DocumentFile` to keep the stamp taken before
+        reading. ``dirty=True`` is a restored recovery snapshot (unsaved until saved).
+        """
+        if path is not None:
+            stamp = stamp if stamp is not None else FileStamp.of(path)
+            if read_only_reason is None:
+                read_only_reason = read_only_reason_of(result, path)
+        elif read_only_reason is None and result.read_only:
+            read_only_reason = read_only_reason_of(result, None)
+        name = path.name if path is not None else UNTITLED
+        self._install(
+            result, name=name, path=path, dirty=dirty, stamp=stamp, reason=read_only_reason
+        )
+
+    def close_document(self) -> None:
+        """Close the document: the panels show their empty hints."""
+        self._unsubscribe()
+        self._unsubscribe = _nothing
+        self.document, self.stack = None, None
+        self._set_file(UNTITLED, None, None, None)
+        self._changed()
+
+    def mark_saved(self, path: Path) -> None:
+        """Record a successful ``write_ui`` onto ``path`` (section 9.3 step 5)."""
+        if self.stack is None:
+            return
+        reason = M_WRITE_PROTECTED if write_protected(path) else None
+        self._set_file(path.name, path, FileStamp.of(path), reason)
+        self.stack.mark_saved()
+        if self.recovery is not None:
+            self.recovery.discard()
+        self.file_changed.emit(self)
+
+    def _set_file(
+        self, name: str, path: Path | None, stamp: FileStamp | None, reason: str | None
+    ) -> None:
+        self.name, self.path, self.stamp, self.read_only_reason = name, path, stamp, reason
+
+    def _install(
+        self,
+        result: ReadResult,
+        *,
+        name: str,
+        path: Path | None,
+        dirty: bool,
+        stamp: FileStamp | None,
+        reason: str | None,
+    ) -> None:
         self._unsubscribe()
         self.document = result.document
-        self.name = name
-        self.stack = CommandStack(result.document, self.registry, source=name)
+        self._set_file(name, path, stamp, reason)
+        source = name if path is None else str(path)
+        self.stack = CommandStack(result.document, self.registry, source=source, dirty=dirty)
         self._unsubscribe = self.stack.subscribe(self._on_stack_event)
+        self._changed()
+
+    def _changed(self) -> None:
+        """Announce a replaced (or closed) document; its old snapshot is obsolete."""
+        self.revision += 1
+        self._was_dirty = self.dirty
+        if self.recovery is not None:
+            self.recovery.discard()
         self._report = None
         self.selection = Selection((), "session")
         self.document_changed.emit(self)
         self.selection_changed.emit(self.selection)
         self.report_changed.emit(self.report())
+        self.file_changed.emit(self)
 
     def new_from_template(self, template_id: str) -> None:
         """Open a fresh document made from a built-in template and select its first window.
@@ -204,12 +313,12 @@ class DesignerSession:
                 self._report = validate(self.document, self.registry, source=self.name)
         return self._report
 
-    def _on_stack_event(self, _event: StackEvent) -> None:
+    def _on_stack_event(self, event: StackEvent) -> None:
         # Runs inside the stack's _Busy guard: no listener below may call the stack.
+        self.revision += 1
         self._report = None
+        if event.dirty != self._was_dirty:
+            self._was_dirty = event.dirty
+            self.file_changed.emit(self)
         self._prune()
         self.report_changed.emit(self.report())
-
-    def can_discard(self) -> bool:
-        """True when the open document may be replaced or closed (Step 14 adds the guard)."""
-        return True

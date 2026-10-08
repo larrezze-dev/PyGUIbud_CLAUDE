@@ -4,9 +4,11 @@ from __future__ import annotations
 
 import argparse
 import contextlib
+import os
 import sys
 from collections.abc import Callable
-from typing import NoReturn
+from pathlib import Path
+from typing import Any, NoReturn
 
 from .__about__ import __version__
 from .i18n import (
@@ -93,20 +95,22 @@ def _print_languages() -> None:
 THEME_CHOICES = ("light", "dark", "high-contrast")
 
 
-def _default_launch(lang: str, theme: str) -> int:
+def _default_launch(lang: str | None, theme: str | None, *, path: Path | None = None) -> int:
     """Open the designer; Tk is imported only here, so --version and --help never load it."""
     from pyguibud.designer import launch
 
-    return launch(lang, theme)
+    return launch(lang, theme, path=path)
 
 
-def main(argv: list[str] | None = None, *, launch: Callable[[str, str], int] | None = None) -> int:
+def main(argv: list[str] | None = None, *, launch: Callable[..., int] | None = None) -> int:
     """Entry point for the PyGUIbud CLI.
 
     Args:
         argv: Command-line arguments; defaults to sys.argv[1:].
-        launch: Opens the designer as ``launch(language, theme)`` and returns the exit code;
-            tests inject a fake. Defaults to :func:`pyguibud.designer.launch`.
+        launch: Opens the designer as ``launch(language, theme)`` (plus ``path=`` when a FILE
+            is given) and returns the exit code; ``language`` and ``theme`` are None when not
+            given, so the designer's settings decide. Tests inject a fake. Defaults to
+            :func:`pyguibud.designer.launch`.
 
     Returns:
         Exit code (0 on success).
@@ -139,8 +143,15 @@ def main(argv: list[str] | None = None, *, launch: Callable[[str, str], int] | N
     parser.add_argument(
         "--theme",
         choices=THEME_CHOICES,
-        default="light",
-        help=_("designer colour theme (default: %(default)s)"),
+        default=None,
+        help=_("designer colour theme (default: the last one used, else light)"),
+    )
+    parser.add_argument(
+        "file",
+        nargs="?",
+        metavar="FILE",
+        default=None,
+        help=_("a .ui file to open"),
     )
 
     args = parser.parse_args(argv)
@@ -152,4 +163,15 @@ def main(argv: list[str] | None = None, *, launch: Callable[[str, str], int] | N
         _print_languages()
         return 0
 
-    return (launch or _default_launch)(get_language(), args.theme)
+    keywords: dict[str, Any] = {}
+    if args.file is not None:
+        from .core.files import is_network_or_device_path
+
+        # Never touch a network path, not even to test that it exists (R82).
+        if is_network_or_device_path(args.file):
+            parser.error(_("Network and device paths cannot be opened."))
+        if not os.path.exists(args.file):
+            # Translators: {path} is the file named on the command line.
+            parser.error(_("The file '{path}' does not exist.").format(path=args.file))
+        keywords["path"] = Path(os.path.abspath(args.file))
+    return (launch or _default_launch)(args.lang, args.theme, **keywords)

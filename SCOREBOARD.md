@@ -1,12 +1,12 @@
 # PyGUIbud scoreboard
 
-_Last updated: 2026-10-08 11:22:05 UTC+0200_
+_Last updated: 2026-10-08 21:17:08 UTC+0200_
 
-- **Steps done:** 13/21
-- **Current step:** 14 Properties, undo/redo, save/load (⏳)
-- **Tests:** 3164/3172 passed (tests run now)
-- **Coverage:** 93.5 %
-- **Test detail:** 3172 collected, 0 failed, 0 errors, 8 skipped, 270.45 s
+- **Steps done:** 13/22
+- **Current step:** 14a Properties, undo/redo, save/load (functional) (🔄)
+- **Tests:** 3544/3552 passed (reused earlier .scorer/ files (--no-tests))
+- **Coverage:** 93.3 %
+- **Test detail:** 3552 collected, 0 failed, 0 errors, 8 skipped, 412.27 s
 
 ## Quality gates
 
@@ -33,7 +33,8 @@ _Last updated: 2026-10-08 11:22:05 UTC+0200_
 | 11 | Code generator pyguibud-uic | BACKEND | ✅ done |
 | 12 | Designer shell | FRONTEND | ✅ done |
 | 13 | Drag-and-drop & selection (13a + 13b) | FRONTEND (opus) | ✅ done |
-| 14 | Properties, undo/redo, save/load | FRONTEND + BACKEND | ⏳ pending |
+| 14a | Properties, undo/redo, save/load (functional) | FRONTEND + BACKEND | 🔄 in progress |
+| 14p | Designer visual polish | FRONTEND | ⏳ pending |
 | 15 | Preview & export | FRONTEND | ⏳ pending |
 | 16 | tkinter + PySide6 backends | BACKEND | ⏳ pending |
 | 17 | Widget plugin API + ttkbootstrap extensions | ARCHITECT + BACKEND (opus) | ⏳ pending |
@@ -44,6 +45,7 @@ _Last updated: 2026-10-08 11:22:05 UTC+0200_
 
 ## Recent commits
 
+- `e172188 004`
 - `6d3a99c 003`
 - `a865a0c 002`
 - `ea6c1e6 InitialCommmit`

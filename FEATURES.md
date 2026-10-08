@@ -21,7 +21,7 @@
 **Designer**
 - M1 Palette → canvas drag-and-drop; move, reorder and reparent widgets in the canvas and the object tree.
 - M2 Object tree (hierarchy) synchronised with the canvas selection; multi-select.
-- M3 Property inspector: typed editors (text, number, bool, enum, colour, font, image, variable, handler), with defaults shown and resettable.
+- M3 Property inspector: typed editors (text, number, bool, enum, colour, image, variable, handler), with defaults shown and resettable. *Font editor deferred until after v1 (Step 14 D8 = A, user 2026-10-08): no `font` property type exists yet.*
 - M4 Undo/redo for **every** model change (command stack).
 - M5 Layout editing: grid (rows/cols, span, sticky, weights, padding) and pack (orientation, fill, expand, padding).
 - M6 Windows: main window (menubar, statusbar), dialogs (modal, standard buttons), reusable components (`<include>`); several windows per file.

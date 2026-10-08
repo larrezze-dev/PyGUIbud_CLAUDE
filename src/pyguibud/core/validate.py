@@ -25,6 +25,7 @@ from types import MappingProxyType
 from typing import TYPE_CHECKING, Final, Protocol
 
 from pyguibud.core import keys
+from pyguibud.core.colours import colour_problem
 from pyguibud.core.diagnostics import EMPTY_SOURCE_MAP, Finding, Severity, SourceMap, node_path
 from pyguibud.core.errors import ModelError, XmlIoError
 from pyguibud.core.files import (
@@ -105,7 +106,10 @@ __all__ = [
 ]
 
 MAX_FINDINGS: Final = 1000
-MAX_GRID_INDEX: Final = 9999  # Tk's grid limit is 10 000 rows/columns
+#: Highest grid row/column (cells and line configuration). Tk 8.6 grids a cell only while
+#: ``row + rowspan <= 9999`` ("row out of bounds" otherwise), so the last usable index is
+#: 9998 and a span may reach ``MAX_GRID_INDEX + 1``.
+MAX_GRID_INDEX: Final = 9998
 MAX_PIXELS: Final = 10_000  # padding, gap, padx/pady, minsize, min_width/min_height
 MAX_WEIGHT: Final = 10_000  # grid line weight, page weight
 MAX_ID_LENGTH: Final = 64
@@ -162,9 +166,6 @@ _BUTTON_TOKENS: Final = ("ok", "cancel", "yes", "no", "close")
 _DOMAIN_RE: Final = re.compile(r"[A-Za-z0-9][A-Za-z0-9_.-]{0,63}")
 _INT_RE: Final = re.compile(r"-?[0-9]{1,9}")
 _FLOAT_RE: Final = re.compile(r"-?(?:[0-9]{1,15}(?:\.[0-9]{1,15})?|\.[0-9]{1,15})")
-_COLOUR_RE: Final = re.compile(
-    r"#(?:[0-9a-fA-F]{3}){1,2}|#[0-9a-fA-F]{12}|[A-Za-z][A-Za-z0-9 ]{0,39}"
-)
 _STICKY_RE: Final = re.compile(r"(?!.*(.).*\1)[nsew]{0,4}")
 _SPLIT_PATH_RE: Final = re.compile(r"[\\/]")
 _CLIP: Final = 100  # longest user text echoed in a message
@@ -259,6 +260,11 @@ _M_BAD_BOOL: Final = N_("The property '{name}' must be true or false, not '{valu
 _M_BAD_ENUM: Final = N_("The property '{name}' must be one of {choices}, not '{value}'.")
 _M_BAD_COLOUR: Final = N_(
     "The property '{name}' must be a colour such as #1a2b3c or a colour name, not '{value}'."
+)
+# Translators: {value} is a name such as SystemButtonFace; keep #1a2b3c as it is.
+_M_SYSTEM_COLOUR: Final = N_(
+    "The property '{name}' uses '{value}', a system colour that exists on one platform only; "
+    "use a colour such as #1a2b3c or a colour name."
 )
 _M_NOT_TRANSLATABLE: Final = N_("The property '{name}' cannot be translatable.")
 _M_IMAGE_NEEDS_REF: Final = N_(
@@ -1340,7 +1346,8 @@ class _Validator:
                 if not isinstance(line, GridLine):
                     self.bad_item(owner, line_part, line, "GridLine")
                     continue
-                self.check_range(owner, line_part, "index", line.index, 0, MAX_GRID_INDEX)
+                # Tk configures one line more than it grids cells into (rowconfigure 9999).
+                self.check_range(owner, line_part, "index", line.index, 0, MAX_GRID_INDEX + 1)
                 self.check_range(owner, line_part, "weight", line.weight, 0, MAX_WEIGHT)
                 self.check_range(owner, line_part, "minsize", line.minsize, 0, MAX_PIXELS)
                 if type(line.index) is int:
@@ -1626,6 +1633,7 @@ class _Validator:
         """R36 to R39. ``spec`` is None when event support cannot be judged."""
         sink = self.sink
         seen: set[str] = set()
+        bound: list[frozenset[tuple[frozenset[str], str]]] = []  # the Tk keys of key: events
         events: object = widget.events  # object: a hand-built model may hold anything
         if not isinstance(events, list | tuple):
             self.bad_item(widget, "", events, "list")
@@ -1662,7 +1670,10 @@ class _Validator:
                             class_name=_clip(widget.class_name),
                             name=_clip(name),
                         )
-                if name in seen:
+                # One chord in two spellings (key:Ctrl+S, key:<Control-s>) is one event too.
+                keys_bound = keys.key_bindings(name[4:]) if name.startswith("key:") else None
+                clash = keys_bound is not None and any(keys_bound & other for other in bound)
+                if name in seen or clash:
                     sink.error(
                         "validate.duplicate_event",
                         _M_DUPLICATE_EVENT,
@@ -1672,6 +1683,8 @@ class _Validator:
                         id=label,
                     )
                 seen.add(name)
+                if keys_bound:
+                    bound.append(keys_bound)
             if not _is_identifier(event.handler):
                 sink.error(
                     "validate.bad_handler",
@@ -1938,10 +1951,9 @@ class _Validator:
                     choices=", ".join(definition.choices),
                     value=_clip(value),
                 )
-        elif kind == "colour" and (text is None or _COLOUR_RE.fullmatch(text) is None):
-            sink.error(
-                "validate.bad_prop_value", _M_BAD_COLOUR, owner, part, name=name, value=_clip(value)
-            )
+        elif kind == "colour" and (problem := colour_problem(text)) is not None:
+            msgid = _M_SYSTEM_COLOUR if problem == "system" else _M_BAD_COLOUR
+            sink.error("validate.bad_prop_value", msgid, owner, part, name=name, value=_clip(value))
         elif kind == "string" and text is not None and len(text) > MAX_TEXT_LENGTH:
             sink.error(
                 "validate.text_too_long",

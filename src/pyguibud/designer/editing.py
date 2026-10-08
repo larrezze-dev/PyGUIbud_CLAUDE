@@ -20,7 +20,10 @@ from pyguibud.core.commands import (
     Macro,
     MoveNode,
     RemoveNode,
+    RemoveVariable,
     SetField,
+    SetVariable,
+    change_layout,
 )
 from pyguibud.core.model import (
     Document,
@@ -32,6 +35,7 @@ from pyguibud.core.model import (
     Placement,
     Prop,
     Statusbar,
+    Variable,
     Widget,
     WidgetSpec,
     Window,
@@ -49,14 +53,19 @@ __all__ = [
     "move_command",
     "move_index",
     "new_node",
+    "new_variable",
     "nudge_command",
     "past_the_grid",
     "refusal",
+    "relayout_command",
+    "remove_and_unbind",
+    "rename_variable",
     "reorder_command",
     "resize_cell",
     "resize_command",
     "span_rect",
     "unique_id",
+    "variable_users",
 ]
 
 _M_STATUSBAR_EXISTS = N_("This window already has a status bar.")
@@ -456,3 +465,69 @@ def span_rect(
     row, column, rowspan, columnspan = area
     x, y = line(columns, column), line(rows, row)
     return Rect(x, y, line(columns, column + columnspan) - x, line(rows, row + rowspan) - y)
+
+
+# ---------------------------------------------------------------- layout and variables (14a)
+_M_CHANGE_LAYOUT = N_("Change layout")
+_M_RENAME_VARIABLE = N_("Rename variable")
+_M_REMOVE_AND_UNBIND = N_("Remove and unbind variable")
+# Translators: a rename would merge two variables; {id} is the name that is taken.
+_M_VARIABLE_EXISTS = N_("A variable called '{id}' already exists.")
+
+
+def relayout_command(container: Window | Widget, kind: str) -> Command:
+    """Switch ``container`` to a grid or pack layout, placing the children in reading order.
+
+    Grid -> pack orders the children row by row; pack -> grid puts them along the orientation.
+    """
+    old = container.layout or DEFAULT_LAYOUT
+    if old.type == kind:
+        return SetField(container, "layout", container.layout)  # unchanged: a no-op
+    children: list[_Movable] = list(container.children)
+    layout = replace(old, type="pack" if kind == "pack" else "grid", columns=(), rows=())
+    placements: dict[Widget | Include, Placement] = {}
+    final = children
+    if layout.type == "pack":
+        final = sorted(children, key=lambda c: (_cell(c).row, _cell(c).column))
+        for child in final:
+            cell = _cell(child)
+            placements[child] = PackPlacement(padx=cell.padx, pady=cell.pady)
+    else:
+        across = old.orient == "horizontal"
+        for k, child in enumerate(children):
+            pack = child.placement if isinstance(child.placement, PackPlacement) else None
+            pad = (pack.padx, pack.pady) if pack else (0, 0)
+            row, column = (0, k) if across else (k, 0)
+            placements[child] = GridCell(row=row, column=column, padx=pad[0], pady=pad[1])
+    moves = _realise(container, children, final)
+    return Macro(_M_CHANGE_LAYOUT, [*moves, change_layout(container, layout, placements)])
+
+
+def variable_users(document: Document, var_id: str) -> list[Widget]:
+    """The widgets bound to the variable ``var_id``, in document order."""
+    return [n for n in document.walk() if isinstance(n, Widget) and n.bind == var_id]
+
+
+def new_variable(document: Document, var_type: str = "string") -> SetVariable:
+    """Declare a fresh ``varN`` variable of ``var_type``."""
+    return SetVariable(document, Variable(id=unique_id(document, "var"), type=var_type))  # type: ignore[arg-type]
+
+
+def rename_variable(document: Document, old: str, new: str) -> Built:
+    """Rename a variable and rebind every user, as one step (the guard judges the new id)."""
+    if new != old and new in document.variables:
+        return _(_M_VARIABLE_EXISTS).format(id=new)
+    variable = document.variables[old]
+    commands: list[Command] = [RemoveVariable(document, old)]
+    commands.append(SetVariable(document, replace(variable, id=new)))
+    commands += [SetField(w, "bind", new) for w in variable_users(document, old)]
+    return Macro(_M_RENAME_VARIABLE, commands)
+
+
+def remove_and_unbind(document: Document, var_id: str) -> Command:
+    """Delete a variable; a used one is unbound from its widgets first, in the same step."""
+    users = variable_users(document, var_id)
+    if not users:
+        return RemoveVariable(document, var_id)
+    unbind: list[Command] = [SetField(w, "bind", None) for w in users]
+    return Macro(_M_REMOVE_AND_UNBIND, [*unbind, RemoveVariable(document, var_id)])

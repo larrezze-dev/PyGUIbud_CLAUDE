@@ -13,7 +13,7 @@ from pyguibud.designer.actions import ActionDef, ActionRegistry, MenuDef
 from pyguibud.designer.edit import EditActions
 from pyguibud.i18n import LANGUAGES, N_, PSEUDO_LANGUAGE
 
-__all__ = ["THEME_ROLES", "ShellCallbacks", "register_standard_actions"]
+__all__ = ["THEME_ROLES", "FileCallbacks", "ShellCallbacks", "register_standard_actions"]
 
 _M_FILE = N_("_File")
 _M_EDIT = N_("_Edit")
@@ -49,6 +49,14 @@ _M_LANGUAGE = N_("_Language")
 # Translators: the dots mean that a dialog opens; _ marks the access key.
 _M_NEW = N_("_New from template…")
 _M_QUIT = N_("_Quit")
+_M_OPEN = N_("_Open…")
+# Translators: a sub-menu listing the files opened last.
+_M_RECENT = N_("Open _recent")
+# Translators: reopen unsaved work kept after a crash; _ marks the access key (R is taken).
+_M_RECOVER = N_("Reco_ver…")
+_M_SAVE = N_("_Save")
+_M_SAVE_AS = N_("Save _as…")
+_M_CLOSE = N_("_Close")
 _M_HELP = N_("_Help")
 _M_SHORTCUTS = N_("_Keyboard shortcuts…")
 _M_NEXT_PANEL = N_("Next _panel")
@@ -61,6 +69,18 @@ THEME_ROLES: tuple[tuple[str, str], ...] = (
     ("dark", N_("_Dark")),
     ("high_contrast", N_("_High contrast")),
 )
+
+
+@dataclass(frozen=True, slots=True)
+class FileCallbacks:
+    """The file lifecycle of the application (spec 14a section 9.1)."""
+
+    open: Callable[[], None]
+    save: Callable[[], None]
+    save_as: Callable[[], None]
+    close: Callable[[], None]
+    recover: Callable[[], None]
+    has_document: Callable[[], bool]
 
 
 @dataclass(frozen=True, slots=True)
@@ -77,6 +97,7 @@ class ShellCallbacks:
     set_language: Callable[[str], None]
     current_language: Callable[[], str]
     edit: EditActions | None = None  # the Edit menu is registered only when given
+    files: FileCallbacks | None = None  # Open, Open recent, Save, Close, Recover
 
 
 def register_standard_actions(registry: ActionRegistry, callbacks: ShellCallbacks) -> None:
@@ -94,6 +115,8 @@ def register_standard_actions(registry: ActionRegistry, callbacks: ShellCallback
             "file.new", "file", _M_NEW, callbacks.new_document, shortcut="Ctrl+N", toolbar=True
         )
     )
+    if callbacks.files is not None:
+        _register_files(registry, callbacks.files)
     registry.add_separator("file")
     registry.add(ActionDef("file.quit", "file", _M_QUIT, callbacks.quit, shortcut="Ctrl+Q"))
 
@@ -134,6 +157,19 @@ def register_standard_actions(registry: ActionRegistry, callbacks: ShellCallback
     registry.add(
         ActionDef("help.shortcuts", "help", _M_SHORTCUTS, callbacks.show_shortcuts, shortcut="F1")
     )
+
+
+def _register_files(registry: ActionRegistry, files: FileCallbacks) -> None:
+    """Open, Open recent (filled by the app), Recover, Save, Save as and Close."""
+    has = files.has_document
+    registry.add(ActionDef("file.open", "file", _M_OPEN, files.open, "Ctrl+O", toolbar=True))
+    registry.add_menu(MenuDef("file.recent", _M_RECENT, parent="file"))
+    registry.add(ActionDef("file.recover", "file", _M_RECOVER, files.recover))
+    registry.add_separator("file")
+    registry.add(ActionDef("file.save", "file", _M_SAVE, files.save, "Ctrl+S", has, toolbar=True))
+    registry.add(ActionDef("file.save_as", "file", _M_SAVE_AS, files.save_as, "Ctrl+Shift+S", has))
+    registry.add_separator("file")
+    registry.add(ActionDef("file.close", "file", _M_CLOSE, files.close, "Ctrl+W", has))
 
 
 def _register_edit(registry: ActionRegistry, edit: EditActions) -> None:

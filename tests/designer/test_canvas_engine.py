@@ -26,6 +26,7 @@ from tests.designer.conftest import best_of
 pytestmark = pytest.mark.gui
 
 RICH = Path(__file__).resolve().parents[1] / "codegen" / "data" / "rich.ui"
+HELLO = Path(__file__).resolve().parents[2] / "examples" / "hello.ui"
 HEADER = (
     '<?xml version="1.0" encoding="UTF-8"?>'
     '<pyguibud-ui schema_version="1.0" xmlns="urn:pyguibud:ui:1">'
@@ -430,3 +431,60 @@ def test_a_theme_switch_rebuilds_the_canvas(shell: DesignerApp, designer_root: A
     shell.flush_theme()
     designer_root.update()
     assert stage.view is not None and stage.view is not old
+
+
+# ---------------------------------------------------------------- properties a class lacks
+def _drawn(app: DesignerApp) -> None:
+    app.root.update()
+    for stage in app.shell.canvas.stages:
+        app.shell.canvas.show_window(stage.window)
+        assert stage.error is None and stage.view is not None, stage.error
+
+
+def test_a_text_on_the_hello_notebook_is_kept_and_the_window_still_draws(
+    shell: DesignerApp,
+) -> None:
+    """Regression: SetProp(text) on a Notebook (no such property: a validator warning) was
+    accepted, then the canvas failed with ``unknown option "-text"``."""
+    assert shell.open_path(HELLO)
+    document, stack = shell.session.document, shell.session.stack
+    assert document is not None and stack is not None
+    notebook = document.find("nbk_main")
+    assert isinstance(notebook, Widget) and notebook.class_name == "Notebook"
+    for name, value in (("text", "Tab strip"), ("state", "disabled")):
+        assert stack.execute(SetProp(notebook, Prop(name=name, value=value))).accepted
+        _drawn(shell)
+    assert notebook.props["text"].value == "Tab strip"  # kept (and saved), only ignored
+
+
+def test_every_offered_field_of_every_class_draws(shell: DesignerApp, tmp_path: Path) -> None:
+    """Each core class x each property field the inspector offers (foreign ones included):
+    reset, then set to a sample value; the guard accepts or refuses, and the canvas draws."""
+    from pyguibud.designer.properties import commit_commands, field_rows
+    from tests.prop_sweep import sample, sweep_ui, widget_classes
+
+    registry = default_registry()
+    assert shell.open_path(sweep_ui(tmp_path, registry))
+    _drawn(shell)
+    document, stack = shell.session.document, shell.session.stack
+    assert document is not None and stack is not None
+    widgets = [n for n in document.walk() if isinstance(n, Widget)]
+    assert len(widgets) == len(widget_classes(registry)) >= 20
+    edits = [
+        (node, field, registry.require(node.class_name).property(field.key[5:]))
+        for node in widgets
+        for field in field_rows([node], registry, document)
+        if field.key.startswith("prop:")
+    ]
+    for phase in ("reset", "sample"):
+        accepted = 0
+        for node, field, definition in edits:
+            if phase == "reset":
+                value = None
+            elif definition is None:
+                value = "Foreign"
+            else:
+                value = "img" if definition.type == "image" else sample(definition)
+            accepted += stack.execute(commit_commands([node], field, value)).accepted
+        assert accepted >= 60, phase  # the sweep really edits
+        _drawn(shell)

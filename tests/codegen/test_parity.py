@@ -27,6 +27,7 @@ from pyguibud.core.xml_io import read_ui
 from pyguibud_runtime import UiError as RuntimeUiError
 from pyguibud_runtime import load_ui
 from tests.codegen.conftest import EXAMPLES
+from tests.prop_sweep import sweep_ui
 
 pytestmark = pytest.mark.gui
 
@@ -603,3 +604,37 @@ def test_embed_none_is_unchanged(make_pair: Callable[..., Pair]) -> None:
     """The runtime path (``embed=None``) still matches the generated module exactly."""
     loaded, generated = make_pair("rich").both()
     assert diff(loaded, generated) == []
+
+
+def test_every_class_ignores_the_properties_it_does_not_define(
+    tk_root: Any, tmp_path: Path, caplog: pytest.LogCaptureFixture
+) -> None:
+    """Every core class with every defined property plus foreign ``text``/``state``/``value``/
+    ``image``/``show``: the validator only warns ("kept but ignored"), so ``load_ui``, the
+    generated module and the designer's embedded build must all build it (a Notebook with a
+    ``text`` property raised ``unknown option "-text"``) and stay equal.
+    """
+    from pyguibud.core import default_registry
+    from tests.prop_sweep import widget_classes
+
+    registry = default_registry()
+    ui = sweep_ui(tmp_path, registry)
+    with caplog.at_level(logging.WARNING):
+        pair = Pair(ui, tk_root, None)
+        built = Embedded(ui, tk_root)
+    try:
+        loaded, generated = pair.both()
+        assert diff(loaded, generated) == []
+        variables = _variables(ui)
+        embed = describe_scope(built.ui, variables)
+        assert diff(_widgets(loaded, pair.loaded), _widgets(embed, built.ui)) == []
+        widgets = loaded["widgets"]
+        assert {f"w_{name.lower()}" for name in widget_classes(registry)} <= set(widgets)
+        # The defined properties still apply: the foreign ones changed nothing else.
+        button = widgets["w_button"]
+        assert button["text"] == "Sample" and button["state"] == "disabled"
+        assert widgets["w_label"]["text"] == "Sample"
+        assert widgets["w_label"]["state"] == "normal"  # a ttk Label would take the foreign one
+    finally:
+        built.close()
+        pair.close()

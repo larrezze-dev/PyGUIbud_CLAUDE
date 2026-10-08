@@ -25,6 +25,7 @@ __all__ = [
     "TkShortcut",
     "format_chord",
     "is_valid_key_sequence",
+    "key_bindings",
     "parse_chord",
     "shortcut_problem",
     "split_mnemonic",
@@ -262,6 +263,26 @@ def tk_key_sequences(sequence: str, *, aqua: bool = False) -> tuple[str, ...]:
             return (f"<{match.group(1)}Key-{match.group(2)}>",)
         return (sequence,)
     raise ValueError(f"not a valid key sequence: {sequence!r}")
+
+
+def key_bindings(sequence: str) -> frozenset[tuple[frozenset[str], str]]:
+    """The Tk bindings a ``key:`` event makes, as ``(Tk modifiers, keysym)`` pairs.
+
+    Two events bind the same key when their sets intersect, whatever the spelling: ``Ctrl+S``,
+    ``<Control-s>`` and ``<Control-KeyPress-s>`` all bind ``<Control-s>``, and Tk keeps only the
+    last handler of a sequence. Empty for an invalid sequence.
+    """
+    try:
+        sequences = tk_key_sequences(sequence)
+    except ValueError:
+        return frozenset()
+    found: set[tuple[frozenset[str], str]] = set()
+    for item in sequences:
+        match = _TK_SEQUENCE_RE.fullmatch(item)
+        if match is not None:
+            modifiers = frozenset(part for part in match.group(1).split("-") if part)
+            found.add((modifiers, match.group(2)))
+    return frozenset(found)
 
 
 def split_mnemonic(text: str) -> tuple[str, int]:

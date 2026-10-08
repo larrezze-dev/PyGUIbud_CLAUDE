@@ -31,7 +31,7 @@ STATUS_LABEL = {"✅": "done", "🧪": "awaiting UAT", "🔄": "in progress", "�
 STATUS_CLASS = {"✅": "done", "🧪": "uat", "🔄": "wip", "⏳": "todo"}
 NA_ITEMS = (("Lint (ruff)", "lint"), ("Types (mypy)", "types"), ("i18n coverage", "i18n"))
 NA_TEXT = "n/a (later step)"
-ROW_RE = re.compile(r"^\|\s*(\d{1,3})\s*\|")
+ROW_RE = re.compile(r"^\|\s*(\d{1,3}[a-z]?)\s*\|")
 
 
 @dataclass
@@ -89,7 +89,13 @@ def split_row(line: str) -> list[str]:
 
 
 def find_status(cell: str) -> str | None:
-    """Return the status emoji contained in a cell, tolerating U+FE0F."""
+    """Return the status emoji contained in a cell, tolerating U+FE0F.
+
+    A cell with several emojis (e.g. "🔄 14a.1 ✅ · 14a.2 ⏳") takes the leading one.
+    """
+    for emoji in STATUS_ORDER:
+        if cell.lstrip().startswith(emoji):
+            return emoji
     for emoji in STATUS_ORDER:
         if emoji in cell:
             return emoji

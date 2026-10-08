@@ -13,7 +13,8 @@ from pyguibud.i18n import N_, _
 __all__ = ["ShortcutsDialog"]
 
 _M_TITLE = N_("Keyboard shortcuts")
-_M_CLOSE = N_("Close")
+# Translators: the Close button of the shortcuts sheet; _ marks the access key (Alt+letter).
+_M_CLOSE = N_("_Close")
 _M_EMPTY = N_("There are no keyboard shortcuts.")
 
 
@@ -30,6 +31,7 @@ class ShortcutsDialog(ModalDialog):
         self.rows.columnconfigure(1, weight=1)
         self.close_button = ttk.Button(self.body, command=self.close, default="active")
         self.close_button.pack(side="bottom", anchor="e", pady=(12, 0))
+        self.access_keys = [(self.close_button, _M_CLOSE)]
         self.window.bind("<Return>", lambda _e: self.close())
 
     def initial_focus(self) -> Any:  # noqa: ANN401 - a Tk widget
@@ -40,7 +42,7 @@ class ShortcutsDialog(ModalDialog):
         """Rebuild the rows in the current language."""
         for child in self.rows.winfo_children():
             child.destroy()
-        self.close_button.configure(text=_(_M_CLOSE))
+        self.label_buttons()
         sheet = self.registry.cheat_sheet()
         if not sheet:
             ttk.Label(self.rows, text=_(_M_EMPTY)).grid(row=0, column=0, columnspan=2)

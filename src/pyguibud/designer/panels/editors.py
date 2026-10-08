@@ -1,0 +1,308 @@
+"""One inspector editor per field kind (Tk; spec properties-save-load 3.2).
+
+An editor only shows a value and reports what the user typed or picked; the inspector (its
+``host``) parses, builds the command and runs it. ``shown`` is the text last loaded from the
+model, so an untouched editor never commits (no phantom edits of defaults or mixed values).
+"""
+
+from __future__ import annotations
+
+import contextlib
+import tkinter
+from collections.abc import Callable
+from tkinter import ttk
+from typing import Any, Protocol
+
+from pyguibud.core.keys import tk_shortcut
+from pyguibud.core.model import Prop
+from pyguibud.designer.properties import Field
+from pyguibud.i18n import N_, _
+
+__all__ = ["INVALID", "Editor", "EditorHost", "bind_history", "history_action", "make_editor"]
+
+#: Style prefix of an editor whose text was refused (configured by the inspector's restyle).
+INVALID = "Invalid"
+_M_NONE = N_("(none)")
+_M_NEW_VARIABLE = N_("New variable…")
+_M_ADD_IMAGE = N_("Add image…")
+_M_CHOOSE = N_("Choose…")
+_M_EDIT_TEXT = N_("Edit text…")
+# Translators: the sticky sides of a grid cell: North, East, South, West (one letter each).
+_STICKY = (("n", N_("N")), ("e", N_("E")), ("s", N_("S")), ("w", N_("W")))
+_BUTTONS = tuple((token, token) for token in ("ok", "cancel", "yes", "no", "close"))
+#: Pseudo values of the choice editors (never a valid id, so they cannot clash).
+NEW, ADD = "\x00new", "\x00add"
+
+
+class EditorHost(Protocol):
+    """What an editor calls on the inspector."""
+
+    def commit(self, editor: Editor, value: str | Prop | None, *, merge: bool = False) -> bool: ...
+    def focus_in(self, editor: Editor) -> None: ...
+    def history_key(self, editor: Editor, redo: bool) -> str: ...
+    def special(self, editor: Editor, what: str) -> None: ...
+
+
+class Editor:
+    """Base editor: ``widget`` is the focusable part, placed in ``frame`` by the subclass."""
+
+    text_input = False  # True: Ctrl+Z reverts typed text first (spec 3.3)
+
+    def __init__(self, parent: Any, field: Field, host: EditorHost) -> None:  # noqa: ANN401
+        self.field, self.host = field, host
+        self.frame = ttk.Frame(parent)
+        self.frame.columnconfigure(0, weight=1)
+        self.shown = ""
+        self.widget: Any = None
+        self.var = tkinter.StringVar(parent)
+        self.invalid = False  # marked red after a refusal
+
+    def _bind(self, widget: Any) -> None:  # noqa: ANN401 - a Tk widget
+        widget.bind("<FocusIn>", lambda _e: self.host.focus_in(self), add="+")
+
+    def load(self, field: Field) -> None:
+        """Show the model value of ``field`` (the text is replaced; marks are cleared)."""
+        self.field, self.shown = field, field.value or ""
+        self.var.set(self.shown)
+        self.set_invalid(False)
+
+    def text(self) -> str:
+        return self.var.get()
+
+    def pending(self) -> bool:
+        """True while the shown text differs from the model value (typed, not committed)."""
+        return self.text_input and self.text() != self.shown
+
+    def commit_pending(self) -> bool:
+        """Commit typed text. Text typed back to the model value after a refusal commits too:
+        the (no-op) command is accepted and clears the mark and the old reason (rule C2)."""
+        if not self.pending() and not self.invalid:
+            return True
+        return self.host.commit(self, self.text())
+
+    def revert(self) -> None:
+        self.var.set(self.shown)
+        self.set_invalid(False)
+
+    def set_invalid(self, invalid: bool) -> None:
+        widget = self.widget
+        if widget is None or not self.text_input:
+            return
+        self.invalid = invalid
+        base = widget.winfo_class()
+        widget.configure(style=f"{INVALID}.{base}" if invalid else base)
+
+    def set_enabled(self, enabled: bool) -> None:
+        for child in self.frame.winfo_children():
+            if isinstance(child, ttk.Widget) and not isinstance(child, ttk.Label | ttk.Frame):
+                child.state(["!disabled"] if enabled else ["disabled"])
+
+
+class _Label(Editor):
+    def __init__(self, parent: Any, field: Field, host: EditorHost) -> None:  # noqa: ANN401
+        super().__init__(parent, field, host)
+        ttk.Label(self.frame, textvariable=self.var, anchor="w").grid(row=0, column=0, sticky="ew")
+
+
+class _Text(Editor):
+    """Entry for strings, ids, handlers, shortcuts, numbers and colours."""
+
+    text_input = True
+
+    def __init__(self, parent: Any, field: Field, host: EditorHost) -> None:  # noqa: ANN401
+        super().__init__(parent, field, host)
+        if field.kind in ("int", "float"):
+            low, high = field.minimum, field.maximum
+            self.widget = ttk.Spinbox(self.frame, textvariable=self.var, width=8,
+                                      from_=-10_000 if low is None else low,
+                                      to=10_000 if high is None else high,
+                                      increment=1 if field.kind == "int" else 0.1,
+                                      command=self._arrow)  # fmt: skip
+        else:
+            self.widget = ttk.Entry(self.frame, textvariable=self.var, width=12)
+        self.widget.grid(row=0, column=0, sticky="ew")
+        self._bind(self.widget)
+        for sequence in ("<Return>", "<KP_Enter>"):
+            self.widget.bind(sequence, lambda _e: self._enter())
+        self.widget.bind("<FocusOut>", lambda _e: self.commit_pending(), add="+")
+        self.widget.bind("<Escape>", lambda _e: self._escape())
+        if field.kind == "colour":
+            self.swatch = tkinter.Frame(self.frame, width=16, height=16, borderwidth=1,
+                                        relief="solid")  # fmt: skip
+            self.swatch.grid(row=0, column=1, padx=(4, 0))
+            self._button(_M_CHOOSE, "colour", 2)
+        elif field.key.startswith("prop:") and field.kind == "string":
+            self._button(_M_EDIT_TEXT, "text", 1, glyph="…")
+
+    def _button(self, msgid: str, what: str, column: int, glyph: str | None = None) -> None:
+        button = ttk.Button(self.frame, text=glyph or _(msgid),
+                            command=lambda: self.host.special(self, what))  # fmt: skip
+        button.grid(row=0, column=column, padx=(4, 0))
+        self.button, self.button_msgid = button, msgid if glyph is None else None
+
+    def load(self, field: Field) -> None:
+        super().load(field)
+        swatch = getattr(self, "swatch", None)
+        if swatch is not None:
+            # A colour Tk does not know leaves the swatch as it is (the guard judges the text).
+            with contextlib.suppress(tkinter.TclError):
+                swatch.configure(background=self.shown or self.frame.winfo_toplevel()["bg"])
+
+    def _enter(self) -> str:
+        # Only typed text commits (QA-14a1-18): Enter in an untouched field, above all a "(mixed)"
+        # one whose entry is empty, must not write that empty text to every selected node.
+        if self.commit_pending():
+            self.shown = self.text()
+        return "break"
+
+    def _escape(self) -> str:
+        self.revert()
+        return "break"
+
+    def _arrow(self) -> None:
+        self.host.commit(self, self.text(), merge=True)  # one undo step per focus session
+
+
+class _Bool(Editor):
+    def __init__(self, parent: Any, field: Field, host: EditorHost) -> None:  # noqa: ANN401
+        super().__init__(parent, field, host)
+        self.widget = ttk.Checkbutton(self.frame, variable=self.var, onvalue="true",
+                                      offvalue="false", command=self._toggle)  # fmt: skip
+        self.widget.grid(row=0, column=0, sticky="w")
+        self._bind(self.widget)
+
+    def load(self, field: Field) -> None:
+        super().load(field)
+        self.widget.state(["alternate"] if field.value is None else ["!alternate"])
+
+    def _toggle(self) -> None:
+        self.widget.state(["!alternate"])
+        self.host.commit(self, self.var.get())
+
+
+_EXTRA = {
+    "image": [("", _M_NONE), (ADD, _M_ADD_IMAGE)],
+    "variable": [("", _M_NONE), (NEW, _M_NEW_VARIABLE)],
+}
+
+
+class _Choice(Editor):
+    """Read-only combobox: enums, images and variables (with "(none)" and "New…" entries)."""
+
+    def __init__(self, parent: Any, field: Field, host: EditorHost) -> None:  # noqa: ANN401
+        super().__init__(parent, field, host)
+        self.widget = ttk.Combobox(self.frame, textvariable=self.var, state="readonly", width=12)
+        self.widget.grid(row=0, column=0, sticky="ew")
+        self.widget.bind("<<ComboboxSelected>>", lambda _e: self._picked())
+        self._bind(self.widget)
+        self._values: list[str] = []
+
+    def load(self, field: Field) -> None:
+        self.field = field
+        extra = _EXTRA.get(field.kind, [])
+        self._values = [v for v, _m in extra[:1]] + list(field.choices) + [v for v, _m in extra[1:]]
+        names = {v: _(m) for v, m in extra}
+        self.widget.configure(values=[names.get(v, v) for v in self._values])
+        self.shown = field.value or ""
+        self.var.set("" if field.value is None else names.get(self.shown, self.shown))
+
+    def _picked(self) -> None:
+        index = int(self.widget.current())
+        value = self._values[index] if 0 <= index < len(self._values) else ""
+        if value in (NEW, ADD):
+            self.load(self.field)
+            self.host.special(self, value)
+        elif value != self.shown:
+            self.host.commit(self, value)
+
+
+class _Flags(Editor):
+    """Checkbuttons for the sticky sides (``"nsew"``) or the dialog buttons (``"ok,cancel"``)."""
+
+    def __init__(self, parent: Any, field: Field, host: EditorHost) -> None:  # noqa: ANN401
+        super().__init__(parent, field, host)
+        self.tokens = _STICKY if field.kind == "sticky" else _BUTTONS
+        self.sep = "" if field.kind == "sticky" else ","
+        self.flags: list[tuple[str, tkinter.BooleanVar, ttk.Checkbutton]] = []
+        for k, (token, msgid) in enumerate(self.tokens):
+            flag = tkinter.BooleanVar(parent)
+            box = ttk.Checkbutton(self.frame, text=_(msgid) if self.sep == "" else msgid,
+                                  variable=flag, command=self._toggle)  # fmt: skip
+            box.grid(row=0, column=k, sticky="w", padx=(0, 4))
+            self._bind(box)
+            self.flags.append((token, flag, box))
+        self.widget = self.flags[0][2]
+
+    def _split(self, value: str) -> list[str]:
+        return list(value) if self.sep == "" else [t for t in value.split(",") if t]
+
+    def load(self, field: Field) -> None:
+        super().load(field)
+        on = self._split(field.value or "")
+        for token, flag, box in self.flags:
+            flag.set(token in on)
+            box.state(["alternate"] if field.value is None else ["!alternate"])
+
+    def _toggle(self) -> None:
+        # Keep the order of an opened file: unticked tokens go, new ones are appended.
+        ticked = {token for token, flag, _box in self.flags if flag.get()}
+        kept = [t for t in self._split(self.shown) if t in ticked]
+        kept += [t for t, _f, _b in self.flags if t in ticked and t not in kept]
+        self.host.commit(self, self.sep.join(kept))
+
+    def retranslate(self) -> None:
+        for (_token, msgid), (_t, _f, box) in zip(self.tokens, self.flags, strict=True):
+            box.configure(text=_(msgid) if self.sep == "" else msgid)
+
+
+_KINDS: dict[str, Callable[[Any, Field, EditorHost], Editor]] = {
+    "class": _Label, "bool": _Bool, "enum": _Choice, "image": _Choice, "variable": _Choice,
+    "sticky": _Flags, "buttons": _Flags,
+}  # fmt: skip
+
+
+def make_editor(parent: Any, field: Field, host: EditorHost) -> Editor:  # noqa: ANN401
+    """The editor for ``field.kind`` (an Entry or Spinbox for every text-like kind)."""
+    editor = _KINDS.get(field.kind, _Text)(parent, field, host)
+    editor.load(field)
+    if editor.widget is not None and editor.text_input:
+        bind_history(editor.widget, lambda redo: editor.host.history_key(editor, redo))
+    return editor
+
+
+def bind_history(widget: Any, handler: Callable[[bool], str]) -> None:  # noqa: ANN401
+    """Bind the shell's Undo/Redo chords on a text editor (``handler(redo)``; spec 3.3)."""
+    aqua = str(widget.tk.call("tk", "windowingsystem")) == "aqua"
+    for chord, redo in (("Ctrl+Z", False), ("Ctrl+Y", True), ("Ctrl+Shift+Z", True)):
+        for sequence in tk_shortcut(chord, aqua=aqua).sequences:
+            widget.bind(sequence, lambda _e, r=redo: handler(r))
+
+
+def history_action(
+    redo: bool,
+    *,
+    pending: Callable[[], bool],
+    revert: Callable[[], None],
+    invoke: Callable[[str], None],
+) -> str:
+    """Ctrl+Z/Ctrl+Y in a text field: revert the typed text first, else undo/redo (spec 3.3).
+
+    Shared by the inspector's editors, the Events tab and the Variables panel, so every text
+    field of the designer answers the history keys the same way.
+    """
+    if pending():
+        revert()
+    else:
+        invoke("edit.redo" if redo else "edit.undo")
+    return "break"
+
+
+def retranslate(editor: Editor) -> None:
+    """Re-read the translated texts of ``editor`` (buttons, sticky letters, choice names)."""
+    msgid = getattr(editor, "button_msgid", None)
+    if msgid:
+        editor.button.configure(text=_(msgid))  # type: ignore[attr-defined]
+    if isinstance(editor, _Flags):
+        editor.retranslate()
+    elif isinstance(editor, _Choice):
+        editor.load(editor.field)

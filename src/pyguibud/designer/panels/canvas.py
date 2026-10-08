@@ -35,7 +35,7 @@ __all__ = ["CanvasPanel"]
 
 _log = logging.getLogger(__name__)
 
-_M_EMPTY = N_("No document is open.")
+_M_EMPTY = N_("No document. Press Ctrl+N for a new one or Ctrl+O to open a file.")
 # Translators: shown on the canvas instead of a window that fails to render; {reason} is the
 # technical cause (usually in English).
 _M_CANNOT_DRAW = N_("This window cannot be drawn on the canvas: {reason}")

@@ -416,6 +416,9 @@ class TkSession:
             self._logged.add(node.class_name)
             plan.log(_M_FALLBACK, name=node.class_name, fallback=name)
         options: dict[str, Any] = {}
+        # Only the properties the built class defines are read: any other (an unknown name, or
+        # one of an extension shown as its fallback) is kept in the model but ignored here.
+        defined = {definition.name for definition in spec.properties}
         for definition in spec.properties:
             prop = node.props.get(definition.name)
             raw = definition.default if prop is None else prop.value
@@ -459,11 +462,11 @@ class TkSession:
             options["value"] = int(value) if is_int else value
         if name in _PADDED and node.layout is not None:
             options["padding"] = node.layout.padding
-        text = node.props.get("text")
+        text = node.props.get("text") if "text" in defined else None
         if "image" in options and text is not None:
             options["compound"] = "left"
         widget = self._create(name, parent, options, node)
-        if "state" in node.props:
+        if "state" in defined and "state" in node.props:
             widget.configure(state=node.props["state"].value)
         if text is not None and not (name == "Label" and node.bind):
             mnemonic = name in _MNEMONIC

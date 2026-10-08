@@ -21,6 +21,7 @@ from pyguibud.designer.panels.canvas import CanvasPanel
 from pyguibud.designer.panels.inspector import InspectorPanel
 from pyguibud.designer.panels.palette import PalettePanel
 from pyguibud.designer.panels.tree import TreePanel
+from pyguibud.designer.panels.variables import VariablesPanel
 from pyguibud.designer.present.focus import cycle
 from pyguibud.designer.present.status import findings_summary, selection_path
 from pyguibud.designer.session import DesignerSession
@@ -39,6 +40,8 @@ _TEXT_CLASSES = frozenset({"TEntry", "Entry", "Text", "TCombobox", "TSpinbox", "
 _TEXT_OWNED = frozenset({"edit.undo", "edit.redo"})
 #: Act once per physical key press: a held Delete must not cascade onto the parent (QA-13b-04).
 _ONCE_PER_PRESS = frozenset({"edit.delete"})
+#: Actions that first commit the inspector's pending text (spec 14a 3.3, risk R2).
+_FLUSH_FIRST = frozenset({"edit.undo", "edit.redo"})
 
 _Entry = tuple[tkinter.Menu, int, "ActionDef | MenuDef"]
 
@@ -66,6 +69,8 @@ class Shell:
         self.registry = registry
         self.aqua = str(root.tk.call("tk", "windowingsystem")) == "aqua"
         self._menus: list[tkinter.Menu] = []
+        #: Every sub-menu by its MenuDef id (the app fills "file.recent" itself).
+        self.submenus: dict[str, tkinter.Menu] = {}
         self._entries: list[_Entry] = []
         self._radio: dict[str, tkinter.StringVar] = {}
         self._buttons: list[tuple[ttk.Button, ActionDef]] = []
@@ -89,9 +94,16 @@ class Shell:
         self.palette = PalettePanel(self.body, session, ring_px=ring_px)
         self.canvas = CanvasPanel(self.body, session, ring_px=ring_px)
         self.inspector = InspectorPanel(self.right, session, ring_px=ring_px)
-        self.tree = TreePanel(self.right, session, ring_px=ring_px, on_full_text=self.show_message)
+        # D10: the object tree and the Variables tab share one pane (one F6 stop).
+        self.side: Any = ttk.Notebook(self.right, takefocus=False)
+        self.tree = TreePanel(self.side, session, ring_px=ring_px, on_full_text=self.show_message)
+        self.variables = VariablesPanel(self.side, session, ring_px=ring_px)
+        self.side.add(self.tree.frame, text=_(self.tree.HEADING))
+        self.side.add(self.variables.frame, text=_(self.variables.HEADING))
         self.right.add(self.inspector.frame, weight=1)
-        self.right.add(self.tree.frame, weight=1)
+        self.right.add(self.side, weight=1)
+        self.inspector.status = self.variables.status = self._post
+        self.inspector.invoke = self.variables.invoke = lambda action: self._invoker(action)()
         self.body.add(self.palette.frame, weight=0)
         self.body.add(self.canvas.frame, weight=1)
         self.body.add(self.right, weight=0)
@@ -119,6 +131,9 @@ class Shell:
         ]
         self._bind_shortcuts()
         root.bind_all("<FocusIn>", self._on_focus_in, add="+")
+        for sequence, step in (("<Control-Tab>", 1), ("<Control-Shift-Tab>", -1)):
+            root.bind_all(sequence, lambda e, d=step: self._switch_tab(e, d))
+            self._bound.append(sequence)
         root.bind_all("<KeyRelease>", self._on_key_release, add="+")
         self._keep_panels_visible()
         self.refresh_states()
@@ -127,8 +142,22 @@ class Shell:
 
     @property
     def panels(self) -> list[PanelBase]:
-        """The four panels in focus-cycle order: palette, canvas, tree, inspector."""
-        return [self.palette, self.canvas, self.tree, self.inspector]
+        """The four focus stops: palette, canvas, the visible side tab (tree or variables) and
+        the inspector."""
+        side = self.variables if self.side.select() == str(self.variables.frame) else self.tree
+        return [self.palette, self.canvas, side, self.inspector]
+
+    @property
+    def all_panels(self) -> list[PanelBase]:
+        """Every panel, including the hidden side tab (restyle, retranslate, dispose)."""
+        return [self.palette, self.canvas, self.tree, self.variables, self.inspector]
+
+    def _post(self, text: str) -> None:
+        """A panel's outcome: a reason is shown; "" clears an older refusal (rule C2)."""
+        if text:
+            self.show_message(text)
+        else:
+            self.clear_message()
 
     # ------------------------------------------------------------ menus
     def _build_menubar(self) -> None:
@@ -143,6 +172,7 @@ class Shell:
     def _add_cascade(self, parent: tkinter.Menu, definition: MenuDef) -> None:
         sub = tkinter.Menu(parent, tearoff=False, postcommand=self.refresh_states)
         self._menus.append(sub)
+        self.submenus[definition.id] = sub
         text, underline = split_mnemonic(_(definition.label))
         parent.add_cascade(label=text, underline=underline, menu=sub)
         self._entries.append((parent, int(parent.index("end") or 0), definition))
@@ -243,7 +273,31 @@ class Shell:
 
         return run
 
+    def flush(self) -> bool:
+        """Commit the pending text of the inspector and the Variables panel (risk R2).
+
+        False when an editor refused its text: the caller aborts (A15).
+        """
+        return self.inspector.flush() and self.variables.flush()
+
+    def typing(self) -> bool:
+        """True while the keyboard focus is in an editor of the inspector or the Variables panel.
+
+        The focus is read as a path name (``focus_get`` raises inside a Combobox drop-down), and
+        ``-lastfor`` keeps the answer while the designer is in the background (Alt+Tab).
+        """
+        try:
+            path = str(self.root.tk.call("focus")) or str(
+                self.root.tk.call("focus", "-lastfor", self.root)
+            )
+        except tkinter.TclError:
+            return False
+        panels = (str(self.inspector.frame), str(self.variables.frame))
+        return any(path == p or path.startswith(p + ".") for p in panels)
+
     def _invoke(self, action_id: str) -> bool:
+        if action_id in _FLUSH_FIRST and not self.flush():
+            return True  # the refused text stays marked and its reason is shown
         self._in_command = True
         try:
             return self.registry.invoke(action_id)
@@ -339,6 +393,19 @@ class Shell:
             return
         panels[target].focus_first()
         self._mark(target)
+
+    def _switch_tab(self, event: Any, step: int) -> str | None:  # noqa: ANN401 - a Tk event
+        """Ctrl+Tab: the next tab of the notebook that holds the focus (spec 14a section 16)."""
+        path = str(getattr(event, "widget", ""))
+        stops = ((self.side, self.side, 2), (self.inspector.notebook, self.inspector.frame, 3))
+        for notebook, owner, index in stops:
+            if path == str(owner) or path.startswith(f"{owner}."):
+                tabs = list(notebook.tabs())
+                notebook.select(tabs[(tabs.index(notebook.select()) + step) % len(tabs)])
+                self.panels[index].focus_first()
+                self._mark(index)
+                return "break"
+        return None
 
     # ------------------------------------------------------------ sashes
     def _keep_panels_visible(self) -> None:
@@ -442,7 +509,10 @@ class Shell:
         self._summary.configure(text=findings_summary(self.session.report()))
 
     def retranslate_status(self) -> None:
-        """Re-render the validator summary (the selection path is not translated)."""
+        """Re-render the side tab labels and the validator summary (the selection path is not
+        translated)."""
+        for panel in (self.tree, self.variables):
+            self.side.tab(panel.frame, text=_(panel.HEADING))
         self._refresh_summary()
         self._refresh_status()
 
@@ -460,7 +530,7 @@ class Shell:
                 )
             except tkinter.TclError:
                 _log.debug("Could not recolour a menu", exc_info=True)
-        for panel in self.panels:
+        for panel in self.all_panels:
             panel.restyle(spec)
 
     # ------------------------------------------------------------ lifecycle
@@ -479,7 +549,7 @@ class Shell:
         for disconnect in self._disconnects:
             disconnect()
         self.drag.dispose()
-        for panel in self.panels:
+        for panel in self.all_panels:
             panel.dispose()
         try:
             for sequence in (*self._bound, "<FocusIn>", "<KeyRelease>"):

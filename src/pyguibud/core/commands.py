@@ -902,7 +902,9 @@ class CommandStack:
         *,
         source: str = "<memory>",
         limit: int = 1000,
+        dirty: bool = False,
     ) -> None:
+        """``dirty=True`` starts unsaved (a restored recovery snapshot, ADR-011)."""
         if not isinstance(document, Document):
             raise TypeError("CommandStack needs a Document")
         if not isinstance(limit, int) or isinstance(limit, bool) or limit < 1:
@@ -913,7 +915,7 @@ class CommandStack:
         self._limit = limit
         self._history: list[Command] = []
         self._index = 0
-        self._saved_index: int | None = 0
+        self._saved_index: int | None = None if dirty else 0
         self._merge_open = False
         self._listeners: list[Callable[[StackEvent], None]] = []
         self._busy = False

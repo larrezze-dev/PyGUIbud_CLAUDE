@@ -50,7 +50,10 @@ def _open_hello(shell: DesignerApp) -> None:
 def test_shell_has_menus_toolbar_four_panels_and_status_bar(shell: DesignerApp) -> None:
     bar = shell.shell.menubar
     assert _labels(bar) == ["File", "Edit", "View", "Help"]
-    assert _labels(_submenu(bar, "File")) == ["New from template…", "Quit"]
+    assert _labels(_submenu(bar, "File")) == [
+        "New from template…", "Open…", "Open recent", "Recover…", "Save", "Save as…", "Close",
+        "Quit",
+    ]  # fmt: skip
     assert _labels(_submenu(_submenu(bar, "View"), "Theme")) == ["Light", "Dark", "High contrast"]
     languages = _labels(_submenu(_submenu(bar, "View"), "Language"))
     assert len(languages) == 8  # the pseudo-locale is hidden (QA-12-12)
@@ -62,8 +65,8 @@ def test_shell_has_menus_toolbar_four_panels_and_status_bar(shell: DesignerApp) 
 
 def test_nothing_unimplemented_in_the_menus(shell: DesignerApp) -> None:
     ids = {action.id for action in shell.registry.actions()}
-    assert ids.isdisjoint({"file.open", "file.save", "edit.cut", "help.about"})
-    assert "file.quit" in ids
+    assert ids.isdisjoint({"edit.cut", "help.about"})
+    assert {"file.open", "file.save", "file.save_as", "file.close", "file.quit"} <= ids
 
 
 def test_theme_radio_follows_the_live_theme(shell: DesignerApp) -> None:
@@ -81,7 +84,7 @@ def test_language_switch_retranslates_everything(shell: DesignerApp) -> None:
     _open_hello(shell)
     shell.set_language("en_XA")  # as ``--lang en_XA`` would, though the menu does not list it
     assert i18n.get_language() == "en_XA"
-    assert shell.root.title().startswith("[")
+    assert shell.root.title() == shell.session.title  # the file name, never translated
     assert _labels(shell.shell.menubar)[0].startswith("[")
     assert shell.shell.palette.heading.cget("text").startswith("[")
     assert shell.shell.inspector.heading.cget("text").startswith("[")
@@ -92,7 +95,7 @@ def test_language_switch_retranslates_everything(shell: DesignerApp) -> None:
     first_button = shell.shell.toolbar.winfo_children()[0]
     assert first_button.cget("text").startswith("[")
     shell.registry.invoke("view.language.en_GB")
-    assert shell.root.title() == "PyGUIbud designer"
+    assert shell.root.title() == "hello — PyGUIbud"
     assert _labels(shell.shell.menubar) == ["File", "Edit", "View", "Help"]
     assert shell.shell._radio["view.language"].get() == "view.language.en_GB"
 
@@ -121,12 +124,13 @@ def test_palette_lists_categories_and_widgets(shell: DesignerApp) -> None:
 def test_new_document_fills_tree_canvas_and_inspector(shell: DesignerApp) -> None:
     shell.new_from_template("main_window")
     panels = shell.shell
-    assert panels.tree.tree is not None and panels.inspector.tree is not None
+    assert panels.tree.tree is not None
     assert len(panels.canvas.notebook.tabs()) == 1
     window = shell.session.document.children[0]  # type: ignore[union-attr]
     assert shell.session.selection.node is window
     assert panels.tree.tree.selection() == (panels.tree.key_of(window),)
-    assert panels.inspector.tree.get_children()  # the window's sections
+    panels.inspector.frame.update()
+    assert panels.inspector.value_of("field:id") == getattr(window, "id", None)  # the window's form
     assert "window[main]" in panels.statusbar.winfo_children()[0].cget("text")
     assert panels.statusbar.winfo_children()[1].cget("text") == "No problems found"
 
@@ -155,14 +159,8 @@ def test_selection_sync_tree_to_canvas_and_inspector(shell: DesignerApp) -> None
     left = min(s.winfo_rootx() for s in outline)
     top = min(s.winfo_rooty() for s in outline)
     assert 0 < widget.winfo_rootx() - left <= 4 and 0 < widget.winfo_rooty() - top <= 4
-    inspector = panels.inspector.tree
-    assert inspector is not None
-    values = [
-        inspector.set(child, "value")
-        for section in inspector.get_children()
-        for child in inspector.get_children(section)
-    ]
-    assert "ent_name" in values
+    tree.update()
+    assert panels.inspector.value_of("field:id") == "ent_name"
 
 
 def test_selection_sync_canvas_tab_selects_the_window(shell: DesignerApp) -> None:

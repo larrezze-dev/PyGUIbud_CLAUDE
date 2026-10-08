@@ -107,3 +107,13 @@ def shell(designer_root: Any) -> Iterator[Any]:
     app.set_theme("light")
     app.flush_theme()
     app.dispose()
+
+
+@pytest.fixture(autouse=True)
+def private_profile(
+    tmp_path_factory: pytest.TempPathFactory, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Settings and recovery data of every test go to temporary folders, never the real profile."""
+    base = tmp_path_factory.mktemp("profile")
+    monkeypatch.setenv("PYGUIBUD_CONFIG_DIR", str(base / "config"))
+    monkeypatch.setenv("PYGUIBUD_STATE_DIR", str(base / "state"))

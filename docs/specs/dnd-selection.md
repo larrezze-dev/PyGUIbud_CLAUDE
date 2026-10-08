@@ -230,7 +230,7 @@ Target  = GridTarget(container, row, column) | SlotTarget(container, index) | Pa
    - **When moving:** the moving nodes and their descendants are never containers for the drop, so a node is never dropped into itself.
 2. **Grid.**
    - `column` = the index *i* with `columns[i] ≤ x < columns[i+1]`.
-   - Beyond the last boundary is the **append** column `n`, and the same holds for rows. The maximum is 9,999.
+   - Beyond the last boundary is the **append** column `n`, and the same holds for rows. The maximum is 9,998 (Tk's limit, `MAX_GRID_INDEX`).
    - An occupied cell (any child's span covers it) gives a `GridTarget` anyway: `check()` denies it with the validator's collision reason.
    - Exception: the cell is occupied only by the moving node itself. That is allowed (a no-op, or a span-preserving shift).
 3. **Pack:** `index` = the number of children whose rect midpoint (x when `horizontal`, else y) is less than the pointer coordinate.
@@ -442,7 +442,7 @@ The keys in §7.3 would clash with `Treeview` navigation if they were bound with
 
 **Multi-move (D4 clarification; orchestrator ruling at 13b, refines the §5.3 "pointer's cell delta" row).**
 - All moved nodes share one parent (otherwise the builder denies with `Only elements of the same container can be moved together.`); the primary node is the **anchor**.
-- **Grid → grid:** every node keeps its row/column offset from the anchor, and the anchor lands on the target cell. If any node would land on a negative cell (or beyond 9,999), the **whole** move is denied with the reason; a collision with a cell that is not being moved is denied by `check()` with the validator's reason.
+- **Grid → grid:** every node keeps its row/column offset from the anchor, and the anchor lands on the target cell. If any node would land on a negative cell (or beyond 9,998), the **whole** move is denied with the reason; a collision with a cell that is not being moved is denied by `check()` with the validator's reason.
 - **Pack/pages:** the nodes move as one contiguous block, in their current sibling order, to the target slot.
 - **Reparent of several:** the same rules, applied in the target container. Grid→grid keeps sticky/padding and spans; a span that would cover a taken cell is clipped to 1. From pack/pages into a grid, the block is laid out in one row, in sibling order, with the anchor on the target cell.
 - Always **one** compound command (`Macro`, `Move elements`), all or nothing. Dropping on the current place is denied (`'{id}' is already there.`) and never recorded.
