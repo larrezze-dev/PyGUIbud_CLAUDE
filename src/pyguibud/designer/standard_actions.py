@@ -6,11 +6,15 @@ features of later steps. The Tk shell turns this registry into menus, toolbar an
 
 from __future__ import annotations
 
+import functools
 from collections.abc import Callable
 from dataclasses import dataclass
 
 from pyguibud.designer.actions import ActionDef, ActionRegistry, MenuDef
+from pyguibud.designer.clipboard_actions import ClipboardActions
 from pyguibud.designer.edit import EditActions
+from pyguibud.designer.editing import MenuItem
+from pyguibud.designer.windows import WindowActions, WindowKind
 from pyguibud.i18n import LANGUAGES, N_, PSEUDO_LANGUAGE
 
 __all__ = ["THEME_ROLES", "FileCallbacks", "ShellCallbacks", "register_standard_actions"]
@@ -24,11 +28,33 @@ _M_REDO = N_("_Redo")
 # Translators: {action} is the step that is redone, e.g. "Add element".
 _M_REDO_ACTION = N_("_Redo {action}")
 _M_DELETE = N_("_Delete")
-_M_SELECT_NEXT = N_("Select nex_t widget")
+_M_SELECT_NEXT = N_("Select _next widget")
 _M_SELECT_PREVIOUS = N_("Select prev_ious widget")
 _M_SELECT_CHILD = N_("Select _first child")
 _M_SELECT_PARENT = N_("Select _parent")
 _M_SELECT_ALL = N_("Select all in _container")
+# Translators: the clipboard verbs of the Edit menu (cut, copy, paste, duplicate the selection).
+_M_CUT = N_("Cu_t")
+_M_COPY = N_("C_opy")
+_M_PASTE = N_("Pa_ste")
+_M_DUPLICATE = N_("Dup_licate")
+# Translators: a sub-menu of Edit that adds menu bars, menus, actions and status bars.
+_M_INSERT = N_("Ins_ert")
+_M_MENUBAR = N_("_Menu bar")
+_M_MENU = N_("M_enu")
+_M_ACTION = N_("_Action")
+_M_SEPARATOR = N_("_Separator")
+_M_STATUSBAR = N_("Status _bar")
+# Translators: the menu of the windows (main window, dialogs, components) of the open file.
+_M_DOCUMENT = N_("_Document")
+_M_ADD_MAIN = N_("Add _main window")
+_M_ADD_DIALOG = N_("Add d_ialog")
+_M_ADD_COMPONENT = N_("Add _component")
+# Translators: the dots mean that a dialog opens; _ marks the access key.
+_M_RENAME_WINDOW = N_("_Rename window…")
+_M_DELETE_WINDOW = N_("_Delete window")
+_M_NEXT_WINDOW = N_("_Next window")
+_M_PREVIOUS_WINDOW = N_("_Previous window")
 # Translators: a sub-menu of Edit: moving and sizing the selected elements on the canvas.
 _M_MOVE = N_("_Move")
 _M_LEFT = N_("Move _left")
@@ -97,6 +123,8 @@ class ShellCallbacks:
     set_language: Callable[[str], None]
     current_language: Callable[[], str]
     edit: EditActions | None = None  # the Edit menu is registered only when given
+    clipboard: ClipboardActions | None = None  # Cut, Copy, Paste, Duplicate (needs ``edit``)
+    windows: WindowActions | None = None  # the Document menu is registered only when given
     files: FileCallbacks | None = None  # Open, Open recent, Save, Close, Recover
 
 
@@ -104,7 +132,9 @@ def register_standard_actions(registry: ActionRegistry, callbacks: ShellCallback
     """Add the File, View and Help menus (New, Quit, Theme, Language, panels, shortcuts)."""
     registry.add_menu(MenuDef("file", _M_FILE))
     if callbacks.edit is not None:
-        _register_edit(registry, callbacks.edit)
+        _register_edit(registry, callbacks.edit, callbacks.clipboard)
+    if callbacks.windows is not None:
+        _register_document(registry, callbacks.windows)
     registry.add_menu(MenuDef("view", _M_VIEW))
     registry.add_menu(MenuDef("view.theme", _M_THEME, parent="view"))
     registry.add_menu(MenuDef("view.language", _M_LANGUAGE, parent="view"))
@@ -172,7 +202,9 @@ def _register_files(registry: ActionRegistry, files: FileCallbacks) -> None:
     registry.add(ActionDef("file.close", "file", _M_CLOSE, files.close, "Ctrl+W", has))
 
 
-def _register_edit(registry: ActionRegistry, edit: EditActions) -> None:
+def _register_edit(
+    registry: ActionRegistry, edit: EditActions, clipboard: ClipboardActions | None
+) -> None:
     """Edit menu (spec 11): live Undo/Redo labels, Delete bound on the canvas and the tree."""
 
     def live(
@@ -205,6 +237,8 @@ def _register_edit(registry: ActionRegistry, edit: EditActions) -> None:
         )
     )
     registry.add_separator("edit")
+    if clipboard is not None:
+        _register_clipboard(registry, clipboard)
     registry.add(
         ActionDef(
             "edit.delete",
@@ -218,6 +252,7 @@ def _register_edit(registry: ActionRegistry, edit: EditActions) -> None:
         )
     )
     registry.add_separator("edit")
+    _register_insert(registry, edit)
     registry.add_menu(MenuDef("edit.move", _M_MOVE, parent="edit"))
     # Keys of the canvas focus proxy and the tree (spec 7.3): scoped, so a Treeview keeps Tab,
     # Enter and the arrows. (id, menu, label, chord, scope, handler)
@@ -243,6 +278,114 @@ def _register_edit(registry: ActionRegistry, edit: EditActions) -> None:
         enabled = edit.has_selection
         registry.add(
             ActionDef(f"edit.{name}", menu, label, handler, chord, enabled, scope=(scope,))
+        )
+
+
+def _register_clipboard(registry: ActionRegistry, clip: ClipboardActions) -> None:
+    """Ctrl+X/C/V/D act on the canvas and the tree only: an inspector Entry keeps its text keys."""
+    both = ("canvas", "tree")
+    read_only = clip.read_only_refusal  # Copy still works in a read-only document
+    for name, label, chord, handler, enabled, refusal in (
+        ("cut", _M_CUT, "Ctrl+X", clip.cut, clip.can_cut, read_only),
+        ("copy", _M_COPY, "Ctrl+C", clip.copy, clip.can_copy, None),
+        ("paste", _M_PASTE, "Ctrl+V", clip.paste, clip.can_paste, read_only),
+        ("duplicate", _M_DUPLICATE, "Ctrl+D", clip.duplicate, clip.can_cut, read_only),
+    ):
+        registry.add(
+            ActionDef(
+                f"edit.{name}",
+                "edit",
+                label,
+                handler,
+                chord,
+                enabled,
+                scope=both,
+                refusal=refusal,
+            )
+        )
+    registry.add_separator("edit")
+
+
+def _register_insert(registry: ActionRegistry, edit: EditActions) -> None:
+    """Edit > Insert (spec 6): menu bar, menu, action, separator and status bar."""
+    registry.add_menu(MenuDef("edit.insert", _M_INSERT, parent="edit"))
+    kinds: tuple[tuple[MenuItem, str], ...] = (
+        ("menubar", _M_MENUBAR),
+        ("menu", _M_MENU),
+        ("action", _M_ACTION),
+        ("separator", _M_SEPARATOR),
+        ("statusbar", _M_STATUSBAR),
+    )
+    for kind, label in kinds:
+        registry.add(
+            ActionDef(
+                f"edit.insert.{kind}",
+                "edit.insert",
+                label,
+                functools.partial(edit.insert, kind),
+                enabled=functools.partial(edit.can_insert, kind),
+                refusal=edit.read_only_refusal,
+            )
+        )
+
+
+def _register_document(registry: ActionRegistry, windows: WindowActions) -> None:
+    """The Document menu (spec 7): add, rename, delete and switch windows."""
+    registry.add_menu(MenuDef("document", _M_DOCUMENT))
+    adds: tuple[tuple[WindowKind, str], ...] = (
+        ("main", _M_ADD_MAIN),
+        ("dialog", _M_ADD_DIALOG),
+        ("component", _M_ADD_COMPONENT),
+    )
+    for kind, label in adds:
+        registry.add(
+            ActionDef(
+                f"document.add_{kind}",
+                "document",
+                label,
+                functools.partial(windows.add, kind),
+                enabled=windows.can_add,
+                refusal=windows.read_only_refusal,
+            )
+        )
+    registry.add_separator("document")
+    registry.add(
+        ActionDef(
+            "document.rename",
+            "document",
+            _M_RENAME_WINDOW,
+            windows.rename,
+            "F2",
+            windows.can_change,
+            scope=("canvas",),
+            refusal=windows.read_only_refusal,
+        )
+    )
+    registry.add(
+        ActionDef(
+            "document.delete",
+            "document",
+            _M_DELETE_WINDOW,
+            windows.delete,
+            None,
+            windows.can_change,
+            refusal=windows.read_only_refusal,
+        )
+    )
+    registry.add_separator("document")
+    for name, label, chord, delta in (
+        ("next", _M_NEXT_WINDOW, "Ctrl+PageDown", 1),
+        ("previous", _M_PREVIOUS_WINDOW, "Ctrl+PageUp", -1),
+    ):
+        registry.add(
+            ActionDef(
+                f"document.{name}",
+                "document",
+                label,
+                functools.partial(windows.step, delta),
+                chord,
+                windows.can_step,
+            )
         )
 
 

@@ -6,9 +6,10 @@ stack) and never fails fast: every finding is returned, in a deterministic order
 passed in, so the reader stays registry-free.
 
 Rule codes are stable (``validate.*``, R01 to R82). R49 to R53 (includes) and R75 to R76 (image
-files) need disk access, which is injected as ``files=`` (:class:`FileAccess`) and skipped when
-it is None; every other rule is pure. The command guards of Step 09 part B compare findings with
-:func:`guard_key` and :func:`new_errors`.
+files) need disk access, which is injected as ``files=`` (:class:`FileAccess`). Without it only
+the same-file includes (``src="#"``) are followed, for R51 to R53 (ADR-006 amendment,
+2026-10-09: the command guards see them too); every other rule is pure. The command guards
+of Step 09 part B compare findings with :func:`guard_key` and :func:`new_errors`.
 """
 
 from __future__ import annotations
@@ -473,6 +474,7 @@ def validate(
     Pure: the document is not changed. With ``files`` the include rules (R49 to R53) and the
     image file rules (R75, R76) also run; each included file is read once, validated without
     ``files`` and its findings follow those of ``document`` (they carry their own ``source``).
+    Without ``files`` the same-file includes (``src="#"``) are still followed (R51 to R53).
     ``limit=None`` is unbounded (used by the command guards).
     After ``limit`` findings no more are stored; the last stored one is replaced by a
     ``validate.truncated`` finding whose severity is that of the worst dropped finding, so
@@ -485,8 +487,7 @@ def validate(
         raise ValueError(f"limit must be None or a whole number of at least 1, not {limit!r}")
     sink = _Sink(source, positions if positions is not None else EMPTY_SOURCE_MAP, limit)
     _Validator(document, registry, sink, files).run()
-    if files is not None:
-        _IncludePass(document, registry, sink, files, limit).run()
+    _IncludePass(document, registry, sink, files, limit).run()
     return sink.report()
 
 
@@ -512,6 +513,8 @@ def guard_key(finding: Finding) -> tuple[object, ...]:
         return (code,)
     if code == "validate.grid_collision":
         return (code, frozenset({finding.anchor, finding.related}))
+    if code == "validate.include_cycle":  # the loop, wherever it is entered (ADR-006 amendment)
+        return (code, finding.related)
     return (code, finding.anchor, finding.part)
 
 
@@ -2016,6 +2019,9 @@ class _IncludePass:
     Every file is read and validated once; every ``(file, component)`` is explored once and its
     depth and size are remembered, so a fan-out bomb (each level including the next ten times)
     costs one visit per component. Once a limit is hit nothing more is followed.
+
+    Without ``files`` only ``src="#"`` is followed: the root's key is ``"#"`` and its name is
+    empty, so a cycle reads ``#a → #b → #a``. No file is ever read then.
     """
 
     def __init__(
@@ -2023,17 +2029,17 @@ class _IncludePass:
         document: Document,
         registry: WidgetLookup,
         sink: _Sink,
-        files: FileAccess,
+        files: FileAccess | None,
         limit: int | None,
     ) -> None:
         self.document = document
         self.registry = registry
         self.files = files
         self.limit = limit
-        root = files.root
+        root = files.root if files is not None else "#"
         self.root = _Ctx(
             key=root,
-            name=os.path.basename(sink.source) or sink.source,
+            name="" if files is None else os.path.basename(sink.source) or sink.source,
             windows=self._windows(document),
             sink=sink,
         )
@@ -2122,14 +2128,21 @@ class _IncludePass:
             or is_network_or_device_path(src)
         ):
             return None  # already reported by R44/R45/R82
+        if self.files is None and src != "#":
+            return None  # another file: followed only with files=
         if frame.level + 1 > MAX_INCLUDE_DEPTH:
             self.limit_hit(ctx, include, _M_LIMIT_DEPTH, MAX_INCLUDE_DEPTH)
             return None
-        try:
-            key = self.files.resolve(ctx.key, src)
-        except OSError:
-            ctx.sink.error("validate.include_missing", _M_INCLUDE_MISSING, include, src=_clip(src))
-            return None
+        if self.files is None:
+            key = ctx.key  # "#": the document itself, whose context is always loaded
+        else:
+            try:
+                key = self.files.resolve(ctx.key, src)
+            except OSError:
+                ctx.sink.error(
+                    "validate.include_missing", _M_INCLUDE_MISSING, include, src=_clip(src)
+                )
+                return None
         target = self.load(include, ctx, key)
         if target is None:
             return None
@@ -2159,6 +2172,7 @@ class _IncludePass:
                 "validate.include_cycle",
                 _M_INCLUDE_CYCLE,
                 include,
+                related=frozenset(loop),  # the guard key: the same loop from any entry
                 src=_clip(src),
                 component=component,
                 chain=" → ".join(f"{self.ctxs[k].name}#{c}" for k, c in loop),
@@ -2188,6 +2202,8 @@ class _IncludePass:
         error = self.failed.get(key)
         target = self.ctxs.get(key)
         if error is None and target is None:
+            # Without files= only "#" is followed, and the root's context is always loaded.
+            assert self.files is not None
             if len(self.ctxs) >= MAX_INCLUDE_FILES:
                 self.limit_hit(ctx, include, _M_LIMIT_FILES, MAX_INCLUDE_FILES)
                 return None
@@ -2221,6 +2237,7 @@ class _IncludePass:
 
     def open(self, key: str, result: ReadResult) -> _Ctx:
         """Validate a newly read file once and probe its images."""
+        assert self.files is not None  # only load() opens, and only with files=
         report = validate(
             result.document,
             self.registry,

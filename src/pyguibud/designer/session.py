@@ -26,7 +26,13 @@ from pyguibud.core import (
 )
 from pyguibud.core.errors import PyGUIbudError
 from pyguibud.core.model import Include, Widget, Window
-from pyguibud.designer.files import M_GONE, M_WRITE_PROTECTED, FileStamp, write_protected
+from pyguibud.designer.files import (
+    M_GONE,
+    M_READ_ONLY,
+    M_WRITE_PROTECTED,
+    FileStamp,
+    write_protected,
+)
 from pyguibud.designer.files import read_only_reason as read_only_reason_of
 from pyguibud.designer.signals import Signal
 from pyguibud.designer.templates import template_bytes, template_info
@@ -115,6 +121,17 @@ class DesignerSession:
     def display_name(self) -> str:
         """The document name in the current language (only the untitled name is translated)."""
         return _(self.name) if self.name == UNTITLED else self.name
+
+    def read_only_refusal(self) -> str | None:
+        """Why the open document cannot be edited (a newer schema, A20), translated; else None.
+
+        Actions that ask first (a confirmation, a name) check it up front (QA-14a2-05).
+        """
+        stack = self.stack
+        if stack is None or not stack.read_only:
+            return None
+        reason = self.read_only_reason
+        return _(M_READ_ONLY).format(reason=_(reason) if reason else "")
 
     @property
     def dirty(self) -> bool:

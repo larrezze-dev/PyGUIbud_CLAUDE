@@ -41,7 +41,7 @@ from pyguibud.core.validate import (
     MAX_WEIGHT,
     WINDOW_PROPERTIES,
 )
-from pyguibud.designer.editing import relayout_command
+from pyguibud.designer.editing import relayout_command, rename_window
 from pyguibud.i18n import N_, NP_, _, ngettext, plural_of
 
 __all__ = [
@@ -361,6 +361,10 @@ def _command(node: Any, field: Field, value: str | Prop | None) -> Command:  # n
     if text is None:
         text = field.default
     typed = _typed(field, text)
+    if family == "field" and rest == "id" and isinstance(node, Window):
+        document = node.parent
+        if isinstance(document, Document):  # its same-file includes follow (spec 14 A21)
+            return rename_window(document, node, str(typed))
     if family == "field":
         return SetField(node, rest, typed)
     if family == "layout":

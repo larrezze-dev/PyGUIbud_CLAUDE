@@ -48,7 +48,12 @@
 | External include rendering | 160 |
 | **Total** | **3,600** |
 
-The only core change is `CommandStack(dirty=)` (§11.4), ≤ 10 lines inside the total. The include expansion for the canvas is designer code (§13.2).
+The include expansion for the canvas is designer code (§13.2). Core changes in 14a:
+1. `CommandStack(dirty=)` (§11.4), at most 10 lines inside the total.
+2. **Amended 2026-10-09 (Step 14a.2, QA-14a2-10; ADR-006 amendment, accepted by the user 2026-10-09):**
+   - `validate()` always runs the same-file (`src="#"`) include checks (R51, R52 and R53), even without `files=`, so the command guards see them.
+   - `guard_key` keys R52 by the loop's members instead of the anchor.
+   - About 40 lines in `core/validate.py`.
 
 **Trim order if over budget:**
 1. external include rendering (keep the placeholder);
@@ -210,7 +215,7 @@ def commit_commands(nodes, field: Field, value: str | None) -> Command   # None 
 | Action | Shortcut | Builder | Notes |
 |---|---|---|---|
 | Add _main window / _dialog / _component | — | `new_window(document, kind)` with `DEFAULT_LAYOUT`, `unique_id` | a second main window → the guard reason (one main per file) |
-| _Rename window… | F2 (canvas scope, a window selected) | `rename_window(document, window, new)` = `Macro([SetField(window, "id", new)] + [SetField(inc, "component", new) for every same-file include (src="#") of it])` | external files that include this component are **not** updated: a warning message says so |
+| _Rename window… | F2 (canvas scope, a window selected) | `rename_window(document, window, new)` = `Macro([SetField(window, "id", new)] + [SetField(inc, "component", new) for every same-file include (src="#") of it])` | external files that include this component are **not** updated: a warning message says so. The inspector's window **Id** field uses the same builder (amended 2026-10-09) |
 | _Delete window | — | `RemoveNode(window)` after confirmation | refused for the **last** window (`_("A document needs at least one window.")`) and for a component still included with `src="#"` (`_("'{id}' is still included by '{user}'.")`) |
 | Next / previous window tab | Ctrl+PageDown / Ctrl+PageUp (global) | selection of the window | restores the keyboard tab switching lost in 13b |
 
@@ -230,13 +235,13 @@ The clipboard holds a complete, valid `.ui` text, read back with the hardened re
 </pyguibud-ui>
 ```
 - **Marker.** The `clip:*` attributes are foreign-namespace root attributes, which the reader keeps in `Document.extra_attrs`. No schema change.
-- **Modes.** `clip:mode` is `widgets` or `windows` (copying a window copies the whole window and pastes it as a new window). `clip:origin` is the source file's absolute path, or absent; it is used to rebase relative `src`.
+- **Modes.** `clip:mode` is `widgets` or `windows` (copying a window copies the whole window and pastes it as a new window). `clip:origin` is the source file's absolute path, or absent; it is used to rebase relative `src`. A pasted or duplicated `kind="main"` window becomes `kind="dialog"` when the target already has a main window (one main per file); otherwise it stays main.
 - **Writing.** `dump_ui`. The text goes to the Tk clipboard (`clipboard_clear` + `clipboard_append`), so it can be pasted between two designer processes and into a text editor.
 
 ### 8.2 Paste
 1. **Read.** `clipboard_get()`. More than 10 MiB once encoded as UTF-8 (the reader's byte limit) → refuse `_("The clipboard content is too large to paste.")`. Then `read_ui_string(text)`. Any failure, or no `clip:mode` marker → `_("The clipboard holds no PyGUIbud elements.")`.
 2. **Check.** `validate_read(result, registry, files=None)`. Errors → `_("The clipboard content is not valid: {reason}")` (the first error). More than **2,000** widgets → refuse with a reason.
-3. **Remap ids (D4 = A).** Every pasted id that clashes with the target document, or is reserved, gets `unique_id(stem)` (`btn_ok` → `btn_ok_2`). Variables: same id **and** same type → reuse the existing variable; otherwise a renamed copy, and the pasted `bind`s follow. Images: the same rule with an equal resolved path, and the `ref`/page `image` values follow.
+3. **Remap ids (D4 = A).** Every pasted id that clashes with the target document, or is reserved, gets a fresh id by the project's `unique_id` numbering: trailing digits are stripped and a counter appended, case kept (`btn_ok` → `btn_ok1`, `OkBtn` → `OkBtn1`). Variables: same id **and** same type → reuse the existing variable; otherwise a renamed copy, and the pasted `bind`s follow. Images: the same rule with an equal resolved path, and the `ref`/page `image` values follow.
 4. **Rebase paths.** A relative image `src` is rebased from `clip:origin` to the target document (§9.4).
 5. **Target.**
    - A selected container → append to it.
@@ -249,6 +254,8 @@ The clipboard holds a complete, valid `.ui` text, read back with the hardened re
 6. **Execute.** `Macro(N_("Paste"), [SetVariable…, SetResource…, InsertNode…])`, one undo step. The pasted nodes become the selection, and the message `ngettext("Pasted {count} element.", "Pasted {count} elements.", n)` comes after the selection (C1). A guard refusal (paste into a non-container, a collision) → its reason, and nothing changes.
 - **Cut** = Copy, then the Delete macro (`N_("Cut")`). **Duplicate** (Ctrl+D) = the same round-trip in memory, inserted after the original, without touching the system clipboard.
 - **Same-file includes.** A pasted `<include src="#">` whose component does not exist in the target → a refused paste with `_("'{id}' includes a component of its original file; paste that component first.")`.
+  - This check stays in `_remap`, because its wording is clearer than R51's.
+  - **Amended 2026-10-09:** the guard itself now refuses a non-component target (R51) and a cycle (R52), as it does for every other edit path (ADR-006 amendment). `clipboard._include_problem` and its helpers are removed.
 - **Scoping.** Ctrl+C/X/V/D are **scoped to the canvas and the tree** (the ADR-010 `scope`), so in an inspector `Entry` they keep their text meaning. The Edit menu items act on the selection from anywhere.
 
 ## 9. File lifecycle (`files.py` pure, `app.py` wiring)
@@ -402,10 +409,11 @@ The clipboard holds a complete, valid `.ui` text, read back with the hardened re
 | A14 | Type `999999999999` / `abc` / `1e400` in an int/float field | Local reason at once; nothing executed |
 | A15 | Close / Quit / Open / New while an editor has invalid pending text | Flush fails → the action is aborted and the reason shown |
 | A16 | Ctrl+C in the console while dirty | Snapshot written; exit 130; recovery offered next start |
-| A17 | Hold Ctrl+V / Ctrl+D | Once per physical press (`_ONCE_PER_PRESS` gains `edit.paste`, `edit.duplicate`) |
+| A17 | Hold Ctrl+X / Ctrl+V / Ctrl+D | Once per physical press (`_ONCE_PER_PRESS` gains `edit.cut`, `edit.paste`, `edit.duplicate`): a held Ctrl+X must not cut the parent that the cut selects, up to the window |
 | A18 | Save As onto a file the document includes, or onto the `.bak` | Refused (`samefile`) / allowed only as a normal target |
 | A19 | Recent file now missing or on a network path | Message, removed from the list; network paths are never stored |
 | A20 | Edit a newer-MINOR (read-only) document | All editors disabled; every command refused (`command.read_only`); Save/Save As refused with reason |
+| A21 | Break a same-file include from the inspector. Examples: change an included component's **Kind** to dialog; set an include's **Component** to `main`, `ghost` or its own window; create a cycle. | Refused by the guard with the validator's reason (R51/R52). Nothing changes. **Id** of an included component → `rename_window`, so its same-file includes follow (same as Document ▸ Rename, with `M_EXTERNAL_INCLUDES` shown). (Added 2026-10-09, QA-14a2-10) |
 
 ## 15. i18n strings (en-GB msgids; `_()`/`N_()`/`ngettext`; named placeholders)
 | Area | Msgids (new) |
@@ -508,11 +516,12 @@ The clipboard holds a complete, valid `.ui` text, read back with the hardened re
 8. Everything again with `--lang en_XA`: no truncated labels.
 
 **14a.2:**
-1. Insert a menu bar, a File menu with Open/Quit actions, a separator and a submenu; set a shortcut and a handler; reorder by tree drag-and-drop.
+_B1 = (b), 2026-10-08: §13 trimmed — items 4 and 5 below are withdrawn; reordering uses Alt+Up/Down._
+1. Insert a menu bar, a File menu with Open/Quit actions, a separator and a submenu; set a shortcut and a handler; reorder with Alt+Up/Down.
 2. Add a dialog and a component; rename them; Ctrl+PageDown switches tabs; deleting the last window is refused.
 3. Copy two widgets, paste them into another Frame and into a second designer instance; the ids are renamed on a clash; Ctrl+D duplicates.
-4. Drag rows in the object tree to reorder and reparent; an invalid drop shows the reason.
-5. A file with an external `<include>` shows the component's widgets on the canvas.
+4. ~~Drag rows in the object tree to reorder and reparent; an invalid drop shows the reason.~~ (trimmed, B1)
+5. ~~A file with an external `<include>` shows the component's widgets on the canvas.~~ (trimmed, B1)
 
 ## 20. Decisions (recommended default in bold) — **all defaults accepted by the user, 2026-10-08**
 - **D1 — Split Step 14a?**

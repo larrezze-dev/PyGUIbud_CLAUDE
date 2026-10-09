@@ -1,9 +1,14 @@
 """The canvas overlay (spec dnd-selection 3, ADR-010): ``place()``-d strips above the window.
 
-The strips are plain ``tk.Frame`` children of the stage, raised with ``lift()``; a sibling with a
-higher stacking order covers the whole subtree of the window frame. Hit-testing never looks at
-them (it uses the geometry snapshot). It outlines every selected node and draws the
-insertion indicator, the primary's resize handles and, during a drag, the cell grid.
+The strips are plain ``tk.Frame`` children of the stage, above the window frame in the stacking
+order; a sibling with a higher stacking order covers the whole subtree of the window frame.
+Hit-testing never looks at them (it uses the geometry snapshot). It outlines every selected node
+and draws the insertion indicator, the primary's resize handles and, during a drag, the cell grid.
+
+Stacking is set once per strip, when it is created, never per draw: a Tk ``raise`` walks the
+stage's sibling list, so lifting every strip on every redraw was quadratic in the number of
+outlined widgets (a paste of 100 widgets took seconds, 14a.2). The canvas puts each new window
+frame beneath the strips instead (:meth:`Overlay.sink`).
 """
 
 from __future__ import annotations
@@ -24,6 +29,10 @@ _DASH = 6  # px at 96 dpi: the segment length of a denied target
 _HANDLE = 9  # px at 96 dpi: a 7 px square plus its 1 px border, the whole of it hit-testable
 _GRID_CAP = 64  # cell-grid lines drawn per axis at most (the 5 ms overlay budget)
 _EMPTY_CAP = 16  # empty-container outlines drawn at most (R-D; the 5 ms overlay budget)
+#: Selection outlines drawn at most besides the primary's (always drawn). Each outline is 8
+#: native windows at about 1 ms each to map on Windows: an uncapped Select all or paste of 500
+#: widgets took seconds (14a.2, ADR-010 amendment). The canvas applies it and says so.
+SELECTION_CAP = 16
 _PHASES = (
     ("<ButtonPress-1>", "press"),
     ("<B1-Motion>", "motion"),
@@ -74,7 +83,11 @@ def _relay(
 
 
 class _Layer:
-    """A pool of coloured strips; :meth:`draw` places as many as needed and hides the rest."""
+    """A pool of coloured strips; :meth:`draw` places as many as needed and hides the rest.
+
+    Within the pool, a strip's stacking order is its index (a later piece covers an earlier
+    one), and the whole pool sits just below the strips of ``ceiling()`` (the layers above).
+    """
 
     def __init__(
         self,
@@ -84,33 +97,58 @@ class _Layer:
         self._stage = stage
         self._setup = setup  # called once per new strip, with its pool index (handle bindings)
         self._strips: list[tkinter.Frame] = []
+        #: What each strip shows now, ``(rect, colour, cursor)``; None = hidden.
+        self._shows: list[tuple[Rect, str, str] | None] = []
+        #: The lowest strip of the layers above (set by the overlay): a new strip goes under it.
+        self.ceiling: Callable[[], tkinter.Frame | None] = lambda: None
+
+    @property
+    def lowest(self) -> tkinter.Frame | None:
+        """The bottom strip of this pool (None while it has none)."""
+        return self._strips[0] if self._strips else None
 
     def draw(
         self, pieces: list[tuple[Rect, str]], cursor: str = "", *, cursors: Sequence[str] = ()
     ) -> None:
-        """Place one strip per (rect, colour); ``cursors`` overrides ``cursor`` per piece."""
+        """Place one strip per (rect, colour); ``cursors`` overrides ``cursor`` per piece.
+
+        Only what changed reaches Tk: an unchanged redraw (a stage ``<Configure>``, a second
+        outline of one selection) costs no Tk call.
+        """
         while len(self._strips) < len(pieces):
             strip = tkinter.Frame(self._stage, borderwidth=0, takefocus=0)
+            ceiling = self.ceiling()
+            if ceiling is not None:  # a new widget starts on top: keep the layers in order
+                strip.lower(ceiling)
             if self._setup is not None:
                 self._setup(len(self._strips), strip)
             self._strips.append(strip)
+            self._shows.append(None)
         for k, (strip, (rect, colour)) in enumerate(zip(self._strips, pieces, strict=False)):
-            strip.configure(background=colour, cursor=cursors[k] if k < len(cursors) else cursor)
-            # "outside": a ttk frame reports its padding as an internal border, and the
-            # coordinates are measured from the stage's outer edge (like winfo_rootx).
-            strip.place(
-                x=rect.x,
-                y=rect.y,
-                width=max(1, rect.w),
-                height=max(1, rect.h),
-                bordermode="outside",
-            )
-            strip.lift()
-        for strip in self._strips[len(pieces) :]:
-            strip.place_forget()
+            show = (rect, colour, cursors[k] if k < len(cursors) else cursor)
+            old = self._shows[k]
+            if old == show:
+                continue
+            if old is None or old[1:] != show[1:]:
+                strip.configure(background=colour, cursor=show[2])
+            if old is None or old[0] != rect:
+                # "outside": a ttk frame reports its padding as an internal border, and the
+                # coordinates are measured from the stage's outer edge (like winfo_rootx).
+                strip.place(
+                    x=rect.x,
+                    y=rect.y,
+                    width=max(1, rect.w),
+                    height=max(1, rect.h),
+                    bordermode="outside",
+                )
+            self._shows[k] = show
+        for k in range(len(pieces), len(self._strips)):
+            if self._shows[k] is not None:
+                self._strips[k].place_forget()
+                self._shows[k] = None
 
     def shown(self) -> list[tkinter.Frame]:
-        return [s for s in self._strips if s.winfo_manager() == "place"]
+        return [s for s, show in zip(self._strips, self._shows, strict=True) if show is not None]
 
 
 class Overlay:
@@ -132,6 +170,10 @@ class Overlay:
         self.target = _Layer(stage)
         #: The resize handles, in :data:`HANDLES` order; a press calls ``on_handle``.
         self.handles = _Layer(stage, self._bind_handle)
+        # Bottom to top: each layer's new strips go under the lowest strip of the layers above.
+        layers = (self.empty, self.grid, self.selection, self.target, self.handles, self.band)
+        for index, layer in enumerate(layers):
+            layer.ceiling = self._ceiling(layers[index + 1 :])
         self._resizable = False
         self._grid: ContainerBox | None = None
         self._colours = {"focus": "", "bg": "", "primary": "", "danger": "", "border": ""}
@@ -179,7 +221,6 @@ class Overlay:
             pieces += [(r, self._colours["focus"]) for r in _ring(grown, outer)]
         self.selection.draw(pieces)
         self._show_handles()
-        self._restack(self.target, self.handles)
 
     def show_empty(self, rects: Sequence[Rect]) -> None:
         """R-D: a 1 px dashed outline around each empty, unselected container (design only).
@@ -195,7 +236,6 @@ class Overlay:
             for piece in _dashed(strip, dash)
         ]
         self.empty.draw(pieces if colour else [])
-        self._restack(self.grid, self.selection, self.target, self.handles)
 
     def show_band(self, rect: Rect | None) -> None:
         """The rubber band (D5): a 1 px focus-coloured rectangle; None hides it."""
@@ -242,14 +282,11 @@ class Overlay:
         lines = [Rect(x, top, 1, height) for x in columns[:_GRID_CAP]]
         lines += [Rect(left, y, width, 1) for y in rows[:_GRID_CAP]]
         self.grid.draw([(r, self._colours["border"]) for r in lines])
-        self._restack(self.selection, self.target, self.handles)
 
     @staticmethod
-    def _restack(*layers: _Layer) -> None:
-        """Raise the shown strips of ``layers``, in order, above a layer just drawn."""
-        for layer in layers:
-            for strip in layer.shown():
-                strip.lift()
+    def _ceiling(above: tuple[_Layer, ...]) -> Callable[[], tkinter.Frame | None]:
+        """The lowest strip of the layers ``above`` (each layer is contiguous, in order)."""
+        return lambda: next((s for s in (layer.lowest for layer in above) if s is not None), None)
 
     def show_target(self, rect: Rect | None, state: TargetState, *, bar: bool = False) -> None:
         """Draw an insertion target: a cell or container outline, or a filled slot ``bar``.
@@ -266,8 +303,9 @@ class Overlay:
             strips = [piece for strip in strips for piece in _dashed(strip, self._scale(_DASH))]
         cursor = "X_cursor" if state == "denied" else ""
         self.target.draw([(r, self._colours[colour]) for r in strips], cursor)
-        self._restack(self.handles)
 
-    def lift(self) -> None:
-        """Raise every shown strip again (after a rebuild created new widgets)."""
-        self._restack(self.empty, self.grid, self.selection, self.target, self.handles, self.band)
+    @staticmethod
+    def sink(widget: Any) -> None:  # noqa: ANN401 - a Tk widget
+        """Put ``widget``, a child of the stage created after the strips (a rebuilt window
+        frame), beneath every strip: one restack instead of raising each strip again."""
+        widget.lower()

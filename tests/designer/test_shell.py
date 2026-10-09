@@ -49,7 +49,7 @@ def _open_hello(shell: DesignerApp) -> None:
 
 def test_shell_has_menus_toolbar_four_panels_and_status_bar(shell: DesignerApp) -> None:
     bar = shell.shell.menubar
-    assert _labels(bar) == ["File", "Edit", "View", "Help"]
+    assert _labels(bar) == ["File", "Edit", "Document", "View", "Help"]
     assert _labels(_submenu(bar, "File")) == [
         "New from template…", "Open…", "Open recent", "Recover…", "Save", "Save as…", "Close",
         "Quit",
@@ -65,8 +65,9 @@ def test_shell_has_menus_toolbar_four_panels_and_status_bar(shell: DesignerApp) 
 
 def test_nothing_unimplemented_in_the_menus(shell: DesignerApp) -> None:
     ids = {action.id for action in shell.registry.actions()}
-    assert ids.isdisjoint({"edit.cut", "help.about"})
+    assert ids.isdisjoint({"help.about"})
     assert {"file.open", "file.save", "file.save_as", "file.close", "file.quit"} <= ids
+    assert {"edit.cut", "edit.paste", "edit.insert.menu", "document.rename"} <= ids  # 14a.2
 
 
 def test_theme_radio_follows_the_live_theme(shell: DesignerApp) -> None:
@@ -96,7 +97,7 @@ def test_language_switch_retranslates_everything(shell: DesignerApp) -> None:
     assert first_button.cget("text").startswith("[")
     shell.registry.invoke("view.language.en_GB")
     assert shell.root.title() == "hello — PyGUIbud"
-    assert _labels(shell.shell.menubar) == ["File", "Edit", "View", "Help"]
+    assert _labels(shell.shell.menubar) == ["File", "Edit", "Document", "View", "Help"]
     assert shell.shell._radio["view.language"].get() == "view.language.en_GB"
 
 

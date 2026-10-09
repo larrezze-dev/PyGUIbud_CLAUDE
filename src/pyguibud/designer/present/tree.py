@@ -20,7 +20,7 @@ from pyguibud.designer.present import clip
 from pyguibud.designer.present.canvas import kind_label
 from pyguibud.i18n import N_, _
 
-__all__ = ["TreeRow", "tree_rows"]
+__all__ = ["TreeRow", "node_label", "tree_rows"]
 
 _M_WIDGET = N_("{id} ({class_name})")
 _M_INCLUDE = N_("{id} (include)")
@@ -62,6 +62,11 @@ def _describe(node: object) -> tuple[str, str]:
     if isinstance(node, Statusbar):
         return _(_M_STATUSBAR).format(id=_id(node.id)), ""
     return clip(type(node).__name__), ""
+
+
+def node_label(node: object) -> str:
+    """The row text of ``node`` in the object tree (a menu bar has no id: "Menu bar")."""
+    return _describe(node)[0]
 
 
 def _children(node: object) -> list[object]:

@@ -55,3 +55,10 @@ Proposed by the architect. It is an implementation clarification within D3, not 
 ## Addendum 3 (Step 13b kickoff, QA-13a-14, 2026-10-07)
 User decision. Spec: `docs/specs/dnd-selection.md` §5.4 rule R-D.
 - **R-D (`empty-container-outline`):** an empty, unselected layout or page container gets a 1 px dashed design-only outline drawn by the overlay. It is a drawing, not a geometry change, so it does not alter any rect, hit test or parity reading. It is listed with the `DESIGN_AFFORDANCES` so that the list of every way the canvas differs from the runtime stays complete.
+
+## Amendment (Step 14a.2, 2026-10-08): overlay stacking and selection-outline cap
+Debugger fix with orchestrator approval. Spec: `docs/specs/dnd-selection.md` §3.
+- **Stacking:** the overlay strips are no longer raised with `lift()` on every draw. A strip's stacking order is set once, when it is created (just below the lowest strip of the layers above it), and a rebuilt window frame is lowered beneath every strip with a single `lower()` (`Overlay.sink`). A redraw only sends changed strips to Tk. The decision (strips above the window frame, children of the stage) is unchanged. Only the way that order is kept has changed. Raising every strip on every redraw was quadratic: a paste of 500 widgets took about 48 s.
+- **Selection-outline cap:** the primary plus at most `SELECTION_CAP` = 16 other selected nodes are outlined. A larger selection is reported in the status bar with its count. Reason: each outline is 8 native child windows, which take about 1 ms each to map on Windows and more as siblings grow (800 strips 0.57 s, 4000 strips 5.9 s to map and 14 s to hide in plain Tk).
+- ➕ Paste of 500 widgets: 48.3 s → 1.21 s (budget 1.5 s). Select all of 500: 5.2 s → 0.55 s. Deselecting afterwards: about 0.2 s.
+- ➖ In a selection larger than 17 nodes, not every selected node is outlined on the canvas. Mitigation: the status-bar count, and the object tree still highlights every selected row.

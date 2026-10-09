@@ -21,7 +21,7 @@ from pyguibud.designer.session import DesignerSession
 from .test_drag import _drag
 
 _HINT = "Drag 'Button' onto the canvas, or press Enter to insert it into the selected container."
-_MENU_EDITOR = "Menus and actions are edited in the menu editor."
+_MENU_EDITOR = "Menus and actions are edited in the menu editor."  # the drag/palette hint
 
 
 def _noop() -> None:
@@ -148,23 +148,22 @@ def test_windows_cannot_be_deleted_and_a_stale_confirmation_is_ignored() -> None
     edit._remove([object()])  # a node that never was in the document: no parent, no crash
 
 
-def test_delete_explains_why_a_window_or_bar_stays() -> None:
-    """QA-13a-07: Delete on a window, bar, menu or action gives a reason; a widget gives none."""
+def test_delete_explains_why_a_window_stays_and_allows_bars_and_menus() -> None:
+    """QA-13a-07 (14a.2): Delete on a window gives a reason; bars, menus and widgets give none."""
     session, frame, _label = _session_with_frame()
     assert session.document is not None
     window = session.document.children[0]
     assert isinstance(window, Window) and window.menubar is not None
     assert window.statusbar is not None
     edit = EditActions(session, lambda *_a: None, lambda _m: None)
-    bars = "Windows, menu bars and status bars cannot be deleted here."
-    menus = "Menus and actions are edited in the menu editor."
+    reason = "Windows are deleted with Document > Delete window."
     menu = window.menubar.children[0]
-    cases: list[tuple[object, str | None]] = [(window, bars), (window.menubar, bars)]
-    cases += [(window.statusbar, bars), (menu, menus)]
-    cases += [(menu.children[0], menus), (frame, None)]
-    for node, reason in cases:
+    cases: list[tuple[object, str | None]] = [(window, reason), (window.menubar, None)]
+    cases += [(window.statusbar, None), (menu, None), (menu.children[0], None), (frame, None)]
+    for node, expected in cases:
         session.select(node, origin="tree")
-        assert edit.delete_refusal() == reason, node
+        assert edit.delete_refusal() == expected, node
+        assert edit.can_delete() == (expected is None), node
     assert EditActions(DesignerSession(default_registry()), *_NOOPS).delete_refusal() is None
 
 

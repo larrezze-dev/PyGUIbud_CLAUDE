@@ -3,7 +3,8 @@
 A stage shows the window's caption, its menu bar strip and the real window, built by the
 runtime builder in embed mode (``canvas.engine``) and put in design mode. Stack listeners only
 mark windows stale and schedule one ``after_idle`` rebuild (they run inside the stack's
-``_Busy`` guard, so they must never call the stack).
+``_Busy`` guard, so they must never call the stack). That rebuild never runs nested inside the
+panel's own work: see :meth:`CanvasPanel._settled`.
 """
 
 from __future__ import annotations
@@ -11,7 +12,7 @@ from __future__ import annotations
 import contextlib
 import logging
 import tkinter
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
 from dataclasses import dataclass, field
 from tkinter import ttk
 from typing import Any
@@ -20,7 +21,7 @@ from pyguibud.core import StackEvent
 from pyguibud.core.model import GridCell, Include, Widget, Window
 from pyguibud.designer.canvas import design
 from pyguibud.designer.canvas.engine import CanvasEngine, WindowView, reveal, widget_rect
-from pyguibud.designer.canvas.overlay import Overlay
+from pyguibud.designer.canvas.overlay import SELECTION_CAP, Overlay
 from pyguibud.designer.editing import Edge
 from pyguibud.designer.geometry import Rect
 from pyguibud.designer.panels.base import PanelBase
@@ -100,6 +101,8 @@ class CanvasPanel(PanelBase):
         self.stages_closing: Signal[CanvasPanel] = Signal()
         self._spec: ThemeSpec | None = None
         self._idle: str | None = None
+        self._depth = 0  # how deep the panel is in its own synchronous work (_settled)
+        self._deferred = False  # a rebuild fired inside that work and waits for its end
         self._unsubscribe_stack: Callable[[], None] = _nothing
         # The tab that our own code selected: Tk reports that switch later, as an event, and it
         # must not be taken for a click of the user.
@@ -132,13 +135,14 @@ class CanvasPanel(PanelBase):
     # ------------------------------------------------------------ the CanvasPanel protocol
     def show_window(self, window: object) -> None:
         """Bring the tab of ``window`` to the front (rendering it if it is stale)."""
-        for stage in self.stages:
-            if stage.window is window:
-                if self.notebook.select() != str(stage.page):
-                    self.notebook.select(stage.page)
-                if stage.stale:
-                    self._build(stage)
-        self._expected = str(self.notebook.select())
+        with self._settled():
+            for stage in tuple(self.stages):
+                if stage.window is window:
+                    if self.notebook.select() != str(stage.page):
+                        self.notebook.select(stage.page)
+                    if stage.stale:
+                        self._build(stage)
+            self._expected = str(self.notebook.select())
 
     def stage_of(self, window: object) -> _Stage | None:
         """The stage of ``window`` (tests and the later drag controller use it)."""
@@ -166,16 +170,28 @@ class CanvasPanel(PanelBase):
         self._render()
 
     def _on_selection(self, selection: Selection) -> None:
-        node = selection.node
-        if node is not None and selection.origin != "canvas":
-            self.show_window(window_of(node, self.session.document))
-        self._outline_all(reveal_node=True)
+        with self._settled():
+            node = selection.node
+            if node is not None and selection.origin != "canvas":
+                self.show_window(window_of(node, self.session.document))
+            self._outline_all(reveal_node=True)
+        count = len(selection.nodes)
+        if count > SELECTION_CAP + 1:  # the outlines are capped: say how many are selected
+            # Translators: status bar after a large multi-selection; {count} is the number of
+            # selected elements, {shown} how many of them the canvas outlines (fewer).
+            text = ngettext(
+                "{count} element selected; only {shown} are outlined.",
+                "{count} elements selected; only {shown} are outlined.",
+                count,
+            )
+            self.status(text.format(count=count, shown=SELECTION_CAP + 1))
 
     def _on_tab(self, _event: object) -> None:
-        current = str(self.notebook.select())
-        stage = next((s for s in self.stages if str(s.page) == current), None)
-        if stage is not None and stage.stale:
-            self._build(stage)
+        with self._settled():
+            current = str(self.notebook.select())
+            stage = next((s for s in self.stages if str(s.page) == current), None)
+            if stage is not None and stage.stale:
+                self._build(stage)
         if current == self._expected or stage is None:
             return
         self._expected = current
@@ -196,8 +212,38 @@ class CanvasPanel(PanelBase):
         if self._idle is None:
             self._idle = self.frame.after_idle(self._flush)
 
+    @contextlib.contextmanager
+    def _settled(self) -> Iterator[None]:
+        """Do the panel's own work without its scheduled rebuild re-entering it.
+
+        ``_build`` and ``_outline`` call ``update_idletasks()`` (spec dnd-selection 2.6), which
+        runs every idle handler, the pending ``_flush`` included. A re-render in there destroys
+        the stage being built or outlined (deleting or cutting a window: a selection change
+        right after the edit, ``bad window path name``). So the outermost call first runs the
+        pending rebuild itself, and a rebuild that still fires inside waits until it ends.
+        """
+        outer = self._depth == 0
+        if outer and self._idle is not None:
+            self.frame.after_cancel(self._idle)
+            self._flush()
+        self._depth += 1
+        try:
+            yield
+        finally:
+            self._depth -= 1
+        if outer and self._deferred:
+            self._deferred = False
+            self._flush()
+
     def _flush(self) -> None:
         self._idle = None
+        if self._depth:  # inside the panel's own update_idletasks(): after it (_settled)
+            self._deferred = True
+            return
+        with self._settled():
+            self._rebuild_stale()
+
+    def _rebuild_stale(self) -> None:
         document = self.session.document
         windows = [] if document is None else [id(w) for w in document.children]
         if windows != [id(s.window) for s in self.stages]:
@@ -430,6 +476,7 @@ class CanvasPanel(PanelBase):
             self.engine.restore_pages(view, self.engine.pages(stage.view))
         stage.stage.update_idletasks()
         view.frame.grid(row=2, column=0, sticky="nsew")
+        stage.overlay.sink(view.frame)  # created above the strips: beneath them now
         self._drop_view(stage)
         stage.view, stage.error = view, None
         stage.card.grid_remove()
@@ -497,7 +544,7 @@ class CanvasPanel(PanelBase):
         A stale stage is skipped too: its view is about to be replaced, and ``_build`` outlines
         the new one (an edit used to outline the shown tab four times, QA-13a-05).
         """
-        for stage in self.stages:
+        for stage in tuple(self.stages):
             if stage is not done and not stage.stale:
                 self._outline(stage, reveal_node=reveal_node)
 
@@ -519,8 +566,12 @@ class CanvasPanel(PanelBase):
                 rect = widget_rect(view.outer[key], stage.stage) if self._container(node) else None
                 empty += [rect] if rect is not None else []
         stage.overlay.show_empty(empty)
-        rects, primary_rect = [], None
+        rects, primary_rect, others = [], None, 0
         for node in self.session.selection.nodes:
+            if node is not primary:  # the primary always; the others up to SELECTION_CAP
+                if others >= SELECTION_CAP:
+                    continue
+                others += 1
             widget = stage.chrome.get(id(node), view.outer.get(id(node)))
             try:
                 rect = widget_rect(widget, stage.stage) if widget is not None else None

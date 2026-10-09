@@ -18,12 +18,14 @@ from typing import Any
 from pyguibud.core import PyGUIbudError, ReadResult, XmlIoError, default_registry, write_ui
 from pyguibud.core.keys import split_mnemonic
 from pyguibud.designer.actions import ActionRegistry
+from pyguibud.designer.clipboard_actions import ClipboardActions
 from pyguibud.designer.dialogs import files as file_dialogs
 from pyguibud.designer.dialogs.base import ModalDialog
 from pyguibud.designer.dialogs.confirm import ConfirmDialog
 from pyguibud.designer.dialogs.message import Answer, ChoiceDialog, message_dialog
 from pyguibud.designer.dialogs.new_file import NewFileDialog
 from pyguibud.designer.dialogs.recovery import RecoveryDialog
+from pyguibud.designer.dialogs.rename import RenameDialog
 from pyguibud.designer.dialogs.save_changes import save_changes_dialog
 from pyguibud.designer.dialogs.shortcuts import ShortcutsDialog
 from pyguibud.designer.edit import EditActions
@@ -54,6 +56,7 @@ from pyguibud.designer.standard_actions import (
     register_standard_actions,
 )
 from pyguibud.designer.theme import ThemeSpec, load_app_icon, load_theme_specs, spec_for_role
+from pyguibud.designer.windows import WindowActions
 from pyguibud.i18n import (
     LANGUAGES,
     N_,
@@ -165,6 +168,16 @@ class DesignerApp:
                     self._confirm,
                     self.message.emit,
                     busy=lambda: self.shell.canvas.rebuild_pending,  # drops key repeats
+                ),
+                clipboard=ClipboardActions(
+                    self.session,
+                    self.message.emit,
+                    self._clipboard_put,
+                    self._clipboard_get,
+                    current_window=self._canvas_window,
+                ),
+                windows=WindowActions(
+                    self.session, self._confirm, self.message.emit, self._ask_name
                 ),
                 files=FileCallbacks(
                     open=self.open_file,
@@ -307,6 +320,29 @@ class DesignerApp:
         """Ask ``question`` in a modal dialog; ``then`` runs only when the user confirms."""
         extra = {} if label is None else {"confirm_label": label}
         self._open_dialog(lambda: ConfirmDialog(self.root, question, then, **extra))
+
+    def _ask_name(
+        self, current: str, check: Callable[[str], str | None], then: Callable[[str], None]
+    ) -> None:
+        """Document > Rename window...: a one-line dialog that judges the id before it closes."""
+        self._open_dialog(lambda: RenameDialog(self.root, current, check, then))
+
+    def _clipboard_put(self, text: str) -> None:
+        """Copy and Cut: the text goes to the system clipboard (readable by other processes)."""
+        self.root.clipboard_clear()
+        self.root.clipboard_append(text)
+
+    def _clipboard_get(self) -> str:
+        """Paste: the clipboard text; "" when it is empty or not text (then: no elements)."""
+        try:
+            return str(self.root.clipboard_get())
+        except tkinter.TclError:
+            return ""
+
+    def _canvas_window(self) -> object | None:
+        """The window of the visible canvas tab (the paste target when nothing is selected)."""
+        stage = self.shell.canvas.current_stage()
+        return None if stage is None else stage.window
 
     def _ask(self, text: Callable[[], str], buttons: list[tuple[str, Answer]]) -> None:
         self._open_dialog(lambda: ChoiceDialog(self.root, text, buttons))

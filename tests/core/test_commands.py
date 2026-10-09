@@ -40,6 +40,7 @@ from pyguibud.core import (
     dump_ui,
     read_ui,
     read_ui_string,
+    validate,
 )
 from pyguibud.core.commands import (
     DEFAULT_LAYOUT,
@@ -899,3 +900,81 @@ def test_parents_ok_detects_bad_pointer(doc: Document) -> None:
 def _drop_demo_module() -> Iterator[None]:
     yield
     sys.modules.pop("validator_demo", None)
+
+
+# ---------------------------------------------------------------- same-file includes in the guard
+# ADR-006 amendment (2026-10-09, QA-14a2-10).
+_INCLUDED = """<?xml version="1.0" encoding="UTF-8"?>
+<pyguibud-ui schema_version="1.0" xmlns="urn:pyguibud:ui:1">
+  <meta source_locale="en_GB"/>
+  <window id="main" kind="main"><layout type="pack"/>
+    <include id="inc" src="#" component="comp"><pack/></include>
+  </window>
+  <window id="comp" kind="component"><layout type="pack"/>
+    <widget class="Label" id="lbl"><pack/></widget>
+  </window>
+  <window id="other" kind="component"><layout type="pack"/></window>
+</pyguibud-ui>
+"""
+
+
+def _included() -> tuple[Document, CommandStack]:
+    document = read_ui_string(_INCLUDED).document
+    return document, CommandStack(document, default_registry())
+
+
+def _find(document: Document, node_id: str) -> object:
+    found = document.find(node_id)
+    assert found is not None
+    return found
+
+
+def test_the_guard_refuses_a_component_kind_change_while_it_is_included() -> None:
+    document, stack = _included()
+    before = dump_ui(document)
+    outcome = stack.execute(SetField(_find(document, "comp"), "kind", "dialog"))
+    assert not outcome.accepted and dump_ui(document) == before
+    assert outcome.findings[0].code == "validate.include_not_component"
+
+
+@pytest.mark.parametrize(
+    ("component", "code"),
+    [
+        ("main", "validate.include_not_component"),
+        ("ghost", "validate.include_not_component"),
+        ("comp", None),  # unchanged: a no-op
+        ("other", None),
+    ],
+)
+def test_the_guard_judges_an_include_component(component: str, code: str | None) -> None:
+    document, stack = _included()
+    outcome = stack.execute(SetField(_find(document, "inc"), "component", component))
+    if code is None:
+        assert outcome.accepted
+    else:
+        assert not outcome.accepted and outcome.findings[0].code == code
+
+
+def test_the_guard_refuses_an_include_of_its_own_window() -> None:
+    document, stack = _included()
+    include = Include(id="loop", src="#", component="comp", placement=PackPlacement())
+    outcome = stack.execute(InsertNode(_find(document, "comp"), include))
+    assert not outcome.accepted and outcome.findings[0].code == "validate.include_cycle"
+
+
+def test_an_already_cyclic_document_stays_editable() -> None:
+    """The R52 guard key is the loop itself: reordering or a valid edit adds no new error."""
+    text = _INCLUDED.replace(
+        '<window id="other" kind="component"><layout type="pack"/></window>',
+        '<window id="a" kind="component"><layout type="pack"/>'
+        '<include id="ib" src="#" component="b"><pack/></include></window>'
+        '<window id="b" kind="component"><layout type="pack"/>'
+        '<include id="ia" src="#" component="a"><pack/></include></window>',
+    )
+    document = read_ui_string(text).document
+    stack = CommandStack(document, default_registry())
+    assert not validate(document, default_registry()).ok  # a -> b -> a
+    windows = list(document.children)
+    assert stack.execute(MoveNode(windows[-1], document, 0)).accepted  # b first: entered at b
+    include = Include(id="more", src="#", component="comp", placement=PackPlacement())
+    assert stack.execute(InsertNode(_find(document, "main"), include)).accepted

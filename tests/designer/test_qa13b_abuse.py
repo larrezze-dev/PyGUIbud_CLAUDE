@@ -268,7 +268,7 @@ _NEW_13B = (
     "Tab selects the next widget; F6 moves to the next panel.",
     # "{count} elements selected; showing '{id}'." was replaced in 14a (spec 3.4).
     "{count} element selected",
-    "Select nex_t widget",
+    "Select _next widget",
     "Select prev_ious widget",
     "Select _first child",
     "Select _parent",

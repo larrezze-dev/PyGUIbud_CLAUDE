@@ -43,6 +43,7 @@ PURE_MODULES = (
     "pyguibud.designer.files",
     "pyguibud.designer.recovery",
     "pyguibud.designer.properties",
+    "pyguibud.designer.clipboard",
 )
 
 

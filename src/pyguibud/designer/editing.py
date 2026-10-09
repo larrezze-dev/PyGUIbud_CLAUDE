@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import keyword
 import re
-from collections.abc import Sequence
+from collections.abc import Iterable, Sequence
 from dataclasses import replace
 from typing import Literal
 
@@ -26,10 +26,13 @@ from pyguibud.core.commands import (
     change_layout,
 )
 from pyguibud.core.model import (
+    Action,
     Document,
     GridCell,
     Include,
+    Menu,
     Menubar,
+    MenuSeparator,
     PackPlacement,
     PagePlacement,
     Placement,
@@ -46,26 +49,36 @@ from pyguibud.designer.targets import MAX_INDEX, Target
 from pyguibud.i18n import N_, _
 
 __all__ = [
+    "M_EXTERNAL_INCLUDES",
+    "M_LAST_WINDOW",
     "Built",
     "Edge",
+    "MenuItem",
     "delete_command",
+    "delete_window_command",
     "insert_command",
+    "menu_insert_command",
+    "menu_insert_enabled",
     "move_command",
     "move_index",
     "new_node",
     "new_variable",
+    "new_window",
     "nudge_command",
     "past_the_grid",
     "refusal",
     "relayout_command",
     "remove_and_unbind",
     "rename_variable",
+    "rename_window",
     "reorder_command",
     "resize_cell",
     "resize_command",
+    "same_file_includes",
     "span_rect",
     "unique_id",
     "variable_users",
+    "window_delete_refusal",
 ]
 
 _M_STATUSBAR_EXISTS = N_("This window already has a status bar.")
@@ -100,10 +113,13 @@ def _stem(class_name: str) -> str:
     return stem[:_STEM_MAX]
 
 
-def unique_id(document: Document | None, stem: str) -> str:
-    """``f"{stem}{n}"`` for the smallest n >= 1 that is free in the one id namespace."""
+def unique_id(document: Document | None, stem: str, taken: Iterable[str] = ()) -> str:
+    """``f"{stem}{n}"`` for the smallest n >= 1 that is free in the one id namespace.
+
+    ``taken`` adds ids that are not in ``document`` yet (a paste being prepared).
+    """
     stem = _stem(stem)
-    used: set[str] = set()
+    used: set[str] = set(taken)
     if document is not None:
         used.update(document.variables, document.resources)
         used.update(i for n in document.walk() if isinstance(i := getattr(n, "id", None), str))
@@ -531,3 +547,118 @@ def remove_and_unbind(document: Document, var_id: str) -> Command:
         return RemoveVariable(document, var_id)
     unbind: list[Command] = [SetField(w, "bind", None) for w in users]
     return Macro(_M_REMOVE_AND_UNBIND, [*unbind, RemoveVariable(document, var_id)])
+
+
+# ---------------------------------------------------------------- menus (14a.2, spec 6)
+#: What Edit > Insert adds.
+MenuItem = Literal["menubar", "menu", "action", "separator", "statusbar"]
+# The default texts are user content in the source language, like a new widget's text.
+_MENU_TEXT = N_("Menu")
+_ACTION_TEXT = N_("Action")
+
+
+def menu_insert_enabled(selected: object, kind: MenuItem) -> bool:
+    """True when Insert > ``kind`` applies to ``selected`` (spec 6 table; greys menu items)."""
+    if kind in ("menubar", "statusbar"):
+        # Mirrors validate.component_chrome: a component window has no menu bar or status bar.
+        return (
+            isinstance(selected, Window)
+            and selected.kind != "component"
+            and getattr(selected, kind) is None
+        )
+    if kind == "menu":
+        return isinstance(selected, Menubar | Menu)
+    return isinstance(selected, Menu) or (
+        isinstance(selected, Action | MenuSeparator) and selected.parent is not None
+    )
+
+
+def menu_insert_command(document: Document, selected: object, kind: MenuItem) -> Command | None:
+    """The Insert > ``kind`` command for ``selected``, or None when it does not apply.
+
+    An action or separator goes after a selected item, or at the end of a selected menu. The
+    stack attaches a copy of a new bar: select ``window.menubar``/``statusbar`` afterwards.
+    """
+    if not menu_insert_enabled(selected, kind):
+        return None
+    if isinstance(selected, Window):
+        if kind == "menubar":
+            return SetField(selected, "menubar", Menubar())
+        return SetField(selected, "statusbar", Statusbar(id=unique_id(document, "statusbar")))
+    node: Menu | Action | MenuSeparator
+    if kind == "menu":
+        node = Menu(id=unique_id(document, "menu"), props={"text": _text(_MENU_TEXT)})
+    elif kind == "action":
+        node = Action(id=unique_id(document, "act"), props={"text": _text(_ACTION_TEXT)})
+    else:
+        node = MenuSeparator()
+    if isinstance(selected, Action | MenuSeparator) and selected.parent is not None:
+        menu = selected.parent
+        return InsertNode(menu, node, menu.index_of(selected) + 1)
+    return InsertNode(selected, node)
+
+
+def _text(value: str) -> Prop:
+    return Prop(name="text", value=value, translatable=True)
+
+
+# ---------------------------------------------------------------- windows (14a.2, spec 7)
+_M_RENAME_WINDOW = N_("Rename window")
+M_LAST_WINDOW = N_("A document needs at least one window.")
+# Translators: deleting a component that another window still shows; {id} is the component,
+# {user} the window that includes it.
+_M_STILL_INCLUDED = N_("'{id}' is still included by '{user}'.")
+#: Shown after renaming a component: other files may include it by its old id.
+M_EXTERNAL_INCLUDES = N_("Files that include this component from outside were not updated.")
+
+
+def new_window(document: Document, kind: Literal["main", "dialog", "component"]) -> Command:
+    """Add an empty window of ``kind`` (a second main window is refused by the guard)."""
+    window = Window(id=unique_id(document, kind), kind=kind, layout=DEFAULT_LAYOUT)
+    return InsertNode(document, window)
+
+
+def same_file_includes(document: Document, component: str) -> list[Include]:
+    """The includes (``src="#"``) of this document that show ``component``."""
+    return [
+        n
+        for n in document.walk()
+        if isinstance(n, Include) and n.src == "#" and n.component == component
+    ]
+
+
+def rename_window(document: Document, window: Window, new: str) -> Command:
+    """Rename ``window`` and the same-file includes of it, as one step (the guard judges ``new``).
+
+    Files that include it from outside are not updated; the UI shows ``M_EXTERNAL_INCLUDES``
+    after renaming a component.
+    """
+    commands: list[Command] = [SetField(window, "id", new)]
+    commands += [SetField(i, "component", new) for i in same_file_includes(document, window.id)]
+    return Macro(_M_RENAME_WINDOW, commands)
+
+
+def _window_of(node: object) -> Window | None:
+    return next((a for a in getattr(node, "ancestors", tuple)() if isinstance(a, Window)), None)
+
+
+def window_delete_refusal(
+    document: Document, window: Window, *, also: Sequence[Window] = ()
+) -> str | None:
+    """Why ``window`` cannot be deleted (the last one; a component still included), or None.
+
+    ``also`` are windows removed in the same step (a cut): their includes do not count.
+    """
+    if len(document.children) <= 1:
+        return _(M_LAST_WINDOW)
+    for include in same_file_includes(document, window.id):
+        user = _window_of(include)
+        if user is not window and not any(user is w for w in also):
+            name = include.id if user is None else user.id
+            return _(_M_STILL_INCLUDED).format(id=window.id, user=name)
+    return None
+
+
+def delete_window_command(document: Document, window: Window) -> Built:
+    """``RemoveNode(window)``, or the reason it is refused."""
+    return window_delete_refusal(document, window) or RemoveNode(window)

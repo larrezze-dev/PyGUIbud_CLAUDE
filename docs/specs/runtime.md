@@ -368,7 +368,7 @@ class ImageProbe:                                # core/files.py
     width: int = 0
     height: int = 0
 ```
-- `files=None` (every existing caller, and **always the command guards**: I/O would break the 100 ms edit budget) skips R49–R53 and R75–R76. Every other new rule is pure and always runs.
+- `files=None` (every existing caller, and **always the command guards**: I/O would break the 100 ms edit budget) skips R49–R53 and R75–R76. Every other new rule is pure and always runs. *Amended 2026-10-09 (ADR-006 amendment): R51–R53 still run for same-file `src="#"` includes, because they need no I/O.*
 - **`DiskFiles(path, root_result)`** (`core/files.py`):
   - key = `os.path.normcase(os.path.realpath(p))`; `read(root)` returns `root_result`;
   - `read` requires a regular file (directories, devices → `OSError`), then `read_ui`, which applies the 10 MiB and depth limits;

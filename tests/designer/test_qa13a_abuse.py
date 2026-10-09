@@ -477,11 +477,15 @@ def test_a_drop_on_the_caption_menubar_strip_or_status_bar_inserts_nothing(
 
 
 # ---------------------------------------------------------------- delete, undo and redo abuse
-_NOT_DELETABLE = "Windows, menu bars and status bars cannot be deleted here."
+_NOT_DELETABLE = "Windows are deleted with Document > Delete window."
+
+
+def _has_statusbar(window: Any) -> bool:
+    return bool(window.statusbar is not None)
 
 
 @pytest.mark.gui
-def test_the_delete_key_never_removes_a_window_menubar_or_statusbar(
+def test_the_delete_key_never_removes_a_window_but_removes_a_menubar_and_statusbar(
     app: DesignerApp, designer_root: Any, tk_errors: list[BaseException]
 ) -> None:
     app.session.new_from_template("main_window")
@@ -492,16 +496,22 @@ def test_the_delete_key_never_removes_a_window_menubar_or_statusbar(
     tree = app.shell.tree.tree
     assert tree is not None
     with _focused(designer_root, tree):
-        for node in (window, window.menubar, window.statusbar):
-            session.select(node, origin="tree")
-            _settle(designer_root)
-            app.registry.invoke("edit.delete")  # the menu item
-            app.shell.show_message("")
-            tree.event_generate("<Delete>")  # the key, on the focused object tree
-            _settle(designer_root)
-            assert app._live_dialogs() == []
-            # QA-13a-07: the key is never silently ignored.
-            assert app.shell._message == _NOT_DELETABLE
+        session.select(window, origin="tree")
+        _settle(designer_root)
+        app.registry.invoke("edit.delete")  # the menu item
+        app.shell.show_message("")
+        tree.event_generate("<Delete>")  # the key, on the focused object tree
+        _settle(designer_root)
+        assert app._live_dialogs() == []
+        # QA-13a-07: the key is never silently ignored.
+        assert app.shell._message == _NOT_DELETABLE
+        # 14a.2 lifts the guard for the bars: Delete removes the status bar (one undo step).
+        session.select(window.statusbar, origin="tree")
+        tree.event_generate("<Delete>")
+        _settle(designer_root)
+        assert not _has_statusbar(window)
+        app.registry.invoke("edit.undo")
+        assert _has_statusbar(window)
     assert session.stack.index == 0 and dump_ui(session.document) == before
     # Control: the same key on the focused tree does delete a widget (the key path is live).
     assert _keyboard_insert(app, designer_root, window, "Label")

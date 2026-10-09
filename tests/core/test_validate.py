@@ -38,9 +38,11 @@ from pyguibud.core import (
     default_registry,
     dump_ui,
     read_ui,
+    read_ui_string,
     validate,
     validate_read,
 )
+from pyguibud.core.files import DiskFiles
 from pyguibud.core.validate import (
     BIND_TYPES,
     MAX_FINDINGS,
@@ -883,3 +885,121 @@ def test_random_documents_never_raise_and_are_stable(children: list[Widget], lim
     assert len(capped.findings) <= limit
     assert capped.ok == full.ok
     assert structure(document) == before
+
+
+# ---------------------------------------------------------------- same-file includes, no files=
+# ADR-006 amendment (2026-10-09, QA-14a2-10): R51 to R53 follow src="#" without disk access.
+_SAME_FILE = (
+    '<?xml version="1.0" encoding="UTF-8"?>\n'
+    '<pyguibud-ui schema_version="1.0" xmlns="urn:pyguibud:ui:1">'
+    '<meta source_locale="en_GB"/>{windows}</pyguibud-ui>\n'
+)
+_MAIN = '<window id="main" kind="main"><layout type="pack"/>{body}</window>'
+
+
+def _component(name: str, body: str = "") -> str:
+    return f'<window id="{name}" kind="component"><layout type="pack"/>{body}</window>'
+
+
+def _inc(include_id: str, component: str, src: str = "#") -> str:
+    return f'<include id="{include_id}" src="{src}" component="{component}"><pack/></include>'
+
+
+_CHAIN = "".join(_component(f"c{k}", _inc(f"i{k}", f"c{k + 1}")) for k in range(10))
+SAME_FILE_CASES = {
+    "dangling": _MAIN.format(body=_inc("i", "ghost")),
+    "to_main": _MAIN.format(body="") + _component("c", _inc("i", "main")),
+    "to_dialog": _MAIN.format(body=_inc("i", "dlg"))
+    + '<window id="dlg" kind="dialog"><layout type="pack"/></window>',
+    "self": _MAIN.format(body="") + _component("a", _inc("i", "a")),
+    "a_b_a": _MAIN.format(body="")
+    + _component("a", _inc("ib", "b"))
+    + _component("b", _inc("ia", "a")),
+    "too_deep": _MAIN.format(body=_inc("i", "c0")) + _CHAIN + _component("c10"),
+}
+_INCLUDE_CODES = (
+    "validate.include_not_component",
+    "validate.include_cycle",
+    "validate.include_limit",
+    "validate.include_missing",
+    "validate.include_invalid",
+)
+
+
+def _include_findings(report: ValidationReport) -> list[tuple[str, object, str]]:
+    return [
+        (f.code, getattr(f.anchor, "id", None), f.part)
+        for f in report.findings
+        if f.code in _INCLUDE_CODES
+    ]
+
+
+def _same_file(windows: str, tmp_path: Path) -> tuple[ValidationReport, ValidationReport]:
+    path = tmp_path / "same.ui"
+    path.write_text(_SAME_FILE.format(windows=windows), encoding="utf-8")
+    result = read_ui(path)
+    without = validate(result.document, default_registry())
+    with_files = validate(result.document, default_registry(), files=DiskFiles(path, result))
+    return without, with_files
+
+
+@pytest.mark.parametrize("case", sorted(SAME_FILE_CASES))
+def test_same_file_includes_are_checked_without_files_as_with_them(
+    case: str, tmp_path: Path
+) -> None:
+    without, with_files = _same_file(SAME_FILE_CASES[case], tmp_path)
+    found = _include_findings(without)
+    assert len(found) == 1, found  # exactly one finding per bad include
+    assert found == _include_findings(with_files)  # same code, anchor and part as with files=
+    assert all(f.severity == "error" for f in without.findings if f.code in _INCLUDE_CODES)
+
+
+def test_same_file_include_codes_and_chains_without_files(tmp_path: Path) -> None:
+    expected = {
+        "dangling": "validate.include_not_component",
+        "to_main": "validate.include_not_component",
+        "to_dialog": "validate.include_not_component",
+        "self": "validate.include_cycle",
+        "a_b_a": "validate.include_cycle",
+        "too_deep": "validate.include_limit",
+    }
+    for case, code in expected.items():
+        without, _with = _same_file(SAME_FILE_CASES[case], tmp_path)
+        (finding,) = [f for f in without.findings if f.code in _INCLUDE_CODES]
+        assert finding.code == code, case
+    without, _with = _same_file(SAME_FILE_CASES["self"], tmp_path)
+    (cycle,) = [f for f in without.findings if f.code == "validate.include_cycle"]
+    assert cycle.message == "Including 'a' from '#' creates a cycle: #a → #a."
+    without, _with = _same_file(SAME_FILE_CASES["a_b_a"], tmp_path)
+    (cycle,) = [f for f in without.findings if f.code == "validate.include_cycle"]
+    assert cycle.message.endswith("#a → #b → #a.")
+    assert cycle.related == frozenset({("#", "a"), ("#", "b")})
+
+
+def test_an_external_include_gives_nothing_without_files() -> None:
+    text = _SAME_FILE.format(windows=_MAIN.format(body=_inc("i", "c", src="other/x.ui")))
+    report = validate(read_ui_string(text).document, default_registry())
+    assert _include_findings(report) == [] and report.ok
+
+
+def test_a_valid_same_file_include_is_clean_without_files() -> None:
+    text = _SAME_FILE.format(windows=_MAIN.format(body=_inc("i", "c")) + _component("c"))
+    assert validate(read_ui_string(text).document, default_registry()).findings == ()
+
+
+_SHIPPED = sorted(
+    [
+        *(Path(__file__).parents[2] / "src" / "pyguibud" / "designer" / "templates").glob("*.ui"),
+        *EXAMPLES.glob("**/*.ui"),
+        *(Path(__file__).parents[1] / "codegen" / "data").glob("*.ui"),
+    ]
+)
+
+
+@pytest.mark.parametrize("path", _SHIPPED, ids=lambda p: p.name)
+def test_shipped_files_stay_valid_without_files_and_match_the_disk_run(path: Path) -> None:
+    result = read_ui(path)
+    without = validate(result.document, default_registry())
+    with_files = validate(result.document, default_registry(), files=DiskFiles(path, result))
+    assert without.ok, [f.code for f in without.errors]
+    assert _include_findings(without) == _include_findings(with_files)

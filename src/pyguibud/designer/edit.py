@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from collections.abc import Callable, Iterator
 
-from pyguibud.core.commands import Command
+from pyguibud.core.commands import Command, InsertNode, SetField
 from pyguibud.core.model import (
     Action,
     GridCell,
@@ -23,19 +23,25 @@ from pyguibud.core.model import (
     Window,
 )
 from pyguibud.designer.editing import (
+    MenuItem,
     delete_command,
+    menu_insert_command,
+    menu_insert_enabled,
     nudge_command,
     past_the_grid,
     reorder_command,
     resize_command,
 )
+from pyguibud.designer.present.tree import node_label
 from pyguibud.designer.session import DesignerSession
 from pyguibud.i18n import N_, _, ngettext
 
 __all__ = ["EditActions", "count_descendants", "tab_order"]
 
-_M_NOT_DELETABLE = N_("Windows, menu bars and status bars cannot be deleted here.")
-_M_MENU_EDITOR = N_("Menus and actions are edited in the menu editor.")
+# Translators: "Document" and "Delete window" are the menu and the entry named in the app.
+_M_NOT_DELETABLE = N_("Windows are deleted with Document > Delete window.")
+#: What Edit > Delete (and the Delete key) removes: elements and the menu nodes.
+_DELETABLE = (Widget, Include, Menu, Action, MenuSeparator, Menubar, Statusbar)
 
 #: ``(question, then)``: show ``question``; call ``then`` when the user agrees.
 Confirm = Callable[[str, Callable[[], None]], None]
@@ -77,7 +83,7 @@ def _roots(nodes: tuple[object, ...]) -> list[object]:
     return [
         n
         for n in nodes
-        if isinstance(n, Widget | Include) and not any(id(a) in chosen for a in _ancestors(n))
+        if isinstance(n, _DELETABLE) and not any(id(a) in chosen for a in _ancestors(n))
     ]
 
 
@@ -124,25 +130,31 @@ class EditActions:
 
     # ------------------------------------------------------------ delete
     def can_delete(self) -> bool:
-        """Only widgets and includes: windows and bars belong to the Step 14 editors."""
+        """Elements and menu nodes; a window is deleted from the Document menu."""
         node = self.session.selection.node
-        return self.session.stack is not None and isinstance(node, Widget | Include)
+        return self.editable() and isinstance(node, _DELETABLE)
+
+    def editable(self) -> bool:
+        """A document is open and may be edited (not read-only: QA-14a2 N3)."""
+        return self.session.stack is not None and self.session.read_only_refusal() is None
+
+    def read_only_refusal(self) -> str | None:
+        """Why the editing actions are greyed (shown when their shortcut is pressed)."""
+        return self.session.read_only_refusal()
 
     def delete_refusal(self) -> str | None:
         """Why Delete does nothing on the selection, for the status bar (QA-13a-07), or None."""
         node = self.session.selection.node
         if self.session.stack is None:
             return None
-        if isinstance(node, Window | Menubar | Statusbar):
-            return _(_M_NOT_DELETABLE)
-        if isinstance(node, Menu | Action | MenuSeparator):
-            return _(_M_MENU_EDITOR)
-        return None
+        if reason := self.session.read_only_refusal():
+            return reason
+        return _(_M_NOT_DELETABLE) if isinstance(node, Window) else None
 
     def delete(self) -> None:
         """Delete the selected nodes as one step; any of them with children asks first."""
         nodes = _roots(self.session.selection.nodes)
-        if not self.can_delete() or not nodes:
+        if not self.can_delete() or not nodes or self._refused():
             return
         count = sum(count_descendants(node) for node in nodes)
         if count == 0:
@@ -153,7 +165,7 @@ class EditActions:
                 "Delete '{id}' and its {count} element?",
                 "Delete '{id}' and its {count} elements?",
                 count,
-            ).format(id=getattr(nodes[0], "id", ""), count=count)
+            ).format(id=getattr(nodes[0], "id", "") or node_label(nodes[0]), count=count)
         else:
             # Translators: several selected elements are deleted with what they contain.
             question = ngettext(
@@ -163,12 +175,51 @@ class EditActions:
             ).format(count=len(nodes))
         self._confirm(question, lambda: self._remove(nodes))
 
+    def _holder(self, node: object) -> object | None:
+        """The node that holds ``node``: its parent, or the window of a bar (bars have none)."""
+        if isinstance(node, Menubar | Statusbar):
+            document = self.session.document
+            windows = [] if document is None else document.children
+            return next((w for w in windows if node in (w.menubar, w.statusbar)), None)
+        return getattr(node, "parent", None)
+
     def _remove(self, nodes: list[object]) -> None:
-        parent = getattr(nodes[-1], "parent", None)
-        if any(getattr(n, "parent", None) is None for n in nodes):
+        parent = self._holder(nodes[-1])
+        if any(self._holder(n) is None for n in nodes):
             return  # the document changed while the dialog was open
-        if self._run(delete_command(*nodes)):
+        bar = nodes[0]
+        if isinstance(bar, Menubar | Statusbar):  # a bar is a field of its window (spec 6)
+            built: Command = SetField(
+                parent, "menubar" if isinstance(bar, Menubar) else "statusbar", None
+            )
+        else:
+            built = delete_command(*nodes)
+        if self._run(built):
             self.session.select(parent, origin="session")
+
+    # ------------------------------------------------------------ insert (spec 6)
+    def can_insert(self, kind: MenuItem) -> bool:
+        """Edit > Insert > ``kind`` applies to the selection (greys the menu entries)."""
+        return self.editable() and menu_insert_enabled(self.session.selection.node, kind)
+
+    def insert(self, kind: MenuItem) -> None:
+        """Insert a menu bar, menu, action, separator or status bar and select it."""
+        selected, document = self.session.selection.node, self.session.document
+        if self._refused():
+            return
+        command = None if document is None else menu_insert_command(document, selected, kind)
+        if command is None or not self._run(command):
+            return
+        # The stack attaches a copy of a bar: read it back from the window (spec 6).
+        added = command.node if isinstance(command, InsertNode) else getattr(selected, kind, None)
+        self.session.select(added, origin="session")
+
+    def _refused(self) -> bool:
+        """True (and the reason is shown) when the document is read-only (before any question)."""
+        reason = self.session.read_only_refusal()
+        if reason:
+            self._message(reason)
+        return reason is not None
 
     def _run(self, built: Command | str) -> bool:
         """Execute ``built`` as one undo step; a refusal goes to the status bar."""

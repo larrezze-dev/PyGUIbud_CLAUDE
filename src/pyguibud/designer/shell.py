@@ -38,10 +38,60 @@ MESSAGE_MS = 5000
 #: Text-input classes keep their own keys: the document's undo must not steal a typed Ctrl+Z.
 _TEXT_CLASSES = frozenset({"TEntry", "Entry", "Text", "TCombobox", "TSpinbox", "Spinbox"})
 _TEXT_OWNED = frozenset({"edit.undo", "edit.redo"})
-#: Act once per physical key press: a held Delete must not cascade onto the parent (QA-13b-04).
-_ONCE_PER_PRESS = frozenset({"edit.delete"})
-#: Actions that first commit the inspector's pending text (spec 14a 3.3, risk R2).
-_FLUSH_FIRST = frozenset({"edit.undo", "edit.redo"})
+#: Act once per physical key press: a held Delete or Ctrl+X must not cascade onto the parent
+#: that the removal selects (QA-13b-04), nor a held Ctrl+V/Ctrl+D multiply the pasted widgets.
+_ONCE_PER_PRESS = frozenset({"edit.delete", "edit.cut", "edit.paste", "edit.duplicate"})
+#: Actions that first commit the inspector's pending text (spec 14a 3.3, risk R2): every one
+#: that reads or edits the document, so the typed value is one step of its own (undone after
+#: the action) and a refused value stops the action with its reason (A15, QA-14a2-02).
+_FLUSH_FIRST = frozenset(
+    {
+        "edit.undo",
+        "edit.redo",
+        "edit.copy",
+        "edit.cut",
+        "edit.paste",
+        "edit.duplicate",
+        "edit.delete",
+        "document.rename",
+        "document.delete",
+    }
+)
+_FLUSH_FIRST_GROUPS = ("edit.insert.", "document.add_")
+
+
+def _flush_first(action_id: str) -> bool:
+    return action_id in _FLUSH_FIRST or action_id.startswith(_FLUSH_FIRST_GROUPS)
+
+
+def unique_mnemonics(entries: list[tuple[str, int]]) -> list[int]:
+    """One access key per entry of a menu, none shared (QA-14a2-03).
+
+    The tree's context menu merges Edit > Insert and the clipboard group, whose translated
+    mnemonics may clash. Each entry keeps its own key while it is free (in menu order); a
+    clashing one moves to the first free letter or digit of its label, else it has none (-1).
+    """
+    taken: set[str] = set()
+    result: list[int] = []
+    for label, underline in entries:
+        key = label[underline].lower() if 0 <= underline < len(label) else ""
+        if key and key not in taken:
+            taken.add(key)
+            result.append(underline)
+        else:
+            result.append(-2)  # decided in the second pass
+    for k, (label, _underline) in enumerate(entries):
+        if result[k] != -2:
+            continue
+        free = next((i for i, c in enumerate(label) if c.isalnum() and c.lower() not in taken), -1)
+        if free >= 0:
+            taken.add(label[free].lower())
+        result[k] = free
+    return result
+
+
+#: The actions of the object tree's context menu after the Insert group.
+_TREE_MENU = ("edit.cut", "edit.copy", "edit.paste", "edit.duplicate", "edit.delete")
 
 _Entry = tuple[tkinter.Menu, int, "ActionDef | MenuDef"]
 
@@ -130,6 +180,7 @@ class Shell:
             session.document_changed.connect(lambda _d: self._refresh_status()),
         ]
         self._bind_shortcuts()
+        self._build_tree_menu()
         root.bind_all("<FocusIn>", self._on_focus_in, add="+")
         for sequence, step in (("<Control-Tab>", 1), ("<Control-Shift-Tab>", -1)):
             root.bind_all(sequence, lambda e, d=step: self._switch_tab(e, d))
@@ -200,6 +251,41 @@ class Shell:
             menu.add_command(**options)
         self._entries.append((menu, int(menu.index("end") or 0), action))
 
+    def _build_tree_menu(self) -> None:
+        """The object tree's context menu: Insert, the clipboard and Delete (registry actions)."""
+        menu = tkinter.Menu(self.root, tearoff=False, postcommand=self.refresh_states)
+        self._menus.append(menu)
+        self.tree_menu = menu
+        known = "edit.insert" in self.registry.menu_ids()
+        items = self.registry.menu_items("edit.insert") if known else ()
+        inserts = [i for i in items if isinstance(i, ActionDef)]
+        groups = (inserts, [a for n in _TREE_MENU if (a := self.registry.get(n)) is not None])
+        for group in (g for g in groups if g):
+            if menu.index("end") is not None:
+                menu.add_separator()
+            for action in group:
+                self._add_action(menu, action)
+        self._unique_access_keys(menu)
+
+        def popup(x: int, y: int) -> None:
+            try:
+                menu.tk_popup(x, y)
+            finally:
+                menu.grab_release()
+
+        self.tree.popup = popup
+
+    @staticmethod
+    def _unique_access_keys(menu: tkinter.Menu) -> None:
+        """Give the merged tree menu one access key per entry (after building or retranslating)."""
+        last = menu.index("end")
+        indices = [i for i in range(0 if last is None else last + 1) if menu.type(i) != "separator"]
+        entries = [
+            (str(menu.entrycget(i, "label")), int(menu.entrycget(i, "underline"))) for i in indices
+        ]
+        for index, underline in zip(indices, unique_mnemonics(entries), strict=True):
+            menu.entryconfigure(index, underline=underline)
+
     def refresh_states(self) -> None:
         """Bring enabled state and radio selection of every menu entry and button up to date."""
         for menu, index, item in self._entries:
@@ -224,6 +310,7 @@ class Shell:
             else:
                 text, underline = split_mnemonic(label_of(item))
             menu.entryconfigure(index, label=text, underline=underline)
+        self._unique_access_keys(self.tree_menu)
         self.refresh_states()
 
     # ------------------------------------------------------------ toolbar
@@ -296,7 +383,7 @@ class Shell:
         return any(path == p or path.startswith(p + ".") for p in panels)
 
     def _invoke(self, action_id: str) -> bool:
-        if action_id in _FLUSH_FIRST and not self.flush():
+        if _flush_first(action_id) and not self.flush():
             return True  # the refused text stays marked and its reason is shown
         self._in_command = True
         try:
@@ -555,7 +642,7 @@ class Shell:
             for sequence in (*self._bound, "<FocusIn>", "<KeyRelease>"):
                 self.root.unbind_all(sequence)
             self.root.configure(menu="")
-            for widget in (self.menubar, self.toolbar, self.body, self.statusbar):
+            for widget in (self.menubar, self.tree_menu, self.toolbar, self.body, self.statusbar):
                 widget.destroy()
         except tkinter.TclError:  # the root is already gone
             _log.debug("The window was already destroyed", exc_info=True)

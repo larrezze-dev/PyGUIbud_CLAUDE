@@ -133,7 +133,7 @@ tab ─ tk.Canvas (scroll host, xview/yview + ttk scrollbars)
             ├ caption   (ttk.Label: title from on_title, else id; + kind label)      [chrome]
             ├ menustrip (ttk.Frame of ttk.Labels, one per top-level menu entry)       [chrome]
             ├ window frame (from embed; contains body / status bar)                  [document]
-            └ overlay strips and handles (place()-d, lift()-ed)                     [chrome, §3]
+            └ overlay strips and handles (place()-d, stacked at creation)           [chrome, §3]
 ```
 - The window frame is gridded at `minsize = (min_width, min_height)` using `stage.grid_columnconfigure/rowconfigure(minsize=…)`. Otherwise it gets its natural requested size; windows never stretch to the tab.
 - The **menubar strip** shows each entry `label` with its `underline` (from the hidden `Menu` tree). Clicking a strip label selects that `Menu` node; the menus never open.
@@ -151,7 +151,8 @@ tab ─ tk.Canvas (scroll host, xview/yview + ttk scrollbars)
 A build exception for one window shows an error card in its tab instead: `_("This window cannot be drawn on the canvas: {reason}")`, plus the error count. The exception is logged with its traceback. The tree, inspector and other tabs keep working. The partially built frame is destroyed by `TkSession.build()`.
 
 ## 3. Overlay (`canvas/overlay.py`)
-**Technique (recommended, ADR-010):** `place()`-d `tk.Frame` strips and handles, children of the **stage**, raised with `lift()`.
+**Technique (recommended, ADR-010):** `place()`-d `tk.Frame` strips and handles, children of the **stage**, above the window frame in the stacking order.
+- **Stacking (amended 14a.2, 2026-10-08):** a strip's stacking order is set once, when it is created: it goes just below the lowest strip of the layers above it (bottom to top: empty outlines, cell grid, selection, insertion target, handles, rubber band), and within a layer a later strip is above an earlier one. A redraw never restacks. After a rebuild, the new window frame (created on top) is lowered beneath every strip with one `lower()` (`Overlay.sink`). Raising every strip on every redraw was quadratic, because a Tk raise walks the sibling list. A redraw sends only the strips whose rect, colour or cursor changed to Tk.
 - A child of the stage with a higher stacking order covers the whole subtree of the window frame, which is its sibling.
 - Coordinates are `widget.winfo_rootx() - stage.winfo_rootx()` (and the same for y), read after `update_idletasks()`.
 
@@ -164,6 +165,7 @@ A build exception for one window shows an error card in its tab instead: `_("Thi
 
 **Elements:**
 - **Selection outline:** 4 strips of 2 px (scaled) in `focus` around each selected node's `outer` rect, with a 1 px inner strip in `bg`. This two-tone outline is visible on any widget colour.
+  - **Cap (amended 14a.2, 2026-10-08):** the primary is always outlined, plus the first `SELECTION_CAP` (16) other selected nodes in selection order. Each outline is 8 native windows, and mapping or hiding one costs about 1 ms on Windows, growing with the number of siblings. When more nodes are selected, the status bar says `{count} elements selected; only {shown} are outlined.` (ngettext). The selection itself, and every action on it, still covers every node.
 - **Handles:** shown for the primary selection under grid only (D2). Up to 8 squares of 7 px (scaled), filled with `primary` and with a 1 px `bg` border. Cursors: `sb_h_double_arrow`, `sb_v_double_arrow`, `sizing`.
 - **Insertion indicator:**
   - grid: a cell outline;

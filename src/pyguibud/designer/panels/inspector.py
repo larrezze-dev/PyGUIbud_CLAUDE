@@ -19,12 +19,12 @@ from typing import Any
 from pyguibud.core import ValidationReport
 from pyguibud.core.commands import Macro, Outcome, SetField, SetResource
 from pyguibud.core.diagnostics import Finding
-from pyguibud.core.model import ImageResource, Prop, Widget
+from pyguibud.core.model import ImageResource, Prop, Widget, Window
 from pyguibud.core.validate import BIND_TYPES
 from pyguibud.designer.dialogs import files
 from pyguibud.designer.dialogs.base import ModalDialog
 from pyguibud.designer.dialogs.text import TextDialog
-from pyguibud.designer.editing import new_variable, unique_id
+from pyguibud.designer.editing import M_EXTERNAL_INCLUDES, new_variable, unique_id
 from pyguibud.designer.panels.base import PanelBase
 from pyguibud.designer.panels.editors import (
     ADD,
@@ -280,10 +280,21 @@ class InspectorPanel(PanelBase):
                 return False
             reset = parsed == "" and field.kind in ("int", "float", "colour")
             value = None if reset else parsed
+        renamed = self._component_id(field)
         if self.report(editor, stack.execute(commit_commands(self._nodes, field, value)), merge):
             editor.shown = editor.text() if editor.text_input else editor.shown
+            if renamed is not None and renamed.id != field.value:
+                # As Document > Rename: other files may include it by its old id (spec 14 A21).
+                self.status(_(M_EXTERNAL_INCLUDES))
             return True
         return False
+
+    def _component_id(self, field: Field) -> Window | None:
+        """The component window whose Id ``field`` edits, else None."""
+        node = self._nodes[0] if len(self._nodes) == 1 else None
+        if field.key == "field:id" and isinstance(node, Window) and node.kind == "component":
+            return node
+        return None
 
     def report(self, editor: Editor | None, outcome: Outcome, merge: bool = False) -> bool:
         """Show the outcome of a commit: a refusal marks the editor; success clears (C2)."""

@@ -49,6 +49,11 @@ class TreePanel(PanelBase):
         self._open: dict[int, bool] = {}
         self._report: ValidationReport | None = None
         tree.bind("<<TreeviewSelect>>", self._on_pick)
+        #: The shell's context menu: ``popup(x_root, y_root)`` (right click, Menu key, Shift+F10).
+        self.popup: Callable[[int, int], None] = lambda _x, _y: None
+        tree.bind("<Button-3>", self._on_context, add="+")
+        for sequence in ("<Menu>", "<Shift-F10>"):
+            tree.bind(sequence, self._on_context_key, add="+")
         tree.bind(_SHOWN, lambda _e: self._shown(), add="+")
         self._muted = 0  # programmatic selections whose <<TreeviewSelect>> is still queued
         self._connect(session.document_changed, self._on_document)
@@ -87,6 +92,22 @@ class TreePanel(PanelBase):
         self._show(self.session.selection.node)  # rows it dropped emit nothing (QA-13b-03)
         if user:  # after the pick: a selection change clears the status message (QA-13b-11)
             self._announce_full_text(focus)
+
+    def _on_context(self, event: Any) -> None:  # noqa: ANN401 - a Tk event
+        """Right click: a row outside the selection becomes the selection first."""
+        tree = self.tree
+        if tree is not None and (row := tree.identify_row(event.y)) and row not in tree.selection():
+            tree.selection_set(row)
+            self._on_pick(None)  # now: the menu's enabled states read the session as it opens
+        self.popup(event.x_root, event.y_root)
+
+    def _on_context_key(self, _event: object) -> str:
+        """The keyboard way to the context menu: it opens below the focused row."""
+        tree = self.tree
+        if tree is not None:
+            box = tree.bbox(tree.focus()) or (0, 0, 0, 0)
+            self.popup(tree.winfo_rootx() + box[0], tree.winfo_rooty() + box[1] + box[3])
+        return "break"
 
     def _mute(self) -> None:
         """Mark the <<TreeviewSelect>> events just queued as no pick of the user."""
