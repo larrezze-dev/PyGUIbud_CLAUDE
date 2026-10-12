@@ -29,6 +29,7 @@ def test_design_affordances_are_pinned() -> None:
         "append-zone-padding",
         "paned-append-pane",
         "empty-container-outline",
+        "include-outline",
     )
 
 

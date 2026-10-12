@@ -10,6 +10,8 @@ listener, so calling the stack here is safe.
 
 A resize starts on a handle of the primary grid child: the dragged edge snaps to the parent's
 cell lines (shown as the snap guide, as during a drag over a grid) and gets the same checks.
+A size drag (spec direct-manipulation 2.7, 3) starts on a size handle or a window handle: motion
+only draws a ghost and the value in the status bar; the release runs one command.
 A rubber band (D5) starts on a container's empty area and selects the container's direct
 children that lie fully inside it.
 """
@@ -23,7 +25,9 @@ from collections.abc import Callable
 from typing import TYPE_CHECKING, Any, Literal
 
 from pyguibud.core.commands import Command
-from pyguibud.core.model import GridCell, Include, Widget
+from pyguibud.core.model import GridCell, Include, Widget, Window
+from pyguibud.designer import sizing
+from pyguibud.designer.canvas.engine import widget_rect
 from pyguibud.designer.editing import (
     Edge,
     NewNode,
@@ -65,6 +69,8 @@ _M_MENU_EDITOR = N_("Menus and actions are edited in the menu editor.")
 _THRESHOLD = 4  # px at 96 dpi before a press becomes a drag
 _REST_MS = 60  # the pointer rests this long on a target before it is checked
 _PITCH = 16  # px at 96 dpi: where the one append line lies past a grid's last boundary
+#: One axis of a size drag: (property or window field, unit, start, px per unit).
+_SizeAxis = tuple[str, sizing.Unit, sizing.Start, float]
 
 
 class DragController:
@@ -90,6 +96,7 @@ class DragController:
         self._node: NewNode | None = None
         self._stage: _Stage | None = None
         self._snapshot: Snapshot | None = None
+        self._view: object | None = None  # the stage's WindowView the snapshot was taken of
         self._target: Target | None = None
         self._checked: dict[tuple[object, ...], tuple[bool, str]] = {}
         self._ok_cursor = "plus"  # the cursor over an accepted target
@@ -98,6 +105,12 @@ class DragController:
         self._resize: tuple[Widget | Include, Edge, ContainerBox] | None = None
         self._area: tuple[tuple[int, int, int, int], Rect] | None = None
         self._timer: str | None = None
+        # A size drag: (node, edge, press point, start rect in stage coordinates, its two axes),
+        # the values a release would write now, which axes moved, and a window's natural size.
+        self._size: tuple[object, Edge, tuple[int, int], Rect, tuple[_SizeAxis | None, ...]] | None
+        self._values: tuple[int | None, int | None]
+        self._size, self._values, self._natural = None, (None, None), (0, 0)
+        self._moved = (False, False)
         # A rubber band: (its container, the selection it adds to) and the action of a press
         # released without a drag (a Ctrl+click on a container toggles it).
         self._band: tuple[object, tuple[object, ...]] | None = None
@@ -114,7 +127,9 @@ class DragController:
 
     # ------------------------------------------------------------ gestures
     def press(self, spec_name: str, x_root: int, y_root: int) -> None:
-        """A press on a palette widget item arms a drag."""
+        """A press on a palette widget item arms a drag; never during a resize (Q12)."""
+        if self.state == "resizing":  # QA-14b1-11: the size or span drag keeps running
+            return
         self._end()
         if self.session.registry.get(spec_name) is not None:
             self.state, self._start = "armed", (x_root, y_root)
@@ -163,6 +178,62 @@ class DragController:
         stage.overlay.show_grid(box)
         self._resize_hover(x_root, y_root)
 
+    def press_size(
+        self,
+        node: object,
+        edge: Edge,
+        x_root: int,
+        y_root: int,
+        handle: Any,  # noqa: ANN401 - the pressed handle (holds the grab; shows the cursor)
+    ) -> None:
+        """A press on a size handle of ``node`` or of a window: measure and freeze the start."""
+        self._end()
+        stage, canvas = self.canvas.current_stage(), self.canvas
+        if stage is None or stage.view is None or self.session.stack is None:
+            return
+        on = (any(c in "ew" for c in edge), any(c in "ns" for c in edge))
+        axes: tuple[_SizeAxis | None, ...]
+        if isinstance(node, Window):
+            box = canvas.window_box(stage)
+            if box is None:
+                return
+            rect, self._natural = box
+            starts = (rect.w, rect.h)
+            axes = tuple(
+                (name, "px", sizing.Start(starts[k], True), 1.0) if on[k] else None
+                for k, name in enumerate(sizing.WINDOW_FIELDS)
+            )
+        else:
+            outer = stage.view.outer.get(id(node))
+            found = widget_rect(outer, stage.stage) if outer is not None else None
+            if found is None:
+                return
+            rect, spec = found, self.session.registry.get(getattr(node, "class_name", ""))
+            metrics, shown = canvas.engine.metrics(stage.view, node), (rect.w, rect.h)
+            built: list[_SizeAxis | None] = []
+            for k, (axis, _why) in enumerate(sizing.sized_axes(node, spec)):
+                pitch = metrics[k] if axis is not None and axis[1] != "px" else 1.0
+                start = sizing.start_value(node, axis[0], shown[k], pitch) if axis else None
+                built.append((axis[0], axis[1], start, pitch) if axis and start and on[k] else None)
+            axes = tuple(built)
+        if not any(axes):
+            return
+        self.session.stack.break_merge()  # one gesture = one undo step
+        self.state, self._stage = "resizing", stage
+        self._size = (node, edge, (x_root, y_root), rect, axes)
+        self._cursor, self._ok_cursor = handle, str(handle.cget("cursor"))
+
+    def reset_size(self, node: object, edge: Edge) -> None:
+        """A double-click on a size handle: back to the natural size (``Reset width``, T1)."""
+        if isinstance(node, Window):
+            fields = [f for f, c in zip(sizing.WINDOW_FIELDS, "es", strict=True) if c in edge]
+            built = sizing.window_size_command(node, dict.fromkeys(fields))
+        else:
+            spec = self.session.registry.get(getattr(node, "class_name", ""))
+            built = sizing.reset_size_command(node, spec, edge)
+        if built is not None:
+            self._execute(built)
+
     def press_band(
         self,
         container: object,
@@ -181,8 +252,11 @@ class DragController:
         """True while a canvas move or rubber band is armed or dragging, or a resize runs."""
         return isinstance(self._payload, Moving) or self.state == "resizing" or bool(self._band)
 
-    def motion(self, x_root: int, y_root: int) -> None:
-        if self.state == "resizing":
+    def motion(self, x_root: int, y_root: int, *, fine: bool = False) -> None:
+        """``fine`` (Shift held) gives a pixel size drag 1 px steps instead of 4 px."""
+        if self.state == "resizing" and self._size is not None:
+            self._size_hover(x_root, y_root, fine=fine)
+        elif self.state == "resizing":
             self._resize_hover(x_root, y_root)
         if self.state == "banding":
             self._band_rect(x_root, y_root)
@@ -207,8 +281,11 @@ class DragController:
         if self.state == "dragging":
             self._hover(x_root, y_root)
 
-    def release(self, x_root: int, y_root: int) -> None:
+    def release(self, x_root: int, y_root: int, *, fine: bool = False) -> None:
         """Drop on the current target (a fresh, validated execute), else cancel."""
+        if self.state == "resizing" and self._size is not None:
+            self._size_release(x_root, y_root, fine=fine)
+            return
         if self._band is not None:
             picked = self._band_pick(x_root, y_root) if self.state == "banding" else None
             click = self._click if self.state == "armed" else None
@@ -346,15 +423,19 @@ class DragController:
     # ------------------------------------------------------------ hover
     def _hover(self, x_root: int, y_root: int) -> None:
         stage = self.canvas.current_stage()
-        if stage is not self._stage:
+        # A rebuild keeps the stage but swaps its view (an include changed on disk, focus-in):
+        # the snapshot's geometry is stale, so the targets are resolved again (QA-14b2-15).
+        if stage is not self._stage or (stage is not None and stage.view is not self._view):
             self._show(None)
             self._stage, self._snapshot = stage, None
+            self._checked.clear()
         if stage is None or stage.view is None or self._payload is None:
             self._show(None)
             return
         menu = isinstance(self._payload, NewWidget) and self._payload.role == "menu"
         if self._snapshot is None:
             self._snapshot = self.canvas.engine.snapshot(stage.view, stage.stage, stage.scroll)
+            self._view = stage.view
         x, y = x_root - stage.stage.winfo_rootx(), y_root - stage.stage.winfo_rooty()
         px = scaled(self._source, 1)
         target = hit_test(self._snapshot, x, y, self._payload, band=6 * px, bar=3 * px)
@@ -369,6 +450,82 @@ class DragController:
         boxes = self._snapshot.containers if grid else ()
         stage.overlay.show_grid(next((b for b in boxes if b.node is target.container), None))
         self._pend(target.key, target.rect, target.bar)
+
+    def _size_hover(self, x_root: int, y_root: int, *, fine: bool) -> None:
+        """Values, ghost and status text of a size drag: no command and no check (spec 2.7)."""
+        if self._size is None or self._stage is None:
+            return
+        node, edge, press, rect, axes = self._size
+        window = isinstance(node, Window)
+        values: list[int | None] = [None, None]
+        grow, moved = [0, 0], [False, False]
+        for k, axis in enumerate(axes):
+            if axis is None:
+                continue
+            _name, unit, start, pitch = axis
+            # A widget has no position: its left/top handle grows it to the left/top.
+            delta = ((x_root, y_root)[k] - press[k]) * (-1 if "wn"[k] in edge else 1)
+            moved[k] = abs(delta) >= (1 if fine else sizing.PIXEL_SNAP / 2)  # QA-14b1-09
+            if window and not moved[k]:  # at the press: no change
+                values[k] = getattr(node, _name)
+            elif window:
+                value = values[k] = sizing.window_value(
+                    start.value + delta, self._natural[k], fine=fine
+                )
+                grow[k] = max(value or 0, self._natural[k]) - start.value
+            else:
+                value = values[k] = sizing.drag_value(start, delta, pitch, unit, fine=fine)
+                grow[k] = round(((value or start.value) - start.value) * pitch)
+        self._values, self._moved = (values[0], values[1]), (moved[0], moved[1])
+        x = rect.x - (grow[0] if "w" in edge else 0)
+        y = rect.y - (grow[1] if "n" in edge else 0)
+        self._stage.overlay.show_band(
+            Rect(x, y, max(1, rect.w + grow[0]), max(1, rect.h + grow[1]))
+        )
+        ident = str(getattr(node, "id", ""))
+        if window:  # QA-14b1-03: only a moved axis can be "cleared"
+            self._status(sizing.window_release_text(ident, self._values, self._moved))
+            return
+        units = [
+            (a[1], v) if a and v is not None else None for a, v in zip(axes, values, strict=True)
+        ]
+        outside = not self._inside(node, x_root, y_root)  # QA-14b1-01: a release cancels there
+        self._status(sizing.release_text(ident, units, outside=outside))
+
+    def _inside(self, node: object, x_root: int, y_root: int) -> bool:
+        """On the canvas tab; a window drag may go past it (a window larger than the shown area
+        grows beyond it)."""
+        assert self._stage is not None
+        page = self._stage.page
+        return isinstance(node, Window) or Rect(page.winfo_rootx(), page.winfo_rooty(),
+                      page.winfo_width(), page.winfo_height()).contains(x_root, y_root)  # fmt: skip
+
+    def _size_release(self, x_root: int, y_root: int, *, fine: bool) -> None:
+        """One ``Resize`` step; a release off the stage cancels; no change records nothing."""
+        assert self._size is not None and self._stage is not None
+        node, axes = self._size[0], self._size[4]
+        inside = self._inside(node, x_root, y_root)
+        self._size_hover(x_root, y_root, fine=fine)
+        values, moved, ident = self._values, self._moved, str(getattr(node, "id", ""))
+        self._end()
+        if not inside:
+            self._status(_(_M_CANCELLED))
+            return
+        pairs = [(a[0], v) for a, v in zip(axes, values, strict=True) if a is not None]
+        if isinstance(node, Window):
+            built = sizing.window_size_command(node, dict(pairs))
+        else:
+            built = sizing.size_command(node, [(n, v) for n, v in pairs if v is not None])
+            if built is None and not any(values):
+                self._status(_(sizing.M_NATURAL).format(id=ident))
+                return
+        if built is not None and self._execute(built):
+            text = _(sizing.M_RESIZED).format(id=ident)
+            if isinstance(node, Window):  # D5: say which minimum was cleared; D4: the note
+                if any(on and v is None for on, v in zip(moved, values, strict=True)):
+                    text = sizing.window_release_text(ident, values, moved)
+                text += f" {_(sizing.M_COMPONENT)}" if node.kind == "component" else ""
+            self._status(text)
 
     def _resize_hover(self, x_root: int, y_root: int) -> None:
         """Snap the dragged edge to the pointer; check the new area after a rest."""
@@ -491,12 +648,15 @@ class DragController:
                 self._stage.overlay.show_band(None)
             if self.state == "resizing":
                 self._set_cursor(self._ok_cursor)  # the handle's own resize cursor
+            if self._size is not None and self._stage is not None:
+                self._stage.overlay.show_band(None)  # the ghost
             self._cancel_timer()
         finally:
             self.state, self._payload, self._node = "idle", None, None
             self._cursor, self._pressed, self._ok_cursor = self._source, None, "plus"
             self._resize, self._area, self._band, self._click = None, None, None, None
-            self._stage, self._snapshot, self._target = None, None, None
+            self._size, self._values = None, (None, None)
+            self._stage, self._snapshot, self._target, self._view = None, None, None, None
             self._checked.clear()
 
 

@@ -446,7 +446,7 @@ def test_autosave_never_flushes_the_editor_being_typed_in(
     assert app.shell.typing() and editor.pending()
     count = stack.index
     app.autosave()
-    assert editor.pending() and editor.widget.cget("style") == editor.widget.winfo_class()
+    assert editor.pending() and editor.widget.cget("style") == "Designer.TSpinbox"
     assert stack.index == count and "width" not in notebook.props
     assert app.recovery is not None and app.recovery.folder is not None
     assert (app.recovery.folder / "document.ui").is_file()  # the committed document

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<pyguibud-ui schema_version="1.0" xmlns="urn:pyguibud:ui:1" xmlns:tb="urn:pyguibud:ext:ttkbootstrap:1">
+  <meta generator="pyguibud" source_locale="en_GB" theme="flatly"/>
+  <resources>
+    <image id="img_logo" src="logo.png"/>
+  </resources>
+  <window id="main" kind="main" min_width="320" min_height="160">
+    <prop name="title" translatable="true">Preview with an image</prop>
+    <layout type="grid" padding="12" gap="6">
+      <column index="1" weight="1"/>
+    </layout>
+    <widget class="Label" id="lbl_logo">
+      <prop name="image" ref="img_logo"/>
+      <cell row="0" column="0"/>
+    </widget>
+    <widget class="Label" id="lbl_text">
+      <prop name="text" translatable="true">Rename logo.png and press F5: the preview is refused.</prop>
+      <cell row="0" column="1" sticky="w"/>
+    </widget>
+  </window>
+</pyguibud-ui>

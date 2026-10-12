@@ -12,7 +12,7 @@
 |---|---|
 | DnD, move/resize, multi-select, canvas engine | 13 |
 | Property editing, events/variables panels, menu editor, open/save/autosave/recent files, copy/paste, unsaved-changes guard, settings persistence | 14 |
-| Live preview window, Export `.py` | 15 |
+| Live preview window, Export `.py` | 15 (spec `docs/specs/preview-export.md`, ADR-013) |
 | Plugin diagnostics panel | 17 |
 
 - **The model is never mutated in Step 12.** The only document change is *replacing* it ("New from template", §6). That creates a new `Document` and a new `CommandStack` through core APIs. It is not an undoable command.

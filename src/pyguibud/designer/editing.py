@@ -254,7 +254,7 @@ def _grid_cells(block: list[_Movable], anchor: _Movable, target: Target) -> list
     """
     container = target.container
     taken: set[tuple[int, int]] = set()
-    if container is not anchor.parent:
+    if container is not anchor.parent and target.index is None:  # an insert makes room instead
         for child in getattr(container, "children", ()):
             if isinstance(child.placement, GridCell):
                 taken |= _area(child.placement)
@@ -276,6 +276,28 @@ def _grid_cells(block: list[_Movable], anchor: _Movable, target: Target) -> list
         new = replace(old, row=row, column=column)
         cells.append(replace(new, rowspan=1, columnspan=1) if _area(new) & taken else new)
     return cells
+
+
+def _make_room(
+    container: Window | Widget, block: list[_Movable], cells: list[GridCell]
+) -> list[Command] | str:
+    """Push the other children down, nearest first, off the cells a tree drop before or after
+    a grid sibling takes; each push stops at the first free row, a moved node's old cell
+    included (ruling QA-14b2-12, spec direct-manipulation 5)."""
+    claimed = set[tuple[int, int]]().union(*map(_area, cells))
+    moving = {id(n) for n in block}
+    others = [c for c in container.children if id(c) not in moving and c.placement is not None]
+    commands: list[Command] = []
+    for child in sorted(others, key=lambda c: (_cell(c).row, _cell(c).column)):
+        cell = new = _cell(child)
+        while _area(new) & claimed and new.row <= MAX_INDEX:
+            new = replace(new, row=new.row + 1)
+        if new.row + max(new.rowspan, 1) - 1 > MAX_INDEX:
+            return _(_M_OFF_GRID)
+        claimed |= _area(new)
+        if new != cell:
+            commands.append(SetField(child, "placement", new))
+    return commands
 
 
 def _reorder(children: list[_Movable], block: list[_Movable], gap: int) -> list[_Movable]:
@@ -321,13 +343,21 @@ def move_command(nodes: Sequence[object], target: Target) -> Built:
         cells = _grid_cells(block, anchor, target)
         if isinstance(cells, str):
             return cells
-        if same and all(c == n.placement for n, c in zip(block, cells, strict=True)):
+        room = [] if target.index is None else _make_room(container, block, cells)
+        if isinstance(room, str):
+            return room
+        gap = len(container.children) if target.index is None else target.index
+        if same and target.index is not None:  # the tree order follows, as with Alt+Up/Down
+            kids = list(parent.children)
+            commands = _realise(parent, kids, _reorder(kids, block, gap))
+        unmoved = all(c == n.placement for n, c in zip(block, cells, strict=True))
+        if same and not commands and unmoved:
             return _(_M_ALREADY_THERE).format(id=anchor.id)
-        end = len(container.children)
         for k, (node, cell) in enumerate(zip(block, cells, strict=True)):
             if not same:
-                commands.append(MoveNode(node, container, end + k))
+                commands.append(MoveNode(node, container, gap + k))
             commands.append(SetField(node, "placement", cell))
+        commands += room
     elif same:
         children = list(parent.children)
         gap = len(children) if target.index is None else target.index

@@ -38,12 +38,16 @@ PURE_MODULES = (
     "pyguibud.designer.edit",
     "pyguibud.designer.present.status",
     "pyguibud.designer.present.focus",
+    "pyguibud.designer.export",
     "pyguibud.designer.present.new_file",
     "pyguibud.designer.settings",
     "pyguibud.designer.files",
     "pyguibud.designer.recovery",
     "pyguibud.designer.properties",
     "pyguibud.designer.clipboard",
+    "pyguibud.designer.sizing",
+    "pyguibud.designer.tree_dnd",
+    "pyguibud.designer.preview",
 )
 
 

@@ -34,6 +34,7 @@ from pyguibud.designer.editing import (
 )
 from pyguibud.designer.present.tree import node_label
 from pyguibud.designer.session import DesignerSession
+from pyguibud.designer.sizing import Measured, step_command
 from pyguibud.i18n import N_, _, ngettext
 
 __all__ = ["EditActions", "count_descendants", "tab_order"]
@@ -100,8 +101,11 @@ class EditActions:
         confirm: Confirm,
         message: Callable[[str], None],
         busy: Callable[[], bool] = lambda: False,
+        measure: Callable[[object], Measured | None] = lambda _node: None,
     ) -> None:
         self.session, self._confirm, self._message, self._busy = session, confirm, message, busy
+        self._measure = measure  # the canvas: shown size and unit pitch of a node (size keys)
+        self._stepped: object = None  # the selection of the last size key step
 
     # ------------------------------------------------------------ undo and redo
     @property
@@ -287,6 +291,25 @@ class EditActions:
         rowspan, columnspan = max(cell.rowspan, 1) + rows, max(cell.columnspan, 1) + columns
         stop = past_the_grid([node], rows, columns)  # QA-13b-02: never past the append cell
         self._run(stop or resize_command(node, cell.row, cell.column, rowspan, columnspan))
+
+    def size_step(self, k: int, step: int) -> None:
+        """Ctrl+Shift+Arrows: the primary's width (k 0) or height (k 1) +-1 unit, or a window's
+        minimum +-8 px. Steps on one property merge into one undo step until the selection
+        changes (a new ``Selection`` object; spec direct-manipulation 4)."""
+        node, stack = self.session.selection.node, self.session.stack
+        if self._busy() or node is None or stack is None or self._refused():
+            return
+        spec = self.session.registry.get(getattr(node, "class_name", ""))
+        built = step_command(node, spec, k, step, self._measure(node))
+        if isinstance(built, str):
+            self._message(built)
+            return
+        if self.session.selection is not self._stepped:
+            stack.break_merge()
+            self._stepped = self.session.selection
+        outcome = stack.execute(built)
+        if not outcome.accepted:
+            self._message(outcome.message)
 
     def _moved(self, built: Command | str) -> None:
         nodes = self.session.selection.nodes

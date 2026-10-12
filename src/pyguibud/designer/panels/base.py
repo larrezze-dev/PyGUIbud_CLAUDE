@@ -8,11 +8,17 @@ from collections.abc import Callable
 from tkinter import ttk
 from typing import Any, TypeVar
 
+from pyguibud.designer.icons_tk import icons
 from pyguibud.designer.panels.focus import FocusFrame
 from pyguibud.designer.session import DesignerSession
 from pyguibud.designer.signals import Signal
-from pyguibud.designer.theme import ThemeSpec
-from pyguibud.designer.theme_tk import TREE_STYLE
+from pyguibud.designer.theme import ThemeSpec, design_tokens
+from pyguibud.designer.theme_tk import (
+    STYLE_DIVIDER,
+    STYLE_HEADER,
+    STYLE_HEADER_LABEL,
+    TREE_STYLE,
+)
 from pyguibud.i18n import _
 
 __all__ = ["PanelBase"]
@@ -41,8 +47,14 @@ class PanelBase:
         self.frame = FocusFrame(parent, thickness=ring_px)
         self.frame.columnconfigure(0, weight=1)
         self.frame.rowconfigure(1, weight=1)
-        self.heading = ttk.Label(self.frame, text=_(self.HEADING), anchor="w")
-        self.heading.grid(row=0, column=0, columnspan=2, sticky="ew", padx=6, pady=(4, 2))
+        # The header band: the heading on the subtle surface, a 1 px divider below it.
+        self.band = ttk.Frame(self.frame, style=STYLE_HEADER)
+        self.band.columnconfigure(0, weight=1)
+        self.band.grid(row=0, column=0, columnspan=2, sticky="ew")
+        self.heading = ttk.Label(self.band, text=_(self.HEADING), anchor="w",
+                                 style=STYLE_HEADER_LABEL)  # fmt: skip
+        self.heading.grid(row=0, column=0, sticky="ew")
+        ttk.Frame(self.band, style=STYLE_DIVIDER, height=1).grid(row=1, column=0, sticky="ew")
         self.tree: ttk.Treeview | None = None
         self._disconnects: list[Callable[[], None]] = []
 
@@ -67,6 +79,10 @@ class PanelBase:
         self.tree = tree
         return tree
 
+    def _icon(self, name: str) -> Any:  # noqa: ANN401 - a PhotoImage, or "" for text only
+        """The icon ``name`` for a list row (``""`` when it is unavailable)."""
+        return icons(self.frame).get(name) or ""
+
     def _connect(self, signal: Signal[T], slot: Callable[[T], None]) -> None:
         self._disconnects.append(signal.connect(slot))
 
@@ -81,7 +97,8 @@ class PanelBase:
 
     def restyle(self, spec: ThemeSpec) -> None:
         """Re-apply theme-dependent colours (tags, ring); ``spec`` is the new theme."""
-        self.frame.set_colours(ring=spec.focus, plain=spec.colors["bg"])
+        tokens = design_tokens(spec)
+        self.frame.set_colours(ring=tokens.ring, plain=tokens.divider, fill=spec.colors["bg"])
 
     def focus_first(self) -> None:
         """Focus the main widget (and its selected or first item for a tree)."""

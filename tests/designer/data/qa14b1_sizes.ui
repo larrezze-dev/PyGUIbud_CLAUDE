@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<pyguibud-ui schema_version="1.0" xmlns="urn:pyguibud:ui:1">
+  <meta generator="pyguibud" source_locale="en_GB" i18n_domain="qa"/>
+  <window id="main" kind="main" min_width="480" min_height="320">
+    <prop name="title">QA sizes</prop>
+    <layout type="grid" padding="8" gap="4"/>
+    <widget class="Frame" id="frm_pack">
+      <cell row="0" column="0"/>
+      <layout type="pack" padding="4"/>
+      <widget class="Button" id="btn_pack">
+        <prop name="text">Packed</prop>
+        <pack/>
+      </widget>
+      <widget class="Entry" id="ent_fill">
+        <pack fill="x"/>
+      </widget>
+    </widget>
+    <widget class="Notebook" id="nbk">
+      <cell row="0" column="1"/>
+      <widget class="Frame" id="frm_page">
+        <page><prop name="text">Page</prop></page>
+        <layout type="grid"/>
+      </widget>
+      <widget class="Frame" id="frm_page2">
+        <page><prop name="text">Hidden</prop></page>
+        <layout type="grid"/>
+        <widget class="Label" id="lbl_hidden">
+          <prop name="text">Hidden label text</prop>
+          <cell row="0" column="0"/>
+        </widget>
+      </widget>
+    </widget>
+    <widget class="PanedWindow" id="pnd">
+      <cell row="1" column="0"/>
+      <widget class="Frame" id="pane_a"><page weight="1"/><layout type="pack"/></widget>
+    </widget>
+    <widget class="Scale" id="scl_v">
+      <prop name="orient">vertical</prop>
+      <cell row="1" column="1"/>
+    </widget>
+    <widget class="Text" id="txt">
+      <cell row="2" column="0"/>
+    </widget>
+    <widget class="Treeview" id="tree">
+      <cell row="2" column="1"/>
+    </widget>
+    <widget class="Checkbutton" id="chk">
+      <prop name="text">Check</prop>
+      <cell row="3" column="0"/>
+    </widget>
+    <widget class="Label" id="lbl_set">
+      <prop name="text">Set</prop>
+      <prop name="width">9</prop>
+      <cell row="3" column="1"/>
+    </widget>
+  </window>
+  <window id="part" kind="component">
+    <layout type="grid"/>
+    <widget class="Label" id="lbl_part">
+      <prop name="text">Part</prop>
+      <cell row="0" column="0"/>
+    </widget>
+  </window>
+</pyguibud-ui>

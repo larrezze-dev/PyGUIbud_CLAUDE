@@ -17,7 +17,13 @@ from pyguibud.designer.editing import MenuItem
 from pyguibud.designer.windows import WindowActions, WindowKind
 from pyguibud.i18n import LANGUAGES, N_, PSEUDO_LANGUAGE
 
-__all__ = ["THEME_ROLES", "FileCallbacks", "ShellCallbacks", "register_standard_actions"]
+__all__ = [
+    "THEME_ROLES",
+    "FileCallbacks",
+    "PreviewCallbacks",
+    "ShellCallbacks",
+    "register_standard_actions",
+]
 
 _M_FILE = N_("_File")
 _M_EDIT = N_("_Edit")
@@ -66,6 +72,12 @@ _M_WIDER = N_("_Wider")
 _M_NARROWER = N_("_Narrower")
 _M_TALLER = N_("_Taller")
 _M_SHORTER = N_("_Shorter")
+# Translators: change the width/height property of the selected element by one unit
+# (a character, a line or 4 pixels), or the minimum size of a selected window.
+_M_SIZE_WIDER = N_("_Increase width")
+_M_SIZE_NARROWER = N_("De_crease width")
+_M_SIZE_TALLER = N_("Increase _height")
+_M_SIZE_SHORTER = N_("Decrease hei_ght")
 # Translators: "Move earlier/later" change the order of an element among its siblings.
 _M_EARLIER = N_("Move _earlier")
 _M_LATER = N_("Move l_ater")
@@ -83,11 +95,19 @@ _M_RECOVER = N_("Reco_ver…")
 _M_SAVE = N_("_Save")
 _M_SAVE_AS = N_("Save _as…")
 _M_CLOSE = N_("_Close")
+# Translators: File menu; writes the .py module of the saved .ui file (Ctrl+E).
+_M_EXPORT = N_("_Export Python code…")
 _M_HELP = N_("_Help")
 _M_SHORTCUTS = N_("_Keyboard shortcuts…")
 _M_NEXT_PANEL = N_("Next _panel")
 _M_PREVIOUS_PANEL = N_("Previous pa_nel")
 _M_PSEUDO = N_("Pseudo-locale (layout test)")
+# Translators: the menu, and its action, that runs the document in a separate window (F5).
+_M_PREVIEW = N_("_Preview")
+_M_CLOSE_PREVIEW = N_("_Close preview")
+# Translators: Preview > Language: show the texts as written in the document (no translation).
+_M_DOCUMENT_LANGUAGE = N_("Document language")
+_M_USE_THEME = N_("_Use this theme in the document")
 
 #: ``(role, label msgid)``; the roles are the ones of ``ThemeSpec.role``.
 THEME_ROLES: tuple[tuple[str, str], ...] = (
@@ -107,6 +127,7 @@ class FileCallbacks:
     close: Callable[[], None]
     recover: Callable[[], None]
     has_document: Callable[[], bool]
+    export: Callable[[], None] | None = None  # File > Export Python code (Step 15b)
 
 
 @dataclass(frozen=True, slots=True)
@@ -126,6 +147,21 @@ class ShellCallbacks:
     clipboard: ClipboardActions | None = None  # Cut, Copy, Paste, Duplicate (needs ``edit``)
     windows: WindowActions | None = None  # the Document menu is registered only when given
     files: FileCallbacks | None = None  # Open, Open recent, Save, Close, Recover
+    preview: PreviewCallbacks | None = None  # the Preview menu (Step 15a)
+
+
+@dataclass(frozen=True, slots=True)
+class PreviewCallbacks:
+    """The Preview menu (spec preview-export 3); the app fills the Theme sub-menu itself."""
+
+    run: Callable[[], None]
+    close: Callable[[], None]
+    has_document: Callable[[], bool]
+    running: Callable[[], bool]
+    set_language: Callable[[str | None], None]  # None = the document language
+    language: Callable[[], str | None]
+    use_theme: Callable[[], None]
+    can_use_theme: Callable[[], bool]
 
 
 def register_standard_actions(registry: ActionRegistry, callbacks: ShellCallbacks) -> None:
@@ -135,6 +171,8 @@ def register_standard_actions(registry: ActionRegistry, callbacks: ShellCallback
         _register_edit(registry, callbacks.edit, callbacks.clipboard)
     if callbacks.windows is not None:
         _register_document(registry, callbacks.windows)
+    if callbacks.preview is not None:
+        _register_preview(registry, callbacks.preview)
     registry.add_menu(MenuDef("view", _M_VIEW))
     registry.add_menu(MenuDef("view.theme", _M_THEME, parent="view"))
     registry.add_menu(MenuDef("view.language", _M_LANGUAGE, parent="view"))
@@ -142,7 +180,7 @@ def register_standard_actions(registry: ActionRegistry, callbacks: ShellCallback
     # "New" opens the template wizard (Step 12h).
     registry.add(
         ActionDef(
-            "file.new", "file", _M_NEW, callbacks.new_document, shortcut="Ctrl+N", toolbar=True
+            "file.new", "file", _M_NEW, callbacks.new_document, "Ctrl+N", toolbar=True, icon="new"
         )
     )
     if callbacks.files is not None:
@@ -192,12 +230,23 @@ def register_standard_actions(registry: ActionRegistry, callbacks: ShellCallback
 def _register_files(registry: ActionRegistry, files: FileCallbacks) -> None:
     """Open, Open recent (filled by the app), Recover, Save, Save as and Close."""
     has = files.has_document
-    registry.add(ActionDef("file.open", "file", _M_OPEN, files.open, "Ctrl+O", toolbar=True))
+    registry.add(
+        ActionDef("file.open", "file", _M_OPEN, files.open, "Ctrl+O", toolbar=True, icon="open")
+    )
     registry.add_menu(MenuDef("file.recent", _M_RECENT, parent="file"))
     registry.add(ActionDef("file.recover", "file", _M_RECOVER, files.recover))
     registry.add_separator("file")
-    registry.add(ActionDef("file.save", "file", _M_SAVE, files.save, "Ctrl+S", has, toolbar=True))
+    registry.add(
+        ActionDef(
+            "file.save", "file", _M_SAVE, files.save, "Ctrl+S", has, toolbar=True, icon="save"
+        )
+    )
     registry.add(ActionDef("file.save_as", "file", _M_SAVE_AS, files.save_as, "Ctrl+Shift+S", has))
+    if files.export is not None:
+        registry.add(
+            ActionDef("file.export", "file", _M_EXPORT, files.export, "Ctrl+E", has,
+                      toolbar=True, icon="export")
+        )  # fmt: skip
     registry.add_separator("file")
     registry.add(ActionDef("file.close", "file", _M_CLOSE, files.close, "Ctrl+W", has))
 
@@ -222,6 +271,8 @@ def _register_edit(
             shortcut="Ctrl+Z",
             enabled=edit.can_undo,
             dynamic_label=live(_M_UNDO_ACTION, lambda: edit.undo_text),
+            toolbar=True,
+            icon="undo",
         )
     )
     registry.add(
@@ -234,6 +285,8 @@ def _register_edit(
             alt_shortcuts=("Ctrl+Shift+Z",),
             enabled=edit.can_redo,
             dynamic_label=live(_M_REDO_ACTION, lambda: edit.redo_text),
+            toolbar=True,
+            icon="redo",
         )
     )
     registry.add_separator("edit")
@@ -249,6 +302,8 @@ def _register_edit(
             enabled=edit.can_delete,
             scope=("canvas", "tree"),
             refusal=edit.delete_refusal,
+            toolbar=True,
+            icon="delete",
         )
     )
     registry.add_separator("edit")
@@ -271,6 +326,14 @@ def _register_edit(
         ("narrower", "edit.move", _M_NARROWER, "Shift+Left", "canvas", lambda: edit.span(0, -1)),
         ("taller", "edit.move", _M_TALLER, "Shift+Down", "canvas", lambda: edit.span(1, 0)),
         ("shorter", "edit.move", _M_SHORTER, "Shift+Up", "canvas", lambda: edit.span(-1, 0)),
+        ("size_wider", "edit.move", _M_SIZE_WIDER, "Ctrl+Shift+Right", "canvas",
+         lambda: edit.size_step(0, 1)),
+        ("size_narrower", "edit.move", _M_SIZE_NARROWER, "Ctrl+Shift+Left", "canvas",
+         lambda: edit.size_step(0, -1)),
+        ("size_taller", "edit.move", _M_SIZE_TALLER, "Ctrl+Shift+Down", "canvas",
+         lambda: edit.size_step(1, 1)),
+        ("size_shorter", "edit.move", _M_SIZE_SHORTER, "Ctrl+Shift+Up", "canvas",
+         lambda: edit.size_step(1, -1)),
         ("earlier", "edit.move", _M_EARLIER, "Alt+Up", "tree", lambda: edit.reorder(-1)),
         ("later", "edit.move", _M_LATER, "Alt+Down", "tree", lambda: edit.reorder(1)),
     )  # fmt: skip
@@ -301,6 +364,8 @@ def _register_clipboard(registry: ActionRegistry, clip: ClipboardActions) -> Non
                 enabled,
                 scope=both,
                 refusal=refusal,
+                toolbar=name != "duplicate",
+                icon="" if name == "duplicate" else name,
             )
         )
     registry.add_separator("edit")
@@ -387,6 +452,38 @@ def _register_document(registry: ActionRegistry, windows: WindowActions) -> None
                 windows.can_step,
             )
         )
+
+
+def _register_preview(registry: ActionRegistry, preview: PreviewCallbacks) -> None:
+    """Preview: run (F5), close (Shift+F5), Language and Theme (live), use the theme."""
+    registry.add_menu(MenuDef("preview", _M_PREVIEW))
+    registry.add(
+        ActionDef("preview.run", "preview", _M_PREVIEW, preview.run, "F5", preview.has_document,
+                  toolbar=True, icon="preview")
+    )  # fmt: skip
+    registry.add(
+        ActionDef("preview.close", "preview", _M_CLOSE_PREVIEW, preview.close, "Shift+F5",
+                  preview.running)
+    )  # fmt: skip
+    registry.add_separator("preview")
+    registry.add_menu(MenuDef("preview.language", _M_LANGUAGE, parent="preview"))
+    choices = [(None, _M_DOCUMENT_LANGUAGE, True), *((c, a, False) for c, a in LANGUAGES.items())]
+    for code, label, translate in [*choices, (PSEUDO_LANGUAGE, _M_PSEUDO, True)]:
+        registry.add(
+            ActionDef(
+                f"preview.language.{code or 'document'}",
+                "preview.language",
+                label,
+                functools.partial(preview.set_language, code),
+                checked=functools.partial(lambda c: preview.language() == c, code),
+                translate=translate,
+            )
+        )
+    registry.add_menu(MenuDef("preview.theme", _M_THEME, parent="preview"))
+    registry.add(
+        ActionDef("preview.use_theme", "preview", _M_USE_THEME, preview.use_theme,
+                  enabled=preview.can_use_theme)
+    )  # fmt: skip
 
 
 def _theme_handler(callbacks: ShellCallbacks, role: str) -> Callable[[], None]:

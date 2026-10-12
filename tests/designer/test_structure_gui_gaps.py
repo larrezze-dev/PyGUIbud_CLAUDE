@@ -762,3 +762,23 @@ def test_n1_renaming_a_window_into_a_dangling_include_cycle_is_refused(
     assert not dialog.closed and "creates a cycle" in dialog.reason.cget("text")
     dialog.close()
     assert dump_ui(document) == before and stack.index == 0
+
+
+def test_n5_a_refused_kind_pick_shows_the_model_value_again(
+    shell: DesignerApp, designer_root: Any
+) -> None:
+    dangling = '<include id="dangling" src="#" component="ghost"><pack/></include>'
+    good = _INCLUDED_UI.replace(dangling, "")
+    shell.session.open_result(read_ui_string(good, source="inc"), name="inc")
+    designer_root.update()
+    comp = _document(shell).find("comp")
+    shell.session.select(comp, origin="tree")
+    designer_root.update()
+    editor: Any = shell.shell.inspector._editors["field:kind"]
+    assert editor.var.get() == "component"
+    editor.widget.set("dialog")  # the pick the guard refuses: main still includes it
+    editor._picked()
+    designer_root.update()
+    assert comp.kind == "component" and _stack(shell).index == 0
+    assert editor.var.get() == "component"  # not the refused "dialog"
+    assert "not a component" in shell.shell._message  # the reason stays in the status bar

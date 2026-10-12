@@ -14,18 +14,25 @@ import re
 from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
 from importlib import resources
+from types import MappingProxyType
 from typing import Final, Literal
 
 __all__ = [
     "COLOUR_KEYS",
     "ICON_FILE",
+    "NON_TEXT_CONTRAST",
     "ROLES",
+    "SPACE",
+    "TEXT_CONTRAST",
+    "DesignTokens",
     "ThemeSpec",
     "contrast",
+    "design_tokens",
     "load_app_icon",
     "load_theme_specs",
     "parse_theme_data",
     "pick_family",
+    "readable",
     "selection_colours",
     "spec_for_role",
     "tag_colours",
@@ -93,6 +100,8 @@ def contrast(first: str, second: str) -> float:
 
 #: WCAG 2.2 AA minimum for text.
 TEXT_CONTRAST: Final = 4.5
+#: WCAG 2.2 minimum for user-interface components and graphics (1.4.11).
+NON_TEXT_CONTRAST: Final = 3.0
 
 
 def _mix(first: str, second: str, amount: float) -> str:
@@ -104,16 +113,19 @@ def _mix(first: str, second: str, amount: float) -> str:
     return "#" + "".join(f"{value:02X}" for value in channels)
 
 
-def readable(colour: str, backgrounds: Iterable[str], toward: str) -> str:
-    """``colour`` moved towards ``toward`` just enough to be readable text on every background.
+def readable(
+    colour: str, backgrounds: Iterable[str], toward: str, minimum: float = TEXT_CONTRAST
+) -> str:
+    """``colour`` moved towards ``toward`` just enough to reach ``minimum`` on every background.
 
     Used for text tints (muted defaults, error rows) that would otherwise fall below AA in some
-    themes, for example a dark grey "secondary" on a dark list (QA-12-01).
+    themes, for example a dark grey "secondary" on a dark list (QA-12-01); non-text marks (a
+    border, a drop target) pass ``minimum=NON_TEXT_CONTRAST``.
     """
     surfaces = tuple(backgrounds)
     for step in range(21):
         candidate = _mix(colour, toward, step / 20)
-        if all(contrast(candidate, surface) >= TEXT_CONTRAST for surface in surfaces):
+        if all(contrast(candidate, surface) >= minimum for surface in surfaces):
             return candidate
     return toward
 
@@ -126,6 +138,68 @@ def tag_colours(spec: ThemeSpec) -> dict[str, str]:
         "muted": readable(colours["secondary"], rows, colours["inputfg"]),
         "error": readable(colours["danger"], rows, colours["inputfg"]),
     }
+
+
+# ---------------------------------------------------------------- design tokens
+#: Spacing steps in px at 96 dpi (SAPE spacing.1-.4 plus a hairline); scale every use.
+SPACE: Final[Mapping[str, int]] = MappingProxyType({"xs": 2, "s": 4, "m": 8, "l": 12, "xl": 16})
+#: How far the canvas backdrop moves from ``bg`` towards ``fg``, per role.
+_STAGE_TINT: Final[Mapping[str, float]] = {"light": 0.06, "dark": 0.10, "high_contrast": 0.0}
+
+
+@dataclass(frozen=True, slots=True)
+class DesignTokens:
+    """The designer chrome's colour roles, derived from a theme's 16 colours (spec 14p 2)."""
+
+    stage: str
+    plate_border: str
+    titlebar: str
+    titlebar_fg: str
+    header: str
+    divider: str
+    muted: str
+    error_text: str
+    error_border: str
+    readonly_bg: str
+    icon: str
+    icon_disabled: str
+    target_allowed: str
+    target_denied: str
+    ring: str
+
+
+def design_tokens(spec: ThemeSpec) -> DesignTokens:
+    """Derive the chrome colours of ``spec``; every gated pair passes by construction.
+
+    Nothing is read from extra brand data (decision D1 (a)), so forks and the neutral themes
+    follow the same rules. ``readable`` nudges a colour only where a theme needs it.
+    """
+    c = spec.colors
+    bg, fg = c["bg"], c["fg"]
+    hc = spec.role == "high_contrast"
+    stage = _mix(bg, fg, _STAGE_TINT[spec.role])
+    titlebar = bg if hc else _mix(bg, c["primary"], 0.08)
+    header = readonly_bg = c["light"]
+    # Every surface a designer label is painted on (readonly_bg is header).
+    surfaces = (bg, c["inputbg"], c["selectbg"], header, titlebar)
+    error_border = readable(c["danger"], (c["inputbg"], bg, stage), fg, NON_TEXT_CONTRAST)
+    return DesignTokens(
+        stage=stage,
+        plate_border=readable(c["border"], (stage, bg), fg, NON_TEXT_CONTRAST),
+        titlebar=titlebar,
+        titlebar_fg=fg,
+        header=header,
+        divider=c["border"] if hc else _mix(bg, c["border"], 0.45),
+        muted=readable(c["secondary"], surfaces, c["inputfg"]),
+        error_text=readable(c["danger"], surfaces, fg),
+        error_border=error_border,
+        readonly_bg=readonly_bg,
+        icon=fg,
+        icon_disabled=_mix(fg, bg, 0.55),
+        target_allowed=readable(c["primary"], (bg, stage, titlebar), fg, NON_TEXT_CONTRAST),
+        target_denied=error_border,
+        ring=readable(spec.focus, (bg, stage, titlebar, c["selectbg"]), fg, NON_TEXT_CONTRAST),
+    )
 
 
 #: Minimum contrast of a selected row against the list background (WCAG 2.2 non-text, 1.4.11).

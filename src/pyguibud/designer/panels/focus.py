@@ -15,11 +15,13 @@ class FocusFrame(tkinter.Frame):
         super().__init__(parent, highlightthickness=thickness, borderwidth=0, takefocus=False)
         self._ring = ""
         self._plain = ""
+        self._fill = ""
         self._active = False
 
-    def set_colours(self, *, ring: str, plain: str) -> None:
-        """Set the focused and unfocused border colours (from the current theme)."""
-        self._ring, self._plain = ring, plain
+    def set_colours(self, *, ring: str, plain: str, fill: str = "") -> None:
+        """Set the focused and unfocused border colours (from the current theme) and the
+        ``fill`` between the border and the body (the border colour when omitted)."""
+        self._ring, self._plain, self._fill = ring, plain, fill
         self.mark(self._active)
 
     def mark(self, active: bool) -> None:
@@ -29,4 +31,4 @@ class FocusFrame(tkinter.Frame):
         if colour:
             self.configure(highlightbackground=colour, highlightcolor=colour)
         if self._plain:
-            self.configure(background=self._plain)  # a plain tk.Frame is not themed by ttk
+            self.configure(background=self._fill or self._plain)  # not themed by ttk

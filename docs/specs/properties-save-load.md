@@ -370,6 +370,7 @@ The clipboard holds a complete, valid `.ui` text, read back with the hardened re
 - **Geometry restore:** clamped to the virtual desktop (`app.desktop_bounds()`: Windows `GetSystemMetrics` virtual screen, else `winfo_vrootwidth/height`); positions are always written as `+X+Y`. If less than 200×150 px would be visible → the default geometry. Sashes are restored after the first `<Configure>`, then pass through the existing `clamp_sashes()`.
 
 ## 13. Tree drag-and-drop and include rendering
+> Trimmed from 14a.2 (B1); **delivered by Step 14b.2**, spec `docs/specs/direct-manipulation.md` §5–§6.
 ### 13.1 Object-tree drag-and-drop (D8 of Step 13, remainder)
 - **Drop positions.** A press-drag of more than 4 px on a row starts a drag; the payload is the tree selection. The row under the pointer gives the target:
   - the top 25 % → **before** it;

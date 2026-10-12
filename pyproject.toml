@@ -54,7 +54,11 @@ core = "pyguibud.core.widgets:core_widgets"
 ttkbootstrap = "pyguibud.backends.ttkbootstrap:TtkbootstrapBackend"
 
 [dependency-groups]
-dev = ["pyguibud[dev]"]
+dev = [
+    "pyguibud[dev]",
+    # Dev-only SVG rasteriser of tools/gen_icons.py (MIT binding of resvg; static, no system DLL).
+    "resvg-py>=0.5,<0.6",
+]
 
 # ---------------------------------------------------------------- build
 [tool.hatch.version]

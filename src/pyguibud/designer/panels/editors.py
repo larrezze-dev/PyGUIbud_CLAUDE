@@ -15,13 +15,17 @@ from typing import Any, Protocol
 
 from pyguibud.core.keys import tk_shortcut
 from pyguibud.core.model import Prop
+from pyguibud.designer.icons_tk import icons
 from pyguibud.designer.properties import Field
+from pyguibud.designer.theme_tk import INVALID_PREFIX
 from pyguibud.i18n import N_, _
 
 __all__ = ["INVALID", "Editor", "EditorHost", "bind_history", "history_action", "make_editor"]
 
-#: Style prefix of an editor whose text was refused (configured by the inspector's restyle).
-INVALID = "Invalid"
+#: Style prefix of an editor whose text was refused (configured with the other Designer styles).
+INVALID = INVALID_PREFIX
+#: The normal looks of the text editors (their read-only fill is mapped by the theme layer).
+STYLE_ENTRY, STYLE_SPINBOX = "Designer.TEntry", "Designer.TSpinbox"
 _M_NONE = N_("(none)")
 _M_NEW_VARIABLE = N_("New variable…")
 _M_ADD_IMAGE = N_("Add image…")
@@ -56,6 +60,8 @@ class Editor:
         self.widget: Any = None
         self.var = tkinter.StringVar(parent)
         self.invalid = False  # marked red after a refusal
+        self.style = ""  # the editor's own (normal) style; "" keeps the class style
+        self.alert: ttk.Label | None = None  # the non-colour cue of an invalid editor (D8)
 
     def _bind(self, widget: Any) -> None:  # noqa: ANN401 - a Tk widget
         widget.bind("<FocusIn>", lambda _e: self.host.focus_in(self), add="+")
@@ -84,18 +90,40 @@ class Editor:
         self.var.set(self.shown)
         self.set_invalid(False)
 
+    def _pick(self, value: str) -> None:
+        """Commit a picked value (a toggle, a list choice). A refused pick shows the model value
+        again: unlike typed text there is nothing to correct, and the reason stays in the status
+        bar (spec 3.3, QA-14a2 N5)."""
+        if not self.host.commit(self, value):
+            self.load(self.field)
+
     def set_invalid(self, invalid: bool) -> None:
         widget = self.widget
         if widget is None or not self.text_input:
             return
         self.invalid = invalid
         base = widget.winfo_class()
-        widget.configure(style=f"{INVALID}.{base}" if invalid else base)
+        widget.configure(style=f"{INVALID}.{base}" if invalid else self.style or base)
+        if self.alert is None and invalid:
+            image = icons(self.frame).get("error")
+            self.alert = ttk.Label(self.frame, image=image or "", text="" if image else "!")
+        if self.alert is not None:
+            if invalid:
+                self.alert.grid(row=0, column=8, padx=(4, 0))
+            else:
+                self.alert.grid_remove()
 
     def set_enabled(self, enabled: bool) -> None:
+        """Enable the editor, or make it read-only: entries and spinboxes stay selectable and
+        copyable (``readonly``); everything else is ``disabled`` (D9). A combobox is readonly
+        in its normal state, so it must never get that flag removed."""
         for child in self.frame.winfo_children():
             if isinstance(child, ttk.Widget) and not isinstance(child, ttk.Label | ttk.Frame):
-                child.state(["!disabled"] if enabled else ["disabled"])
+                text = isinstance(child, ttk.Entry) and not isinstance(child, ttk.Combobox)
+                if enabled:
+                    child.state(["!disabled", "!readonly"] if text else ["!disabled"])
+                else:
+                    child.state(["readonly"] if text else ["disabled"])
 
 
 class _Label(Editor):
@@ -113,13 +141,15 @@ class _Text(Editor):
         super().__init__(parent, field, host)
         if field.kind in ("int", "float"):
             low, high = field.minimum, field.maximum
-            self.widget = ttk.Spinbox(self.frame, textvariable=self.var, width=8,
+            self.style = STYLE_SPINBOX
+            self.widget = ttk.Spinbox(self.frame, textvariable=self.var, width=8, style=self.style,
                                       from_=-10_000 if low is None else low,
                                       to=10_000 if high is None else high,
                                       increment=1 if field.kind == "int" else 0.1,
                                       command=self._arrow)  # fmt: skip
         else:
-            self.widget = ttk.Entry(self.frame, textvariable=self.var, width=12)
+            self.style = STYLE_ENTRY
+            self.widget = ttk.Entry(self.frame, textvariable=self.var, width=12, style=self.style)
         self.widget.grid(row=0, column=0, sticky="ew")
         self._bind(self.widget)
         for sequence in ("<Return>", "<KP_Enter>"):
@@ -160,6 +190,12 @@ class _Text(Editor):
         return "break"
 
     def _arrow(self) -> None:
+        # ttk's spin (arrows, Up/Down, the wheel) only stops at ``disabled``, and a read-only
+        # spinbox is ``readonly`` so its text stays copyable (D9): it has already set the new
+        # value when it runs this command, so show the model value again (QA-14p-02).
+        if self.widget.instate(["readonly"]):
+            self.revert()
+            return
         self.host.commit(self, self.text(), merge=True)  # one undo step per focus session
 
 
@@ -177,7 +213,7 @@ class _Bool(Editor):
 
     def _toggle(self) -> None:
         self.widget.state(["!alternate"])
-        self.host.commit(self, self.var.get())
+        self._pick(self.var.get())
 
 
 _EXTRA = {
@@ -213,7 +249,7 @@ class _Choice(Editor):
             self.load(self.field)
             self.host.special(self, value)
         elif value != self.shown:
-            self.host.commit(self, value)
+            self._pick(value)
 
 
 class _Flags(Editor):
@@ -248,7 +284,7 @@ class _Flags(Editor):
         ticked = {token for token, flag, _box in self.flags if flag.get()}
         kept = [t for t in self._split(self.shown) if t in ticked]
         kept += [t for t, _f, _b in self.flags if t in ticked and t not in kept]
-        self.host.commit(self, self.sep.join(kept))
+        self._pick(self.sep.join(kept))
 
     def retranslate(self) -> None:
         for (_token, msgid), (_t, _f, box) in zip(self.tokens, self.flags, strict=True):

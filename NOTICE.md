@@ -18,5 +18,11 @@ The logos, design tokens and brand guidelines in `assets/brand/` belong to the S
 ## 3. Your files
 `.ui` files you create, and `.py` files generated from them by `pyguibud-uic`, belong to you. You may license them however you like.
 
-## 4. Third-party toolkits
+## 4. Third-party toolkits and content
 PySide6 (LGPL-3.0) is an optional extra. It is imported dynamically from the user's environment and is not bundled. ttkbootstrap is MIT; tkinter is part of the Python standard library (PSF licence).
+
+**Tabler Icons** (MIT, Copyright (c) 2020-2026 Paweł Kuna, <https://github.com/tabler/tabler-icons>). The designer's icons are rasterised from Tabler Icons by `tools/gen_icons.py`.
+- They ship in the `pyguibud` wheel and sdist as `src/pyguibud/designer/icons/icons.json`, next to a verbatim copy of the Tabler licence in `src/pyguibud/designer/icons/LICENSE-tabler.txt`.
+- The source SVGs are kept verbatim in `tools/icons-src/tabler/` with the same licence.
+- Applications you build with PyGUIbud never receive these icons.
+- The dev-only rasteriser `resvg-py` (MIT) is not shipped.

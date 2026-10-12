@@ -15,6 +15,7 @@ from pyguibud.designer.dialogs.shortcuts import ShortcutsDialog
 from pyguibud.designer.present.focus import cycle
 from pyguibud.designer.present.new_file import step_index, template_rows
 from pyguibud.designer.templates import TEMPLATES
+from pyguibud.designer.theme import design_tokens
 
 
 def test_cycle_wraps_in_both_directions() -> None:
@@ -59,9 +60,10 @@ class TestPanelFocus:
         panels.cycle_focus(1)
         panels.cycle_focus(1)
         frames = [p.frame for p in panels.panels]
-        assert str(frames[1].cget("highlightcolor")) == spec.focus
+        tokens = design_tokens(spec)
+        assert str(frames[1].cget("highlightcolor")) == tokens.ring
         for other in (f for f in frames if f is not frames[1]):
-            assert str(other.cget("highlightcolor")) == spec.colors["bg"]
+            assert str(other.cget("highlightcolor")) == tokens.divider  # D10: a subtle edge
         assert int(frames[1].cget("highlightthickness")) >= 2
 
     def test_focus_in_marks_the_containing_panel(self, shell: DesignerApp) -> None:

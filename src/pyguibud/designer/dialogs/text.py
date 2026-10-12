@@ -10,6 +10,7 @@ from typing import Any
 
 from pyguibud.core.model import Prop
 from pyguibud.designer.dialogs.base import ModalDialog
+from pyguibud.designer.theme_tk import INVALID_PREFIX
 from pyguibud.i18n import N_, _
 
 __all__ = ["TextDialog"]
@@ -65,8 +66,8 @@ class TextDialog(ModalDialog):
                 label.grid(row=row, column=0, sticky="w", padx=(0, 8), pady=(4, 0))
                 ttk.Entry(self.body, textvariable=var).grid(row=row, column=1, sticky="ew")
                 self.labels.append((label, msgid))
-        # The reason a refusal gives; hidden until OK is refused (the style is the inspector's).
-        self.reason = ttk.Label(self.body, style="Invalid.TLabel", justify="left",
+        # The reason a refusal gives; hidden until OK is refused.
+        self.reason = ttk.Label(self.body, style=f"{INVALID_PREFIX}.TLabel", justify="left",
                                 wraplength=self.root.winfo_fpixels("4i"))  # fmt: skip
         self.reason.grid(row=8, column=0, columnspan=2, sticky="w", pady=(8, 0))
         self.reason.grid_remove()

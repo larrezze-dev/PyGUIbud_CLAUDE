@@ -30,7 +30,11 @@ from pyguibud.designer.app import DesignerApp
 from pyguibud.designer.edit import EditActions
 from pyguibud.designer.editing import insert_command, new_node
 from pyguibud.designer.session import DesignerSession
-from pyguibud.designer.standard_actions import ShellCallbacks, register_standard_actions
+from pyguibud.designer.standard_actions import (
+    PreviewCallbacks,
+    ShellCallbacks,
+    register_standard_actions,
+)
 from pyguibud.designer.targets import NewWidget, hit_test, keyboard_target
 from pyguibud.designer.theme import selection_colours, spec_for_role
 from pyguibud.designer.theme_tk import TREE_STYLE
@@ -52,7 +56,10 @@ def _registry(session: DesignerSession, lang: str) -> ActionRegistry:
         set_language=lambda _code: None,
         current_language=lambda: lang,
         edit=EditActions(session, lambda _question, _then: None, lambda _text: None),
-    )
+        # Step 15a: the Preview menu joins the collision check of every locale
+        preview=PreviewCallbacks(*(lambda *_a: None,) * 2, *(lambda: True,) * 2,
+                                 lambda _code: None, lambda: None, lambda: None, lambda: True),
+    )  # fmt: skip
     registry = ActionRegistry()
     register_standard_actions(registry, callbacks)
     return registry

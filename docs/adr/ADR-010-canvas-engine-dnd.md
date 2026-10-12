@@ -62,3 +62,28 @@ Debugger fix with orchestrator approval. Spec: `docs/specs/dnd-selection.md` §3
 - **Selection-outline cap:** the primary plus at most `SELECTION_CAP` = 16 other selected nodes are outlined. A larger selection is reported in the status bar with its count. Reason: each outline is 8 native child windows, which take about 1 ms each to map on Windows and more as siblings grow (800 strips 0.57 s, 4000 strips 5.9 s to map and 14 s to hide in plain Tk).
 - ➕ Paste of 500 widgets: 48.3 s → 1.21 s (budget 1.5 s). Select all of 500: 5.2 s → 0.55 s. Deselecting afterwards: about 0.2 s.
 - ➖ In a selection larger than 17 nodes, not every selected node is outlined on the canvas. Mitigation: the status-bar count, and the object tree still highlights every selected row.
+
+## Addendum 4 (Step 14b, 2026-10-10): size handles and include rendering
+- **Status:** Accepted (user, 2026-10-10; D1–D10 all defaults, so no ADR-013). Spec: `docs/specs/direct-manipulation.md` (D1–D10). This is an addendum rather than a new ADR because it amends this ADR's own D2, the "placeholders until Step 14" clause and the R-A affordance. If D8 (b) is chosen (a `PropertyDef.unit` field = plugin-API scope), that part moves to a new ADR-013.
+- **D2 amended (user, 14a.2 UAT):** the handles of the primary selection change the widget's **size properties** (`width`/`height`/`length`, in the unit Tk uses: px, characters, lines or rows; designer-side table) wherever an axis has one. Span semantics remain for grid children:
+  - on axes without a size property (hollow handles);
+  - on axes stretched by grid sticky (on both sides);
+  - on mixed corners;
+  - for the whole drag when Ctrl is held.
+
+  Hidden size axes, so that a value with no runtime effect is never written:
+  - pack `fill`;
+  - page children;
+  - Frame/LabelFrame with children (Tk propagation).
+- **Window size:** the selected window's plate gets right, bottom and corner handles. They write `min_width`/`min_height` with `SetField`; dragging below the contents clears them. For `kind="component"` they are a design-time preview size (no runtime effect). No format change.
+- **Gestures:** motion draws a ghost only. Release runs one `Macro` (`Resize`, `Resize window`) after `break_merge()`. Keyboard steps (Ctrl+Shift+Arrows) use mergeable bare `SetProp`/`SetField`.
+- **R-A amended:** per axis, a set `width`/`height` property overrides the 120×64 design size, with a 16 px (scaled) design-only geometry floor that is never written.
+- **R-E `include-outline` (new `DESIGN_AFFORDANCES` entry):** a 1 px dashed outline around an expanded include. It is a drawing, with no geometry change.
+- **Include rendering:** `render_plan.design_plan` populates `Instance.includes`, mirroring the runtime's `_expand` without importing it (ADR-007). `_tk.py` is unchanged: `_include` already expands when the entry exists, so embed/runtime parity holds, and a parity test with an external include is added.
+  - External files go through `core.files.DiskFiles` and the R49–R53/R82 findings.
+  - Any finding, any reader error (newer MAJOR, more than 10 MiB, invalid), an untitled document, or a depth, cycle or node-budget breach → a placeholder with the reason.
+  - A newer MINOR file renders read-only (as at runtime).
+  - Cache by `(realpath, mtime_ns, size)`; refresh on focus-in.
+  - The engine maps only nodes of the window's own `walk()`, by identity. Included widgets resolve to the `Include` node, which is a read-only leaf. This is required for `src="#"`, where included widgets are the component tab's own objects.
+- ➕ Fixes the 14a.2 UAT complaint without a `.ui` format change, core change or runtime change (recommended defaults). Opening an included file never executes code.
+- ➖ The canvas measures character pitch in the designer theme (ADR-009 D4), and first drags from a natural size are estimates (±1–2 units). Mitigation: the exact value shows in the status bar, and the rebuild shows the truth. A window minimum is a floor, not an exact size; an initial-size attribute is deferred (spec D3 b).

@@ -13,10 +13,11 @@
 | `src/pyguibud/core/xmltree.py` | Hardened expat parser into `xml.etree.ElementTree.Element` trees, canonical serialiser, prefix assignment (§5–7). No model knowledge beyond `NS_UI`/`KNOWN_NAMESPACES`. |
 | `src/pyguibud/core/migrations/__init__.py` | `Migration`, `MIGRATIONS` (empty), `migrate()` (§4). |
 | `src/pyguibud/core/xml_io.py` | Public read/write API (§3), element ↔ model mapping (§9), atomic save (§10). |
+| `src/pyguibud/core/atomic.py` | `create_temporary()`: the temporary file for every atomic write (§10 step 3; also `codegen.output.write_atomic` and the designer's settings/autosave). Stdlib only. Added in Step 15b (QA-15b-01). |
 | `src/pyguibud/uic.py` | `pyguibud-uic` CLI (§12). |
 | `examples/hello.ui` | §13, byte-exact. |
 
-- **Import graph (no cycles):** `schema → (stdlib)`; `xmltree → errors, model, i18n`; `migrations → xmltree, schema, errors, i18n`; `xml_io → model, errors, schema, xmltree, migrations, i18n`; `uic → core.xml_io, cli, i18n`.
+- **Import graph (no cycles):** `schema → (stdlib)`; `xmltree → errors, model, i18n`; `migrations → xmltree, schema, errors, i18n`; `atomic → (stdlib)`; `xml_io → model, errors, schema, xmltree, migrations, atomic, i18n`; `uic → core.xml_io, cli, i18n`.
 - **Stdlib only.** `xmltree` imports `xml.parsers.expat` and `xml.etree.ElementTree` (for the `Element` type only: **never** `ET.parse`, `ET.fromstring`, `ET.XMLParser`, `ET.tostring`, `ET.indent` or `ET.register_namespace`). No `tkinter`, no `registry` import (the reader does not know the widget registry), nothing designer-only: `pyguibud_runtime` will reuse the reader (Step 10/20).
 - **Re-exports from `pyguibud.core`** (add to `__all__`): `CURRENT_SCHEMA_VERSION`, `MAX_UI_BYTES`, `MAX_DEPTH`, `ReadResult`, `XmlWarning`, `XmlIoError`, `ContainerExtras`, `read_ui`, `read_ui_bytes`, `read_ui_string`, `dump_ui`, `write_ui`. `xmltree` and `migrations` are importable but not re-exported.
 - `pyproject.toml`: add `pyguibud-uic = "pyguibud.uic:main"` under `[project.scripts]`; add `"pyguibud.uic"` to the strict mypy override list; add `"/examples"` to the sdist `include`. The wheel needs **no** change: hatchling ships every file under `src/pyguibud`, `.gitignore` does not exclude `*.xsd` (verify with the gate in §15). Run `uv sync` afterwards.
@@ -287,8 +288,8 @@ All msgids are wrapped in `N_()` at the raise site. `{element}` is the local nam
 ## 10. Atomic save (`write_ui`)
 1. `data = dump_ui(document)`. Every `XmlIoError` is raised here, before the file system is touched.
 2. `target = Path(path)`. If `target.is_dir()` → `xml.write_failed`.
-3. Create the temporary file with `tempfile.mkstemp(dir=target.parent or ".", prefix=f".{target.name}.", suffix=".tmp")`. Write the bytes, `flush`, `os.fsync`, close.
-4. **POSIX:** `shutil.copymode(target, tmp)` if the target exists, else `os.chmod(tmp, 0o644)`. This undoes `mkstemp`'s 0600.
+3. Create the temporary file with `core.atomic.create_temporary(target.parent or ".", prefix=f".{target.name}.", suffix=".tmp")` (mode 0600, `O_EXCL`, at most 100 names; a `PermissionError` is raised at once). Not `tempfile.mkstemp`: on Windows it retries a refused folder up to `TMP_MAX` times because `os.access` ignores ACLs (QA-15b-01, Step 15b). Write the bytes, `flush`, `os.fsync`, close.
+4. **POSIX:** `shutil.copymode(target, tmp)` if the target exists, else `os.chmod(tmp, 0o644)`. This undoes the 0600 of step 3.
 5. If `backup` and the target exists: `shutil.copy2(target, target.with_name(target.name + ".bak"))`. Copy, never rename, so the target exists until step 6; an existing `.bak` is overwritten. Example: `hello.ui` → `hello.ui.bak`.
 6. `os.replace(tmp, target)`. On `PermissionError`, retry up to 5 times, 50 ms apart (Windows antivirus or indexer locks).
 7. Best effort: `os.fsync` of the directory, POSIX only.

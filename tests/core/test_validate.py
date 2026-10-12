@@ -976,6 +976,13 @@ def test_same_file_include_codes_and_chains_without_files(tmp_path: Path) -> Non
     assert cycle.related == frozenset({("#", "a"), ("#", "b")})
 
 
+def test_a_same_file_depth_limit_names_the_component(tmp_path: Path) -> None:
+    """N4: '{src}' of a same-file include reads '#c8' (as in a cycle chain), never '#'."""
+    for report in _same_file(SAME_FILE_CASES["too_deep"], tmp_path):
+        (limit,) = [f for f in report.findings if f.code == "validate.include_limit"]
+        assert limit.message == "Including '#c8' nests includes deeper than 8 levels."
+
+
 def test_an_external_include_gives_nothing_without_files() -> None:
     text = _SAME_FILE.format(windows=_MAIN.format(body=_inc("i", "c", src="other/x.ui")))
     report = validate(read_ui_string(text).document, default_registry())

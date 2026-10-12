@@ -54,9 +54,10 @@ def _handle(app: DesignerApp, root: Any, node: object, edge: Edge) -> Any:  # no
 
 
 def _press(handle: Any, to: tuple[int, int]) -> None:
-    """Press ``handle`` and drag it to the root point ``to`` (no release)."""
+    """Press ``handle`` with Ctrl held (span, not size: Step 14b D1) and drag it to the root
+    point ``to`` (no release)."""
     x, y = handle.winfo_rootx() + 2, handle.winfo_rooty() + 2
-    handle.event_generate("<ButtonPress-1>", x=2, y=2, rootx=x, rooty=y)
+    handle.event_generate("<ButtonPress-1>", x=2, y=2, rootx=x, rooty=y, state=0x4)
     handle.event_generate("<B1-Motion>", x=0, y=0, rootx=to[0], rooty=to[1], state=0x100)
 
 
@@ -178,7 +179,7 @@ def test_handles_only_for_grid_children_and_visible_in_every_theme(
     overlay = app.shell.canvas.stages[0].overlay
     app.session.select(window, origin="canvas")
     _settle(designer_root)
-    assert overlay.handles.shown() == []
+    assert len(overlay.handles.shown()) == 3  # Step 14b: the window's e, se and s size handles
     for theme in ("light", "dark", "high_contrast"):
         assert app.set_theme(theme)
         app.flush_theme()

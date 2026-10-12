@@ -16,3 +16,9 @@ htmlcov/
 coverage.xml
 .hypothesis/
 .venv-*/
+.claude/
+CLAUDE.md
+DEVELOPMENT_PLAN.md
+
+# Test screenshots and other test output
+tests/artifacts/

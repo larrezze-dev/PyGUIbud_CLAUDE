@@ -164,9 +164,14 @@ def _general(node: Any, document: Document) -> list[Field]:  # noqa: ANN401 - an
     if isinstance(node, Window):
         kinds = ("main", "dialog", "component")
         rows.append(_f("field:kind", N_("Kind"), "enum", node.kind, choices=kinds))
-        rows.append(_f("field:min_width", N_("Minimum width"), "int", node.min_width,
+        # A component is expanded into a Frame: its minimum is a canvas preview size (D4).
+        preview = node.kind == "component"
+        width, height = N_("Preview width"), N_("Preview height")
+        if not preview:
+            width, height = N_("Minimum width"), N_("Minimum height")
+        rows.append(_f("field:min_width", width, "int", node.min_width,
                        minimum=0, maximum=MAX_PIXELS))  # fmt: skip
-        rows.append(_f("field:min_height", N_("Minimum height"), "int", node.min_height,
+        rows.append(_f("field:min_height", height, "int", node.min_height,
                        minimum=0, maximum=MAX_PIXELS))  # fmt: skip
         rows.append(_f("field:modal", N_("Modal"), "bool", node.modal, False))
         if node.kind == "dialog":

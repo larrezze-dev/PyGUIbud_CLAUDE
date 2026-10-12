@@ -5,8 +5,10 @@ from __future__ import annotations
 from typing import Any, Protocol
 
 from pyguibud.designer.panels.base import PanelBase
+from pyguibud.designer.present.icons import class_icon
 from pyguibud.designer.present.palette import palette_groups
 from pyguibud.designer.session import DesignerSession
+from pyguibud.designer.theme_tk import FONT_HEADER
 from pyguibud.i18n import N_, _
 
 __all__ = ["PalettePanel"]
@@ -44,6 +46,7 @@ class PalettePanel(PanelBase):
     ) -> None:
         super().__init__(parent, session, ring_px=ring_px)
         tree = self._new_tree()
+        tree.tag_configure("category", font=FONT_HEADER)
         self.drag: DragSink | None = None
         tree.bind("<ButtonPress-1>", self._on_press, add="+")
         tree.bind("<B1-Motion>", lambda e: self._forward("motion", e), add="+")
@@ -91,7 +94,7 @@ class PalettePanel(PanelBase):
             self.drag.cancel()
 
     def _forward(self, gesture: str, event: Any) -> None:  # noqa: ANN401 - a Tk event
-        if self.drag is not None:
+        if self.drag is not None and not self.drag.moving:  # Q12: never a canvas gesture
             getattr(self.drag, gesture)(event.x_root, event.y_root)
 
     def _render(self) -> None:
@@ -115,10 +118,12 @@ class PalettePanel(PanelBase):
                 iid=f"c{index}",
                 text=group.category_label,
                 open=opened.get(first, True),
+                tags=("category",),
             )
             for item in group.items:
                 label = _(_M_PLUGIN).format(label=item.label) if item.plugin else item.label
-                tree.insert(category, "end", iid=f"w:{item.name}", text=label)
+                icon = self._icon(class_icon(item.name, self.session.registry))
+                tree.insert(category, "end", iid=f"w:{item.name}", text=label, image=icon)
         if selected and tree.exists(selected[0]):
             tree.selection_set(selected[0])
         self._restore_scroll(scroll)

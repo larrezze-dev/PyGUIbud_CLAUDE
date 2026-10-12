@@ -94,13 +94,13 @@ def test_bad_number_is_refused_marked_and_escape_reverts(
     editor.var.set("999999999999")
     assert not editor.commit_pending()
     assert "width" not in label.props and not stack.can_undo
-    assert str(editor.widget.cget("style")) == "Invalid.TSpinbox"
+    assert str(editor.widget.cget("style")) == "Designer.Invalid.TSpinbox"
     assert app.shell._message.startswith("Must be between")  # QA-14a1-13: a number, too big
     assert not app.shell.inspector.flush()  # A15: the pending text blocks Save/Quit
     app.shell._invoke("edit.undo")  # R2: undo flushes first; the refusal stops it
     assert editor.text() == "999999999999"
     editor._escape()
-    assert editor.text() == "" and str(editor.widget.cget("style")) == "TSpinbox"
+    assert editor.text() == "" and str(editor.widget.cget("style")) == "Designer.TSpinbox"
     assert app.shell.inspector.flush()
 
 
@@ -250,7 +250,7 @@ def test_read_only_disables_every_editor(
     inspector = app.shell.inspector
     inspector._render()
     editor = _editor(inspector, "prop:text")
-    assert "disabled" in editor.widget.state()
+    assert "readonly" in editor.widget.state()  # D9: selectable, not disabled
     assert inspector.header.cget("text") == (
         "This document is read-only: the file is write-protected"
     )

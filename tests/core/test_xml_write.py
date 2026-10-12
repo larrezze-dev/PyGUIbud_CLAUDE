@@ -5,7 +5,6 @@ from __future__ import annotations
 import os
 import stat
 import sys
-import tempfile
 from collections.abc import Callable
 from pathlib import Path
 from typing import Any
@@ -964,7 +963,7 @@ def test_failure_creating_the_temp_file(
     def fail(*args: Any, **kwargs: Any) -> Any:
         raise PermissionError(13, "Permission denied")
 
-    monkeypatch.setattr(tempfile, "mkstemp", fail)
+    monkeypatch.setattr(xml_io, "create_temporary", fail)
     with pytest.raises(XmlIoError) as info:
         write_ui(hello_document, target)
     assert info.value.code == "xml.write_failed" and "Permission denied" in info.value.message

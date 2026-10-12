@@ -121,13 +121,23 @@ def test_a_failing_window_shows_an_error_card_and_the_others_render(
     assert second.view is not None and second.error is None
 
 
-def test_an_unexpanded_include_is_a_placeholder(shell: DesignerApp) -> None:
+def test_a_same_file_include_renders_and_an_unsaved_external_one_is_a_placeholder(
+    shell: DesignerApp,
+) -> None:
+    """Step 14b.2 (spec direct-manipulation 6.1): ``src="#"`` renders even when untitled."""
     shell.session.open_result(read_ui_string(WITH_INCLUDE, source="inc"), name="inc")
+    stage = shell.shell.canvas.stages[0]
+    include = next(n for n in stage.window.walk() if isinstance(n, Include))
+    assert stage.view.outer[id(include)].winfo_class() == "TFrame"  # type: ignore[union-attr]
+    external = WITH_INCLUDE.replace('src="#"', 'src="other.ui"')
+    shell.session.open_result(read_ui_string(external, source="inc"), name="inc")
     stage = shell.shell.canvas.stages[0]
     include = next(n for n in stage.window.walk() if isinstance(n, Include))
     placeholder = stage.view.outer[id(include)]  # type: ignore[union-attr]
     assert placeholder.winfo_class() == "TLabelframe"
     assert placeholder.cget("text") == "Included: part"
+    reason = placeholder.winfo_children()[0].cget("text")
+    assert reason == "Save the document to show included files."
 
 
 # ---------------------------------------------------------------- design mode

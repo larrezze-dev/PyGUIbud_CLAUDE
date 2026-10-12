@@ -18,18 +18,30 @@ from tkinter import ttk
 from typing import Any
 
 from pyguibud.core import StackEvent
-from pyguibud.core.model import GridCell, Include, Widget, Window
+from pyguibud.core.model import Include, Widget, Window
+from pyguibud.designer import sizing
 from pyguibud.designer.canvas import design
 from pyguibud.designer.canvas.engine import CanvasEngine, WindowView, reveal, widget_rect
 from pyguibud.designer.canvas.overlay import SELECTION_CAP, Overlay
 from pyguibud.designer.editing import Edge
 from pyguibud.designer.geometry import Rect
+from pyguibud.designer.icons_tk import icons
 from pyguibud.designer.panels.base import PanelBase
 from pyguibud.designer.present.canvas import canvas_tabs, kind_label, window_of
 from pyguibud.designer.session import DesignerSession, Selection
 from pyguibud.designer.signals import Signal
-from pyguibud.designer.theme import ThemeSpec
-from pyguibud.designer.theme_tk import scaled
+from pyguibud.designer.theme import ThemeSpec, design_tokens
+from pyguibud.designer.theme_tk import (
+    STYLE_CAPTION,
+    STYLE_ERROR,
+    STYLE_MUTED,
+    STYLE_STAGE,
+    STYLE_STRIP,
+    STYLE_TITLE_LABEL,
+    STYLE_TITLEBAR,
+    scaled,
+    space,
+)
 from pyguibud.i18n import N_, _, ngettext
 
 __all__ = ["CanvasPanel"]
@@ -45,16 +57,13 @@ _STAGE_PAD = 12  # px at 96 dpi around the window on its stage
 FOCUS_HINT = N_("Tab selects the next widget; F6 moves to the next panel.")
 
 
+def _includes(window: Window, *, external: bool = False) -> bool:
+    """True when ``window`` holds a same-file include (or, ``external``, one of another file)."""
+    return any(isinstance(n, Include) and (n.src != "#") == external for n in window.walk())
+
+
 def _nothing() -> None:
     return None
-
-
-def _resizable(node: object) -> bool:
-    """True for a grid child: it gets resize handles (pack and page children never do)."""
-    if not isinstance(node, Widget | Include) or not isinstance(node.placement, GridCell):
-        return False
-    layout = node.parent.layout if node.parent is not None else None
-    return layout is not None and layout.type == "grid"
 
 
 @dataclass(eq=False, slots=True)
@@ -68,8 +77,9 @@ class _Stage:
     title: ttk.Label
     kind: ttk.Label
     strip: ttk.Frame
-    card: ttk.Frame
+    card: tkinter.Frame
     overlay: Overlay
+    plate: tkinter.Frame  # the window's framed backdrop: the lowest child of ``stage`` (R3)
     view: WindowView | None = None
     stale: bool = True
     error: str | None = None  # why the last build failed
@@ -94,7 +104,9 @@ class CanvasPanel(PanelBase):
         self.notebook: Any = ttk.Notebook(self.frame, takefocus=False)
         self.notebook.grid(row=1, column=0, columnspan=2, sticky="nsew", padx=2, pady=2)
         self.empty = ttk.Label(self.frame, anchor="center")
-        self.engine = CanvasEngine(session.registry, scale=self._scaled)
+        self.engine = CanvasEngine(
+            session.registry, scale=self._scaled, source=lambda: (session.path, session.revision)
+        )
         self.stages: list[_Stage] = []
         #: Emitted just before every stage is destroyed (a re-render): whoever holds a stage
         #: (the drag controller) lets go of it while its widgets still exist.
@@ -127,6 +139,8 @@ class CanvasPanel(PanelBase):
         )
         self._connect(session.document_changed, self._on_document)
         self._connect(session.selection_changed, self._on_selection)
+        self._path = session.path  # a new folder (Save As) resolves the includes again
+        self._connect(session.file_changed, lambda s: self.refresh_includes(s.path != self._path))
         self._render()
 
     def _scaled(self, pixels: int) -> int:
@@ -165,8 +179,21 @@ class CanvasPanel(PanelBase):
         for stage in self.stages:
             stage.scroll.bind(sequence, handler, add="+")
 
+    def refresh_includes(self, force: bool = False) -> None:
+        """Rebuild the windows showing other files when one changed on disk (focus-in) or, with
+        ``force``, when the document's folder changed (Save As; spec 6.2)."""
+        self._path = self.session.path
+        if not self.engine.includes.changed() and not force:
+            return
+        for stage in self.stages:
+            # A same-file include may show a component that includes the changed file.
+            stage.stale = stage.stale or any(isinstance(n, Include) for n in stage.window.walk())
+        if self._idle is None:
+            self._idle = self.frame.after_idle(self._flush)
+
     # ------------------------------------------------------------ signals
     def _on_document(self, _session: DesignerSession) -> None:
+        self._path = self.session.path
         self._render()
 
     def _on_selection(self, selection: Selection) -> None:
@@ -207,7 +234,8 @@ class CanvasPanel(PanelBase):
         targets = event.command.targets() if event.command is not None else ()
         owners = {id(w) for t in targets if (w := window_of(t, document)) is not None}
         for stage in self.stages:
-            if not owners or id(stage.window) in owners:
+            # A same-file include shows another window's nodes: any edit may change it.
+            if not owners or id(stage.window) in owners or _includes(stage.window):
                 stage.stale = True
         if self._idle is None:
             self._idle = self.frame.after_idle(self._flush)
@@ -338,15 +366,65 @@ class CanvasPanel(PanelBase):
         return "break" if getattr(event, "keysym", "") == "Escape" else None
 
     def _on_handle(self, edge: Edge, phase: str, event: Any) -> str:  # noqa: ANN401 - a Tk event
-        """A resize handle of the primary grid child: press, drag and release (spec 8)."""
-        if self.drag is not None and phase == "press":
+        """A handle of the primary: hover, press, drag, release and double-click.
+
+        A filled handle sizes (spec direct-manipulation 2.2), a hollow one or Ctrl (also
+        Command on macOS, R3) changes a grid child's spans (dnd-selection 8).
+        """
+        node, stage, drag = self.session.selection.node, self.current_stage(), self.drag
+        state = event.state if isinstance(event.state, int) else 0
+        if drag is None or stage is None:
+            return "break"
+        kind = stage.overlay.kinds.get(edge)
+        if phase == "enter" and kind is not None and not isinstance(node, Window):
+            spec = self.session.registry.get(getattr(node, "class_name", ""))
+            self.status(sizing.hover_text(node, spec, edge, kind))
+        elif phase == "double" and kind == "size" and drag.state in ("idle", "armed"):  # Q12
+            drag.reset_size(node, edge)
+        elif phase == "press" and drag.state in ("idle", "armed"):  # Q12: one drag at a time
             self.focus_widget.focus_set()  # Esc reaches _cancel_move
-            node = self.session.selection.node
-            self.drag.press_resize(node, edge, event.x_root, event.y_root, event.widget)
-        elif self.drag is not None:
-            relay = self.drag.motion if phase == "motion" else self.drag.release
-            relay(event.x_root, event.y_root)
+            span = bool(state & 0x4) or (self._aqua and bool(state & 0x8))
+            if kind == "span" or (span and sizing.grid_child(node)):
+                drag.press_resize(node, edge, event.x_root, event.y_root, event.widget)
+            elif kind == "size":
+                drag.press_size(node, edge, event.x_root, event.y_root, event.widget)
+        elif phase in ("motion", "release"):
+            relay = drag.motion if phase == "motion" else drag.release
+            relay(event.x_root, event.y_root, fine=bool(state & 0x1))
         return "break"
+
+    def _handle_kinds(self, node: object) -> dict[Edge, sizing.HandleKind]:
+        """The primary's handles: none while read-only (Q2); a window gets 3 (spec 3)."""
+        if node is None or self.session.read_only_refusal() is not None:
+            return {}
+        if isinstance(node, Window):
+            return dict.fromkeys(("e", "se", "s"), "size")
+        return sizing.handle_kinds(node, self.session.registry.get(getattr(node, "class_name", "")))
+
+    def window_box(self, stage: _Stage) -> tuple[Rect, tuple[int, int]] | None:
+        """The window body (stage column 0, row 2, where ``min_width``/``min_height`` apply)
+        in stage coordinates, and its contents' natural size (spec 3, D5)."""
+        column, row, view = stage.stage.grid_bbox(0, 0), stage.stage.grid_bbox(0, 2), stage.view
+        if view is None or not column or not row:
+            return None
+        bars = [w for w in (stage.title.master, stage.strip) if w.winfo_manager()]
+        width = max(w.winfo_reqwidth() for w in (view.frame, *bars)) + 2  # the plate edge
+        natural = (width, view.frame.winfo_reqheight() + 1)
+        return Rect(column[0], row[1], column[2], row[3]), natural
+
+    def measure(self, node: object) -> sizing.Measured | None:
+        """What a size key step needs of ``node`` on the shown stage (spec 4)."""
+        stage = self.current_stage()
+        if stage is None or stage.view is None:
+            return None
+        if isinstance(node, Window):
+            box = self.window_box(stage)
+            return None if box is None else sizing.Measured((box[0].w, box[0].h), natural=box[1])
+        outer = stage.view.outer.get(id(node))
+        rect = widget_rect(outer, stage.stage) if outer is not None else None
+        if rect is None:
+            return None
+        return sizing.Measured((rect.w, rect.h), self.engine.metrics(stage.view, node))
 
     @staticmethod
     def _select_tab(event: Any) -> None:  # noqa: ANN401 - a Tk event
@@ -431,21 +509,36 @@ class CanvasPanel(PanelBase):
         scroll.grid(row=0, column=0, sticky="nsew")
         vbar.grid(row=0, column=1, sticky="ns")
         hbar.grid(row=1, column=0, sticky="ew")
-        stage = ttk.Frame(scroll, padding=self._scaled(_STAGE_PAD))
+        stage = ttk.Frame(scroll, style=STYLE_STAGE, padding=self._scaled(_STAGE_PAD))
         scroll.create_window(0, 0, anchor="nw", window=stage)
-        caption = ttk.Frame(stage)
-        title = ttk.Label(caption, font="TkHeadingFont", anchor="w")
-        kind = ttk.Label(caption, anchor="w")
-        title.grid(row=0, column=0, sticky="w")
-        kind.grid(row=0, column=1, sticky="w", padx=(self._scaled(12), 0))
-        caption.grid(row=0, column=0, sticky="w", pady=(0, self._scaled(6)))
+        # The plate is created first, so it starts beneath the caption, strip and card; after a
+        # window build it is lowered again (R3). Its 1 px edge is the window's frame. It is
+        # placed over the first column's rows (``_on_stage_configure``), not gridded: the stage
+        # grid keeps exactly one child per cell.
+        plate = tkinter.Frame(stage, borderwidth=0, highlightthickness=1, takefocus=0)
+        caption = ttk.Frame(stage, style=STYLE_TITLEBAR)
+        m, s = space(stage, "m"), space(stage, "s")
+        mark = icons(stage).get(f"window_{window.kind}")
+        glyph = ttk.Label(caption, style=STYLE_TITLE_LABEL, image=mark or "")
+        title = ttk.Label(caption, style=STYLE_TITLE_LABEL, anchor="w")
+        kind = ttk.Label(caption, style=STYLE_CAPTION, anchor="w")
+        if mark is not None:
+            glyph.grid(row=0, column=0, padx=(m, 0), pady=s)
+        title.grid(row=0, column=1, sticky="w", padx=(m, 0), pady=s)
+        kind.grid(row=0, column=2, sticky="w", padx=m, pady=s)
+        caption.grid(row=0, column=0, sticky="ew", padx=1, pady=(1, 0))
         strip = ttk.Frame(stage)
-        stage.columnconfigure(0, minsize=window.min_width or 0)
-        stage.rowconfigure(2, minsize=window.min_height or 0)
         overlay = Overlay(stage, scale=self._scaled, on_handle=self._on_handle)
-        built = _Stage(window, page, scroll, stage, title, kind, strip, ttk.Frame(stage), overlay)
+        card = tkinter.Frame(stage, borderwidth=0, highlightthickness=1, takefocus=0)
+        built = _Stage(window, page, scroll, stage, title, kind, strip, card, overlay, plate)
         stage.bind("<Configure>", lambda _e: self._on_stage_configure(built))
-        for widget in (scroll, stage, caption, title, kind, strip):
+        # The stage's own <Configure> comes before grid has laid out its rows (and, the first
+        # time, before the stage padding applies: grid_bbox() is still (0, 0, ...)). The title
+        # bar is moved or resized whenever that layout settles, so its <Configure> places the
+        # plate again with the final box; a fixed min_height/min_width gives no second stage
+        # <Configure> to do it (QA-14p-04).
+        caption.bind("<Configure>", lambda _e: self._on_stage_configure(built), add="+")
+        for widget in (scroll, stage, plate, caption, glyph, title, kind, strip):
             widget.bind("<ButtonPress-1>", self._selector(window))
             widget.bind("<MouseWheel>", self._on_wheel)
         title.configure(text=window.id)
@@ -455,6 +548,9 @@ class CanvasPanel(PanelBase):
         return built
 
     def _on_stage_configure(self, stage: _Stage) -> None:
+        box = stage.stage.grid_bbox(0, 0, 0, 2)
+        if box is not None:
+            stage.plate.place(x=box[0], y=box[1], width=box[2], height=box[3], bordermode="outside")
         stage.scroll.configure(scrollregion=stage.scroll.bbox("all"))
         self._outline(stage, reveal_node=False)
 
@@ -464,6 +560,9 @@ class CanvasPanel(PanelBase):
         document = self.session.document
         if document is None:
             return
+        # A window drag or key step changes these: every rebuild applies them again.
+        stage.stage.columnconfigure(0, minsize=stage.window.min_width or 0)
+        stage.stage.rowconfigure(2, minsize=stage.window.min_height or 0)
         try:
             view = self.engine.build(document, stage.window, stage.stage)
         except Exception as exc:
@@ -475,8 +574,11 @@ class CanvasPanel(PanelBase):
         if stage.view is not None:  # a rebuild keeps the shown Notebook pages
             self.engine.restore_pages(view, self.engine.pages(stage.view))
         stage.stage.update_idletasks()
-        view.frame.grid(row=2, column=0, sticky="nsew")
+        view.frame.grid(
+            row=2, column=0, sticky="nsew", padx=1, pady=(0, 1)
+        )  # inside the plate edge
         stage.overlay.sink(view.frame)  # created above the strips: beneath them now
+        stage.plate.lower()  # sink() put the window at the very bottom: the plate goes under it
         self._drop_view(stage)
         stage.view, stage.error = view, None
         stage.card.grid_remove()
@@ -492,13 +594,21 @@ class CanvasPanel(PanelBase):
     def _show_card(self, stage: _Stage) -> None:
         for child in stage.card.winfo_children():
             child.destroy()
-        count = len(self.session.report().errors)
+        count, m = len(self.session.report().errors), space(stage.card, "m")
         wrap = self._scaled(480)
         reason = _(_M_CANNOT_DRAW).format(reason=stage.error)
-        ttk.Label(stage.card, text=reason, wraplength=wrap, anchor="w").grid(sticky="w")
+        mark = icons(stage.card).get("error")
+        message = ttk.Label(stage.card, style=STYLE_ERROR, text=reason, wraplength=wrap)
+        message.grid(row=0, column=1, sticky="w", padx=(0, m), pady=(m, 0))
         errors = ngettext("{count} error", "{count} errors", count).format(count=count)
-        ttk.Label(stage.card, text=errors, anchor="w").grid(sticky="w")
-        stage.card.grid(row=2, column=0, sticky="nw")
+        ttk.Label(stage.card, style=STYLE_MUTED, text=errors).grid(
+            row=1, column=1, sticky="w", padx=(0, m), pady=(0, m)
+        )
+        # Created last: the reason and the count stay the card's first two children.
+        glyph = ttk.Label(stage.card, style=STYLE_ERROR, image=mark or "")
+        glyph.grid(row=0, column=0, rowspan=2, padx=m, pady=m)
+        stage.card.grid(row=2, column=0, sticky="nw", padx=m, pady=m)
+        stage.plate.lower()
         stage.strip.grid_remove()
         stage.overlay.show_selection(())
         stage.overlay.show_empty(())
@@ -514,19 +624,22 @@ class CanvasPanel(PanelBase):
             return
         stage.chrome[id(model)] = stage.strip
         last = bar.index("end")
-        menus = model.children
-        for index in range(0 if last is None else last + 1):
+        menus, count = model.children, 0 if last is None else last + 1
+        for index in range(count):
             label = ttk.Label(
                 stage.strip,
+                style=STYLE_STRIP,
                 text=bar.entrycget(index, "label"),
                 underline=int(bar.entrycget(index, "underline")),
-                padding=(self._scaled(6), self._scaled(2)),
             )
-            label.pack(side="left")
+            label.grid(row=0, column=index)
             node: object = menus[index] if index < len(menus) else model
             stage.chrome[id(node)] = label
             label.bind("<ButtonPress-1>", self._selector(node))
-        stage.strip.grid(row=1, column=0, sticky="w")
+        # A full-width bar: a spacer column takes the slack, and the 1 px gap below it shows the
+        # plate (painted ``divider``), which is the bar's divider.
+        stage.strip.columnconfigure(count, weight=1)
+        stage.strip.grid(row=1, column=0, sticky="ew", padx=1, pady=(0, 1))
 
     def _selector(self, node: object) -> Callable[[object], None]:
         """A click handler of chrome: select ``node`` and take the keys, as a body click does."""
@@ -560,6 +673,9 @@ class CanvasPanel(PanelBase):
             stage.stage.update_idletasks()
         chosen, empty = {id(n) for n in self.session.selection.nodes}, list[Rect]()
         for key, node in view.nodes.items():  # R-D: empty, unselected, never a window body
+            if key in view.included and key not in chosen:  # R-E: an expanded include
+                with contextlib.suppress(tkinter.TclError):
+                    empty += [r] if (r := widget_rect(view.outer[key], stage.stage)) else []
             if key in chosen or not isinstance(node, Widget) or node.children:
                 continue
             with contextlib.suppress(tkinter.TclError):  # the widget is being destroyed
@@ -580,8 +696,8 @@ class CanvasPanel(PanelBase):
             if rect is not None:
                 rects.append(rect)
                 primary_rect = rect if node is primary else primary_rect
-        # Handles only for a grid child: pack and page children are sized in the inspector.
-        stage.overlay.show_selection(rects, primary=primary_rect, handles=_resizable(primary))
+        handles = self._handle_kinds(primary)
+        stage.overlay.show_selection(rects, primary=primary_rect, handles=handles)
         if reveal_node and primary_rect is not None and not isinstance(primary, Window):
             self._see(stage, primary_rect)
 
@@ -619,7 +735,10 @@ class CanvasPanel(PanelBase):
 
     @staticmethod
     def _restyle_stage(stage: _Stage, spec: ThemeSpec) -> None:
-        stage.scroll.configure(background=spec.colors["bg"])
+        tokens = design_tokens(spec)
+        stage.scroll.configure(background=tokens.stage)
+        stage.plate.configure(background=tokens.divider, highlightbackground=tokens.plate_border)
+        stage.card.configure(background=spec.colors["bg"], highlightbackground=tokens.error_border)
         stage.overlay.restyle(spec)
 
     def focus_first(self) -> None:

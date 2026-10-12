@@ -22,6 +22,7 @@ from pyguibud.designer.clipboard_actions import ClipboardActions
 from pyguibud.designer.dialogs import files as file_dialogs
 from pyguibud.designer.dialogs.base import ModalDialog
 from pyguibud.designer.dialogs.confirm import ConfirmDialog
+from pyguibud.designer.dialogs.export import ExportController
 from pyguibud.designer.dialogs.message import Answer, ChoiceDialog, message_dialog
 from pyguibud.designer.dialogs.new_file import NewFileDialog
 from pyguibud.designer.dialogs.recovery import RecoveryDialog
@@ -38,6 +39,7 @@ from pyguibud.designer.files import (
     open_document,
     save_plan,
 )
+from pyguibud.designer.preview_tk import PreviewController, sweep_stale
 from pyguibud.designer.recovery import RecoveryEntry, RecoverySession
 from pyguibud.designer.screen import desktop_bounds
 from pyguibud.designer.session import DesignerSession, TemplateError
@@ -52,6 +54,7 @@ from pyguibud.designer.shell import Shell
 from pyguibud.designer.signals import Signal
 from pyguibud.designer.standard_actions import (
     FileCallbacks,
+    PreviewCallbacks,
     ShellCallbacks,
     register_standard_actions,
 )
@@ -150,6 +153,18 @@ class DesignerApp:
         self.role = first.role
         root.minsize(*(theme_tk.scaled(root, size) for size in _MIN_SIZE))
 
+        self.preview = PreviewController(
+            root, self.session, self.settings, post=self.message.emit,
+            tell=lambda text: self._tell(lambda: text), save_settings=self._save_settings,
+            current_window=self._canvas_window,
+        )  # fmt: skip
+        preview = self.preview
+        self.exporter = ExportController(
+            root, self.session, self.settings, post=self.message.emit,
+            tell=lambda text: self._tell(lambda: text), ask=self._ask,
+            save=lambda then: self.save(then=then), open_dialog=self._open_dialog,
+            save_settings=self._save_settings,
+        )  # fmt: skip
         self.registry = ActionRegistry()
         register_standard_actions(
             self.registry,
@@ -168,6 +183,7 @@ class DesignerApp:
                     self._confirm,
                     self.message.emit,
                     busy=lambda: self.shell.canvas.rebuild_pending,  # drops key repeats
+                    measure=lambda node: self.shell.canvas.measure(node),
                 ),
                 clipboard=ClipboardActions(
                     self.session,
@@ -186,6 +202,17 @@ class DesignerApp:
                     close=lambda: self.guard(self.session.close_document),
                     recover=self.recover,
                     has_document=lambda: self.session.document is not None,
+                    export=self.exporter.start,
+                ),
+                preview=PreviewCallbacks(
+                    preview.run,
+                    preview.close,
+                    lambda: self.session.document is not None,
+                    lambda: preview.running,
+                    preview.set_language,
+                    lambda: self.settings.preview_lang,
+                    preview.use_theme,
+                    preview.can_use_theme,
                 ),
             ),
         )
@@ -201,6 +228,9 @@ class DesignerApp:
         self._recent_menu = self.shell.submenus.get("file.recent")
         if self._recent_menu is not None:
             self._recent_menu.configure(postcommand=self._fill_recent)
+        if (themes := self.shell.submenus.get("preview.theme")) is not None:
+            themes.configure(postcommand=lambda: preview.fill_theme_menu(themes))
+            preview.fill_theme_menu(themes)
         self.shell.body.bind("<Configure>", self._restore_sashes, add="+")
         self.retranslate()
         self._fill_recent()
@@ -762,6 +792,8 @@ class DesignerApp:
             with contextlib.suppress(tkinter.TclError):
                 self.root.after_cancel(self._autosave_id)
             self._autosave_id = None
+        self.preview.dispose()
+        self.exporter.dispose()
         self.shell.dispose()
 
 
@@ -857,6 +889,7 @@ def run(lang: str | None, theme: str | None, *, path: Path | None = None) -> int
     previous = _set_sigint(on_interrupt)
     recovery = RecoverySession()
     recovery.start()
+    sweep_stale()  # preview folders a crashed designer left behind (spec preview-export 4.3)
     try:
         role = resolve_theme(theme, settings)
         app = DesignerApp(root, role=role, settings=settings, recovery=recovery)

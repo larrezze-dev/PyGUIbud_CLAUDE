@@ -6,13 +6,14 @@ functions for fakes instead of opening them.
 
 from __future__ import annotations
 
+import os
 import tkinter
 from tkinter import colorchooser, filedialog
 from typing import Any
 
 from pyguibud.i18n import N_, _
 
-__all__ = ["ask_colour", "ask_image", "ask_open", "ask_save"]
+__all__ = ["ask_colour", "ask_export", "ask_image", "ask_open", "ask_save"]
 
 _M_COLOUR = N_("Choose a colour")
 _M_IMAGE = N_("Choose an image")
@@ -22,6 +23,8 @@ _M_UI_FILES = N_("PyGUIbud UI files")
 # Translators: the titles of the native Open and Save As file dialogs.
 _M_OPEN = N_("Open a UI file")
 _M_SAVE_AS = N_("Save the UI file as")
+_M_PYTHON = N_("Python files")
+_M_TEMPLATES = N_("Translation templates")
 
 
 def _chosen(path: object) -> str | None:
@@ -52,6 +55,21 @@ def ask_save(root: Any, name: str, folder: str | None = None) -> str | None:  # 
         initialdir=folder or None,
     )
     return _chosen(path)
+
+
+def ask_export(root: Any, path: str, *, pot: bool = False) -> str | None:  # noqa: ANN401
+    """The Python module (or with ``pot`` the ``.pot`` template) to export to, or None."""
+    kind, pattern = (_M_TEMPLATES, ".pot") if pot else (_M_PYTHON, ".py")
+    folder, name = os.path.split(path)
+    chosen = filedialog.asksaveasfilename(
+        parent=root,
+        filetypes=[(_(kind), f"*{pattern}"), (_(_M_ALL), "*")],
+        defaultextension=pattern,
+        confirmoverwrite=False,  # the export checks the file itself (D12)
+        initialfile=name,
+        initialdir=folder or None,
+    )
+    return _chosen(chosen)
 
 
 def ask_colour(root: Any, initial: str) -> str | None:  # noqa: ANN401 - the app root

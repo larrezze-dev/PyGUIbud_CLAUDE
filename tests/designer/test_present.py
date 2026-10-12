@@ -347,3 +347,12 @@ def test_fit_text_is_monotonic_and_survives_odd_input() -> None:
     assert lengths == sorted(lengths)
     assert fit_text("", 5, _measure) == ""
     assert fit_text("ab cd", 24, _measure) == "ab…"  # no dangling space before the ellipsis
+
+
+def test_fit_text_by_words_never_cuts_mid_word() -> None:
+    """QA-14b1-06: the status bar elides at a word boundary."""
+    text = "Release here to cancel the drag"
+    assert fit_text(text, 7 * 18, _measure, words=True) == "Release here to…"  # not "to ca…"
+    assert fit_text(text, 7 * 14, _measure, words=True) == "Release here…"  # cut at a space
+    assert fit_text("Unbreakable", 7 * 5, _measure, words=True) == "Unbr…"  # one word: chars
+    assert fit_text(text, 7 * 40, _measure, words=True) == text

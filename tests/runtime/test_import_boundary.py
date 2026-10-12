@@ -1,4 +1,5 @@
-"""ADR-007: importing the runtime or a backend loads no toolkit and none of the designer side."""
+"""ADR-007/013: importing the runtime, a backend or the preview child loads no toolkit and none
+of the designer side."""
 
 from __future__ import annotations
 
@@ -20,6 +21,8 @@ _FORBIDDEN = repr(
     [
         "pyguibud_runtime, pyguibud.backends.ttkbootstrap, pyguibud.backends._tk",
         "pyguibud.core",
+        # ADR-013: the preview child loads its toolkit only inside run()
+        "pyguibud.preview, pyguibud.preview._host, pyguibud.preview._describe",
     ],
 )
 def test_import_boundary(imports: str) -> None:

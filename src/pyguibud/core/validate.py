@@ -2112,9 +2112,9 @@ class _IncludePass:
             self.limit_hit(parent.ctx, include, _M_LIMIT_NODES, MAX_EXPANDED_NODES)
 
     def limit_hit(self, ctx: _Ctx, include: Include, msgid: str, limit: int) -> None:
-        ctx.sink.error(
-            "validate.include_limit", msgid, include, src=_clip(include.src), limit=limit
-        )
+        # A same-file include names its component as a cycle chain does ('#c9', not '#').
+        src = f"#{_clip(include.component)}" if include.src == "#" else _clip(include.src)
+        ctx.sink.error("validate.include_limit", msgid, include, src=src, limit=limit)
         self.stopped = True
 
     def enter(self, include: Include, frame: _Frame) -> _Frame | None:

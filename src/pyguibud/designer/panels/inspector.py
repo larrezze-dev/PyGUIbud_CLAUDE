@@ -16,6 +16,8 @@ from tkinter import font as tkfont
 from tkinter import ttk
 from typing import Any
 
+from ttkbootstrap.widgets.tooltip import ToolTip
+
 from pyguibud.core import ValidationReport
 from pyguibud.core.commands import Macro, Outcome, SetField, SetResource
 from pyguibud.core.diagnostics import Finding
@@ -25,10 +27,10 @@ from pyguibud.designer.dialogs import files
 from pyguibud.designer.dialogs.base import ModalDialog
 from pyguibud.designer.dialogs.text import TextDialog
 from pyguibud.designer.editing import M_EXTERNAL_INCLUDES, new_variable, unique_id
+from pyguibud.designer.icons_tk import icons
 from pyguibud.designer.panels.base import PanelBase
 from pyguibud.designer.panels.editors import (
     ADD,
-    INVALID,
     NEW,
     Editor,
     history_action,
@@ -46,7 +48,8 @@ from pyguibud.designer.properties import (
     parse_value,
 )
 from pyguibud.designer.session import DesignerSession, Selection
-from pyguibud.designer.theme import ThemeSpec, tag_colours
+from pyguibud.designer.theme import ThemeSpec
+from pyguibud.designer.theme_tk import GHOST_STYLE, STYLE_MUTED, STYLE_SECTION, space
 from pyguibud.i18n import N_, _
 
 __all__ = ["InspectorPanel"]
@@ -65,8 +68,9 @@ _M_ADD_IMAGE = N_("Add image")
 #: Fields without a Reset button (they have no default).
 _NO_RESET = frozenset({"field:id", "field:src", "field:component", "field:kind", "layout:type"})
 _NO_RESET |= {"place:grid:row", "place:grid:column"}
-_SECTION, _MUTED = "Section.TLabel", "Muted.TLabel"
-_RESET_STYLE = "Reset.TButton"
+_SECTION, _MUTED = STYLE_SECTION, STYLE_MUTED
+#: The label column takes at most this share of the form width (text is never cut: it wraps).
+_LABEL_SHARE = 0.45
 
 
 class InspectorPanel(PanelBase):
@@ -83,6 +87,7 @@ class InspectorPanel(PanelBase):
         ring_px: int = 2,
     ) -> None:
         super().__init__(parent, session, ring_px=ring_px)
+        self._gaps: dict[str, int] = {}
         #: Seams the shell sets: the status line ("" clears it, rule C2) and an action runner.
         self.status: Callable[[str], None] = lambda _text: None
         self.invoke: Callable[[str], None] = lambda _action: None
@@ -93,7 +98,9 @@ class InspectorPanel(PanelBase):
         self.frame.rowconfigure(2, weight=1)
         self.header = ttk.Label(self.frame, anchor="w", justify="left")
         self.frame.bind(
-            "<Configure>", lambda e: self.header.configure(wraplength=e.width - 12), add="+"
+            "<Configure>",
+            lambda e: self.header.configure(wraplength=e.width - 2 * self._gap("m")),
+            add="+",
         )
         self.notebook: Any = ttk.Notebook(self.frame, takefocus=True)  # untyped tab API
         self.notebook.grid(row=2, column=0, columnspan=2, sticky="nsew")
@@ -105,11 +112,21 @@ class InspectorPanel(PanelBase):
         self.canvas.configure(yscrollcommand=bar.set)
         self.canvas.grid(row=0, column=0, sticky="nsew")
         bar.grid(row=0, column=1, sticky="ns")
-        self.form = ttk.Frame(self.canvas, padding=(6, 4))
+        self.form = ttk.Frame(self.canvas, padding=(self._gap("m"), self._gap("s")))
         self.form.columnconfigure(1, weight=1)
         item = self.canvas.create_window(0, 0, window=self.form, anchor="nw")
         self.form.bind("<Configure>", lambda _e: self._fit_scroll(), add="+")
         self.canvas.bind("<Configure>", lambda e: self.canvas.itemconfigure(item, width=e.width))
+        # One bind tag scrolls the form from every row widget: three callbacks per widget, made
+        # and deleted again on every pick, cost a tenth of the rebuild budget (QA-14p-11).
+        self._wheel_tag = f"InspectorWheel{self.frame}"
+        wheel = {
+            "<MouseWheel>": lambda e: self._scroll(-1 if e.delta > 0 else 1),
+            "<Button-4>": lambda _e: self._scroll(-1),
+            "<Button-5>": lambda _e: self._scroll(1),
+        }
+        for sequence, handler in wheel.items():
+            self.frame.bind_class(self._wheel_tag, sequence, handler)
         self._wheel(self.canvas)
         self.events = EventsTab(self.notebook, self)
         self.notebook.add(tab, text=_(_M_PROPERTIES))
@@ -151,6 +168,7 @@ class InspectorPanel(PanelBase):
         for child in self.form.winfo_children():
             child.destroy()
         self._editors, self._rows, self._findings = {}, {}, []
+        self._gaps.clear()
         session, document = self.session, self.session.document
         nodes = session.selection.nodes if document is not None else ()
         self._nodes = nodes
@@ -161,28 +179,54 @@ class InspectorPanel(PanelBase):
             if field.section != section:
                 section = field.section
                 ttk.Label(self.form, text=_(section), style=_SECTION).grid(
-                    row=row, column=0, columnspan=3, sticky="w", pady=(6, 2)
-                )
+                    row=row, column=0, columnspan=3, sticky="ew",
+                    pady=(self._gap("m") if row else 0, self._gap("xs")),
+                )  # fmt: skip
                 row += 1
             self._add_row(field, row)
             row += 1
+        self._fit_label_column()
         self._findings_row = row
         self._show_findings()
         self.events.render(nodes, document)
         self.canvas.yview_moveto(0)
 
+    def _gap(self, key: str) -> int:
+        """A scaled spacing step, looked up once per render (rows are rebuilt on every pick)."""
+        if key not in self._gaps:
+            self._gaps[key] = space(self.frame, key)
+        return self._gaps[key]
+
+    def _fit_label_column(self) -> None:
+        """Size the label column to the widest label (measured, so +40 % text still fits), up to
+        a share of the form; wider labels wrap instead of squeezing the editors."""
+        labels = [row[0] for row in self._rows.values()]
+        name = str(ttk.Style(self.form).lookup("TLabel", "font") or "TkDefaultFont")
+        font = tkfont.nametofont(name)
+        widest = max((font.measure(str(label.cget("text"))) for label in labels), default=0)
+        room = max(self.canvas.winfo_width(), self.canvas.winfo_reqwidth(), 1)
+        width = min(widest, int(room * _LABEL_SHARE))
+        self.form.columnconfigure(0, minsize=width)
+        for label in labels:
+            label.configure(wraplength=width if widest > width else 0)
+
     def _add_row(self, field: Field, row: int) -> None:
         label = ttk.Label(self.form, text=_(field.label), anchor="w")
-        label.grid(row=row, column=0, sticky="w", padx=(0, 8), pady=1)
+        label.grid(row=row, column=0, sticky="w", padx=(0, self._gap("m")), pady=self._gap("xs"))
         editor = make_editor(self.form, field, self)
-        editor.frame.grid(row=row, column=1, sticky="ew", pady=1)
+        editor.frame.grid(row=row, column=1, sticky="ew", pady=self._gap("xs"))
         mixed = ttk.Label(editor.frame, text=_(_M_MIXED), style=_MUTED)  # never in the entry
-        reset = None
+        reset: Any = None
         if field.kind != "class" and field.key not in _NO_RESET:
-            reset = ttk.Button(self.form, text="↺", width=2, style=_RESET_STYLE,
+            reset = ttk.Button(self.form, text="↺", style=GHOST_STYLE,
                                command=partial(self.reset, field.key))  # fmt: skip
-            reset.grid(row=row, column=2, padx=(4, 0), pady=1)
-            # The glyph has no words: say what it does when the keyboard reaches it.
+            cache = icons(self.frame)
+            if (image := cache.get("reset")) is not None:  # else the glyph stays
+                grey = cache.get("reset", disabled=True)
+                reset.configure(image=(image, "disabled", grey or image), compound="image")
+            reset.grid(row=row, column=2, padx=(self._gap("s"), 0), pady=self._gap("xs"))
+            # The icon has no words: say what it does on hover and when the keyboard reaches it.
+            ToolTip(reset, text=_(_M_RESET))
             reset.bind("<FocusIn>", lambda _e: self.status(_(_M_RESET)), add="+")
         self._editors[field.key], self._rows[field.key] = editor, (label, reset, mixed)
         for widget in (label, editor.widget, editor.frame):
@@ -208,9 +252,18 @@ class InspectorPanel(PanelBase):
         reason = self.session.read_only_reason
         if self.read_only:
             texts.append(_(_M_READ_ONLY).format(reason=_(reason) if reason else ""))
+        lock = icons(self.frame).get("lock") if self.read_only else None
+        self.header.configure(image=lock or "", compound="left")
         self.header.configure(text="\n".join(texts))
         if texts:
-            self.header.grid(row=1, column=0, columnspan=2, sticky="ew", padx=6, pady=(0, 4))
+            self.header.grid(
+                row=1,
+                column=0,
+                columnspan=2,
+                sticky="ew",
+                padx=self._gap("m"),
+                pady=(0, self._gap("s")),
+            )
         else:
             self.header.grid_remove()
 
@@ -393,10 +446,20 @@ class InspectorPanel(PanelBase):
 
     # ------------------------------------------------------------ Panel protocol
     def flush(self) -> bool:
-        """Commit every editor's pending text; False (the editor stays marked) on a refusal."""
+        """Commit every editor's pending text; False (the editor stays marked) on a refusal.
+
+        A read-only document takes no edit, so its pending text (if anything ever slips past
+        the read-only editors) is dropped: nothing could correct it, and a False here would
+        block Close, Open and Quit without a word (QA-14p-02; the Variables panel does the same).
+        """
+        read_only = self.read_only
         for editor in [*self._editors.values(), *self.events.editors()]:
             try:
-                if editor.pending() and not editor.commit_pending():
+                if not editor.pending():
+                    continue
+                if read_only:
+                    editor.revert()
+                elif not editor.commit_pending():
                     return False
             except tkinter.TclError:  # the editor is being destroyed: nothing is pending
                 continue
@@ -422,14 +485,7 @@ class InspectorPanel(PanelBase):
 
     def restyle(self, spec: ThemeSpec) -> None:
         super().restyle(spec)
-        style, colours = ttk.Style(), spec.colors
-        style.configure(_MUTED, foreground=tag_colours(spec)["muted"])
-        bold = tkfont.nametofont("TkDefaultFont").actual()
-        style.configure(_SECTION, font=(bold["family"], bold["size"], "bold"))
-        for base in ("TEntry", "TSpinbox", "TCombobox", "TLabel"):  # TLabel: the text dialog
-            style.configure(f"{INVALID}.{base}", foreground=colours["danger"],
-                            bordercolor=colours["danger"])  # fmt: skip
-        self.canvas.configure(background=colours["bg"])
+        self.canvas.configure(background=spec.colors["bg"])
 
     def dispose(self) -> None:
         for after_id in self._pending_ids.values():
@@ -438,6 +494,11 @@ class InspectorPanel(PanelBase):
             except tkinter.TclError:
                 continue
         self._pending_ids.clear()
+        for sequence in ("<MouseWheel>", "<Button-4>", "<Button-5>"):
+            try:
+                self.frame.unbind_class(self._wheel_tag, sequence)
+            except tkinter.TclError:  # the root is already gone: nothing is bound any more
+                break
         super().dispose()
 
     # ------------------------------------------------------------ scrolling
@@ -453,11 +514,9 @@ class InspectorPanel(PanelBase):
             self.canvas.yview_moveto(max(0.0, top - 0.05))
 
     def _wheel(self, widget: Any) -> None:  # noqa: ANN401 - a Tk widget
-        if widget is None:
-            return
-        widget.bind("<MouseWheel>", lambda e: self._scroll(-1 if e.delta > 0 else 1), add="+")
-        widget.bind("<Button-4>", lambda _e: self._scroll(-1), add="+")
-        widget.bind("<Button-5>", lambda _e: self._scroll(1), add="+")
+        """Scroll the form on the wheel over ``widget`` (first, so a spinbox does not spin)."""
+        if widget is not None:
+            widget.bindtags((self._wheel_tag, *widget.bindtags()))
 
     def _scroll(self, step: int) -> str:
         self.canvas.yview_scroll(step * 3, "units")

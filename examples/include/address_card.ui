@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<pyguibud-ui schema_version="1.0" xmlns="urn:pyguibud:ui:1">
+  <meta generator="pyguibud" source_locale="en_GB"/>
+  <window id="address_card" kind="component">
+    <layout type="grid" padding="6" gap="4">
+      <column index="1" weight="1"/>
+    </layout>
+    <widget class="Label" id="lbl_street">
+      <prop name="text" translatable="true">Street</prop>
+      <cell row="0" column="0" sticky="w"/>
+    </widget>
+    <widget class="Entry" id="ent_street">
+      <cell row="0" column="1" sticky="ew"/>
+    </widget>
+    <widget class="Label" id="lbl_city">
+      <prop name="text" translatable="true">City</prop>
+      <cell row="1" column="0" sticky="w"/>
+    </widget>
+    <widget class="Entry" id="ent_city">
+      <cell row="1" column="1" sticky="ew"/>
+    </widget>
+  </window>
+</pyguibud-ui>

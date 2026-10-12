@@ -19,7 +19,7 @@
 
 ### Must
 **Designer**
-- M1 Palette → canvas drag-and-drop; move, reorder and reparent widgets in the canvas and the object tree.
+- M1 Palette → canvas drag-and-drop; move, reorder and reparent widgets in the canvas and the object tree (tree drag-and-drop: Step 14b.2); resize widgets and windows by dragging handles (Step 14b.1).
 - M2 Object tree (hierarchy) synchronised with the canvas selection; multi-select.
 - M3 Property inspector: typed editors (text, number, bool, enum, colour, image, variable, handler), with defaults shown and resettable. *Font editor deferred until after v1 (Step 14 D8 = A, user 2026-10-08): no `font` property type exists yet.*
 - M4 Undo/redo for **every** model change (command stack).
@@ -28,7 +28,7 @@
 - M7 Menubar/menu editor (actions with text, shortcut, icon, handler, separator, submenu).
 - M8 Event panel: assign named handlers to abstract events.
 - M9 Variables panel: declare `string/int/double/bool` variables and bind them to widgets.
-- M10 Live preview in a real window, plus a live theme switch.
+- M10 Live preview in a real window, plus a live theme switch (Step 15a, `docs/specs/preview-export.md`: separate process, F5 restart, live theme/language switch).
 - M11 Copy / paste / duplicate, also between `.ui` files (clipboard carries XML).
 - M12 Templates / new-file wizard: Main window, Dialog, Login form, Settings, Empty component.
 - M13 Keyboard-only operation: every action reachable by keyboard; shortcut cheat-sheet.
@@ -52,7 +52,7 @@
 ### Should
 - S1 Alignment/distribution helpers for selected widgets in a grid.
 - S2 Search/filter in the palette and the object tree.
-- S3 Pseudo-locale preview (`en_XA`) in the designer to check text expansion.
+- S3 Pseudo-locale preview (`en_XA`) in the designer to check text expansion (Step 15a: Preview ▸ Language; not available in exported modules).
 - S4 Accessibility hints in the inspector (missing label for an entry, low contrast).
 - S5 Export screenshot of the form (PNG) for docs.
 

@@ -1,12 +1,12 @@
 # PyGUIbud scoreboard
 
-_Last updated: 2026-10-08 21:17:08 UTC+0200_
+_Last updated: 2026-10-12 20:13:53 UTC+0200_
 
-- **Steps done:** 13/22
-- **Current step:** 14a Properties, undo/redo, save/load (functional) (🔄)
-- **Tests:** 3544/3552 passed (reused earlier .scorer/ files (--no-tests))
-- **Coverage:** 93.3 %
-- **Test detail:** 3552 collected, 0 failed, 0 errors, 8 skipped, 412.27 s
+- **Steps done:** 17/23
+- **Current step:** 16 tkinter + PySide6 backends (⏳)
+- **Tests:** 4203/4215 passed, 2 failing (pytest exited with code 1)
+- **Coverage:** 92.2 %
+- **Test detail:** 4215 collected, 2 failed, 0 errors, 10 skipped, 664.45 s
 
 ## Quality gates
 
@@ -33,9 +33,10 @@ _Last updated: 2026-10-08 21:17:08 UTC+0200_
 | 11 | Code generator pyguibud-uic | BACKEND | ✅ done |
 | 12 | Designer shell | FRONTEND | ✅ done |
 | 13 | Drag-and-drop & selection (13a + 13b) | FRONTEND (opus) | ✅ done |
-| 14a | Properties, undo/redo, save/load (functional) | FRONTEND + BACKEND | 🔄 in progress |
-| 14p | Designer visual polish | FRONTEND | ⏳ pending |
-| 15 | Preview & export | FRONTEND | ⏳ pending |
+| 14a | Properties, undo/redo, save/load (functional) | FRONTEND + BACKEND | ✅ done |
+| 14p | Designer visual polish | FRONTEND | ✅ done |
+| 14b | Direct-manipulation sizing & structure | FRONTEND + BACKEND | ✅ done |
+| 15 | Preview & export | FRONTEND + BACKEND | ✅ done |
 | 16 | tkinter + PySide6 backends | BACKEND | ⏳ pending |
 | 17 | Widget plugin API + ttkbootstrap extensions | ARCHITECT + BACKEND (opus) | ⏳ pending |
 | 18 | Translations (7 languages) | TRANSLATOR + QA | ⏳ pending |
@@ -45,8 +46,8 @@ _Last updated: 2026-10-08 21:17:08 UTC+0200_
 
 ## Recent commits
 
+- `ff016eb 006`
+- `0685c94 005`
 - `e172188 004`
 - `6d3a99c 003`
 - `a865a0c 002`
-- `ea6c1e6 InitialCommmit`
-- `42b6356 Step 01: project concept, stack, development plan, brand assets`

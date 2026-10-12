@@ -13,7 +13,6 @@ import errno
 import os
 import re
 import shutil
-import tempfile
 import time
 import xml.etree.ElementTree as ET
 from collections.abc import Iterable, Iterator, Mapping, Sequence
@@ -23,6 +22,7 @@ from types import MappingProxyType
 from typing import Final, Literal, cast
 
 from pyguibud.core import migrations, xmltree
+from pyguibud.core.atomic import create_temporary
 from pyguibud.core.diagnostics import EMPTY_SOURCE_MAP, Finding, SourceMap
 from pyguibud.core.errors import ModelError, XmlIoError
 from pyguibud.core.model import (
@@ -1020,15 +1020,15 @@ def write_ui(document: Document, path: str | os.PathLike[str], *, backup: bool =
     try:
         if target.is_dir():
             raise IsADirectoryError(errno.EISDIR, os.strerror(errno.EISDIR), source)
-        handle, temporary = tempfile.mkstemp(
-            dir=target.parent, prefix=f".{target.name}.", suffix=".tmp"
+        handle, temporary = create_temporary(
+            target.parent, prefix=f".{target.name}.", suffix=".tmp"
         )
         with os.fdopen(handle, "wb") as stream:
             stream.write(data)
             stream.flush()
             os.fsync(stream.fileno())
         if os.name == "posix":  # pragma: no cover - exercised on POSIX CI only
-            # Undo mkstemp's 0600 so the saved file keeps normal permissions.
+            # Undo the temporary file's 0600 so the saved file keeps normal permissions.
             if target.exists():
                 shutil.copymode(target, temporary)
             else:

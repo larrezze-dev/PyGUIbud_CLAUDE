@@ -12,6 +12,7 @@ import re
 import tkinter
 from collections.abc import Callable
 from dataclasses import dataclass, field
+from pathlib import Path
 from tkinter import ttk
 from typing import Any
 
@@ -20,9 +21,10 @@ from pyguibud.backends.ttkbootstrap import TtkbootstrapBackend
 from pyguibud.core.errors import format_message
 from pyguibud.core.model import Document, Include, Widget, Window
 from pyguibud.core.registry import Registry
-from pyguibud.designer.canvas.design import apply_design_mode
+from pyguibud.designer.canvas.design import apply_design_mode, descendants
 from pyguibud.designer.geometry import ChildBox, ContainerBox, Rect, Snapshot
-from pyguibud.designer.render_plan import design_plan
+from pyguibud.designer.render_plan import IncludeResolver, design_plan
+from pyguibud.designer.sizing import size_axes
 from pyguibud.i18n import N_, _
 
 __all__ = ["CanvasEngine", "WindowView", "reveal", "widget_rect"]
@@ -32,6 +34,7 @@ _log = logging.getLogger(__name__)
 # Translators: drawn on the canvas in place of an included component; {component} is its id.
 _M_INCLUDED = N_("Included: {component}")
 _PLACEHOLDER_SIZE = (120, 48)  # px at 96 dpi
+_REASON_WRAP = 240  # px at 96 dpi: the reason line of a placeholder
 
 
 @dataclass(eq=False, slots=True)
@@ -46,6 +49,7 @@ class WindowView:
     inner: dict[int, Any] = field(default_factory=dict)  # id(node) -> widget holding children
     nodes: dict[int, object] = field(default_factory=dict)  # id(node) -> node (keeps it alive)
     owner: dict[str, object] = field(default_factory=dict)  # Tk path -> node
+    included: set[int] = field(default_factory=set)  # id(include) of the expanded includes
 
     def node_of(self, widget: Any) -> object | None:  # noqa: ANN401 - a Tk widget
         """The node that owns ``widget`` (internal sub-widgets map to their node)."""
@@ -83,7 +87,7 @@ def _wheel_commands(view: WindowView) -> list[str]:
     their Tcl commands outlive ``destroy()`` and keep every rebuilt widget alive.
     """
     names: list[str] = []
-    for inner in view.inner.values():
+    for inner in descendants(view.frame):  # included ScrolledFrames are no mapped node
         tag = getattr(inner, "_wheel_tag", None)
         if isinstance(tag, str):
             for sequence in inner.bind_class(tag):
@@ -93,6 +97,8 @@ def _wheel_commands(view: WindowView) -> list[str]:
 
 #: Design-time size (px at 96 dpi) of an empty container.
 _EMPTY_W, _EMPTY_H = 120, 64
+#: Design-only geometry floor (px at 96 dpi) of a set container size: it stays hittable (R-A).
+_FLOOR = 16
 #: Design-time append zone (px at 96 dpi) added to a non-empty container's right/bottom padding.
 _ZONE = 20
 
@@ -103,6 +109,7 @@ DESIGN_AFFORDANCES = (
     "append-zone-padding",
     "paned-append-pane",
     "empty-container-outline",
+    "include-outline",
 )
 
 
@@ -123,13 +130,23 @@ def _padding(inner: Any) -> tuple[int, int, int, int]:  # noqa: ANN401 - a Tk wi
 class CanvasEngine:
     """Builds :class:`WindowView` objects; a failing build raises (the caller shows a card)."""
 
-    def __init__(self, registry: Registry, *, scale: Callable[[int], int] = lambda px: px) -> None:
+    def __init__(
+        self,
+        registry: Registry,
+        *,
+        scale: Callable[[int], int] = lambda px: px,
+        source: Callable[[], tuple[Path | None, int]] = lambda: (None, 0),
+    ) -> None:
         self.registry = registry
         self._scale = scale
+        self._source = source  # (the document's file, its revision): where includes resolve
         self._backend = TtkbootstrapBackend()
+        self.includes = IncludeResolver(registry)
+        self._reasons: dict[int, str] = {}  # id(include) -> why it shows a placeholder
 
     def build(self, document: Document, window: Window, host: Any) -> WindowView:  # noqa: ANN401
-        """Build ``window`` (ungridded) inside ``host`` and put it in design mode."""
+        """Build ``window`` (ungridded) inside ``host`` and put it in design mode; only its own
+        nodes are mapped, so an expanded include is one read-only leaf (spec 6.3)."""
         found: list[tuple[object, Any, Any]] = []
         titles: dict[int, str] = {}
         embed = Embed(
@@ -139,15 +156,21 @@ class CanvasEngine:
             placeholder=self._placeholder,
         )
         plan = design_plan(document, window, self.registry, log=_log_note)
+        self._reasons = self.includes.expand(plan.top, *self._source())
         session = self._backend.build_embedded(plan, embed)
+        own = {id(node) for node in window.walk()}
+        found = [entry for entry in found if id(entry[0]) in own]
         try:
             frame = next(outer for node, outer, _inner in found if node is window)
             view = WindowView(window, session, frame, titles.get(id(window)))
+            view.included = set(plan.top.includes)
             for node, outer, inner in found:
                 view.outer[id(node)], view.inner[id(node)] = outer, inner
                 view.nodes[id(node)] = node
             for node, _outer, inner in found:
                 self._reachable(node, inner)
+                if id(node) in view.included and not inner.winfo_children():  # R-A as well
+                    inner.configure(width=self._scale(_EMPTY_W), height=self._scale(_EMPTY_H))
             _map_owners(view)  # after _reachable: a press on an append pane finds its owner
             apply_design_mode(frame)
         except BaseException:
@@ -173,12 +196,48 @@ class CanvasEngine:
             self._append_pane(inner)
             return
         with contextlib.suppress(tkinter.TclError):  # not every container has these options
-            if not node.children:
-                inner.configure(width=self._scale(_EMPTY_W), height=self._scale(_EMPTY_H))
+            if not node.children:  # per axis, a set width/height wins (ADR-010 Addendum 4)
+                inner.configure(width=self._size(node, "width", _EMPTY_W),
+                                height=self._size(node, "height", _EMPTY_H))  # fmt: skip
             elif not pages:
                 left, top, right, bottom = _padding(inner)
                 zone = self._scale(_ZONE)
                 inner.configure(padding=(left, top, right + zone, bottom + zone))
+
+    def _size(self, node: Window | Widget, name: str, empty: int) -> int:
+        """R-A per axis: a set size property (at least the floor), else the empty size."""
+        prop = node.props.get(name) if isinstance(node, Widget) else None
+        if prop is None or not prop.value.isdigit():
+            return self._scale(empty)
+        return max(int(prop.value), self._scale(_FLOOR))
+
+    def metrics(self, view: WindowView, node: object) -> tuple[float, float]:
+        """(x, y) pixels of one unit of ``node``'s size axes (spec direct-manipulation 2.3).
+
+        Characters and lines come from the widget's real font, Treeview rows from its style.
+        """
+        widget, pitch = view.inner.get(id(node)), [1.0, 1.0]
+        spec = self.registry.get(getattr(node, "class_name", ""))
+        if widget is None:
+            return 1.0, 1.0
+        call, font = widget.tk.call, ""
+        with contextlib.suppress(tkinter.TclError):  # ttk.Button has no -font option
+            font = str(widget.cget("font"))
+        style = ""
+        with contextlib.suppress(tkinter.TclError):  # tk widgets have no -style option
+            style = str(widget.cget("style"))
+        style = style or widget.winfo_class()
+        font = font or str(call("ttk::style", "lookup", style, "-font")) or "TkDefaultFont"
+        for k, axis in enumerate(size_axes(node, spec)):
+            unit = axis[1] if axis else "px"
+            if unit == "chars":
+                pitch[k] = float(call("font", "measure", font, "0"))
+            elif unit != "px":
+                pitch[k] = float(call("font", "metrics", font, "-linespace"))
+            if unit == "rows" and style.endswith("Treeview"):
+                rows = str(call("ttk::style", "lookup", style, "-rowheight"))
+                pitch[k] = float(rows) if rows.replace(".", "", 1).isdigit() else pitch[k]
+        return pitch[0], pitch[1]
 
     def _append_pane(self, paned: Any) -> None:  # noqa: ANN401 - a ttk Panedwindow
         """R-C: a trailing empty pane, ``_ZONE`` px along the orient axis; ``hit_test`` maps it
@@ -271,7 +330,11 @@ class CanvasEngine:
     def _placeholder(self, node: Include, parent: Any) -> Any:  # noqa: ANN401 - Tk widgets
         width, height = (self._scale(px) for px in _PLACEHOLDER_SIZE)
         text = _(_M_INCLUDED).format(component=node.component)
-        return ttk.Labelframe(parent, text=text, width=width, height=height)
+        frame = ttk.Labelframe(parent, text=text, width=width, height=height)
+        if reason := self._reasons.get(id(node)):  # spec 6.1: the card names the reason
+            label = ttk.Label(frame, text=reason, wraplength=self._scale(_REASON_WRAP))
+            label.pack(padx=self._scale(4), pady=self._scale(4))
+        return frame
 
 
 def _log_note(msgid: str, **params: object) -> None:

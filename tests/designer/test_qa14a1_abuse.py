@@ -353,7 +353,7 @@ def test_handler_box_clears_its_refusal_when_the_original_is_typed_back(
     box.var.set(original)
     box.commit_pending()
     _settle(qa_app.root)
-    assert not str(box.widget.cget("style")).startswith("Invalid")
+    assert not str(box.widget.cget("style")).startswith("Designer.Invalid")
 
 
 @pytest.mark.gui
@@ -547,7 +547,7 @@ def test_newer_minor_document_is_fully_read_only(
     assert document is not None and stack is not None
     assert "(read-only)" in qa_app.root.title()
     _select(qa_app, _widget(document, "Label"))
-    assert "disabled" in qa_app.shell.inspector._editors["prop:text"].widget.state()
+    assert "readonly" in qa_app.shell.inspector._editors["prop:text"].widget.state()  # D9
     assert not stack.execute(
         SetProp(_widget(document, "Label"), Prop(name="text", value="x"))
     ).accepted
@@ -628,7 +628,7 @@ def test_absurd_inspector_values_are_marked_and_explained(qa_app: DesignerApp, h
         editor = qa_app.shell.inspector._editors[key]
         editor.var.set(text)
         assert not qa_app.shell.inspector.commit(editor, text), (key, text)
-        assert str(editor.widget.cget("style")).startswith("Invalid") and _status(qa_app)
+        assert str(editor.widget.cget("style")).startswith("Designer.Invalid") and _status(qa_app)
         editor.revert()
     assert dump_ui(qa_app.session.document) == before
 
@@ -738,7 +738,7 @@ _SIGINT_CHILD = textwrap.dedent(
             if mode == "report":
                 dialogs = self._live_dialogs()
                 tree = getattr(dialogs[-1], "tree", None) if dialogs else None
-                rows = [tree.set(i, "path") for i in tree.get_children()] if tree else []
+                rows = [e.path for e in dialogs[-1]._entries.values()] if tree else []  # full paths
                 print("ROWS", rows, flush=True)
             else:
                 doc = self.session.document

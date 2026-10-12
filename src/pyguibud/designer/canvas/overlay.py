@@ -19,10 +19,10 @@ from typing import Any, Literal
 
 from pyguibud.designer.editing import Edge
 from pyguibud.designer.geometry import ContainerBox, Rect
-from pyguibud.designer.theme import ThemeSpec
+from pyguibud.designer.sizing import HandleKind
+from pyguibud.designer.theme import ThemeSpec, design_tokens
 
 __all__ = ["Overlay", "TargetState"]
-
 #: How an insertion target is drawn: accepted, denied (dashed) or still being checked.
 TargetState = Literal["allowed", "denied", "pending"]
 _DASH = 6  # px at 96 dpi: the segment length of a denied target
@@ -37,6 +37,8 @@ _PHASES = (
     ("<ButtonPress-1>", "press"),
     ("<B1-Motion>", "motion"),
     ("<ButtonRelease-1>", "release"),
+    ("<Double-Button-1>", "double"),
+    ("<Enter>", "enter"),
 )
 #: The handles in pool order, each with its cursor.
 HANDLES: tuple[tuple[Edge, str], ...] = (
@@ -77,9 +79,9 @@ def _dashed(strip: Rect, dash: int) -> list[Rect]:
 
 
 def _relay(
-    callback: Callable[[Edge, str, Any], object], edge: Edge, phase: str
+    callback: Callable[[Edge, str, Any], object], edge: Callable[[], Edge], phase: str
 ) -> Callable[[Any], object]:
-    return lambda event: callback(edge, phase, event)
+    return lambda event: callback(edge(), phase, event)
 
 
 class _Layer:
@@ -174,9 +176,12 @@ class Overlay:
         layers = (self.empty, self.grid, self.selection, self.target, self.handles, self.band)
         for index, layer in enumerate(layers):
             layer.ceiling = self._ceiling(layers[index + 1 :])
-        self._resizable = False
+        #: The shown handles by edge: size (filled) or span (hollow); a pool strip shows
+        #: ``self._edges[k]`` (fewer than 8 for a pack child or a window).
+        self.kinds: dict[Edge, HandleKind] = {}
+        self._edges: list[Edge] = []
         self._grid: ContainerBox | None = None
-        self._colours = {"focus": "", "bg": "", "primary": "", "danger": "", "border": ""}
+        self._colours = dict.fromkeys(("ring", "bg", "primary", "border", "allowed", "denied"), "")
         self._selected: tuple[Rect, ...] = ()
         self._empty: tuple[Rect, ...] = ()
         #: The outline of the primary node, where its resize handles go (None: not shown).
@@ -185,31 +190,40 @@ class Overlay:
 
     def restyle(self, spec: ThemeSpec) -> None:
         """Re-read the colours from the theme and redraw."""
-        colours = spec.colors
+        colours, tokens = spec.colors, design_tokens(spec)
+        # ring / allowed / denied are derived to reach 3:1 on every surface they sit on (A8).
         self._colours = {
-            "focus": spec.focus,
+            "ring": tokens.ring,
             "bg": colours["bg"],
             "primary": colours["primary"],
-            "danger": colours["danger"],
             "border": colours["border"],
+            "allowed": tokens.target_allowed,
+            "denied": tokens.target_denied,
         }
         grid, self._grid = self._grid, None
         self.show_empty(self._empty)
         self.show_grid(grid)
-        self.show_selection(self._selected, primary=self.primary, handles=self._resizable)
+        self.show_selection(self._selected, primary=self.primary, handles=self.kinds)
         if self._target is not None:
             self.show_target(self._target[0], self._target[1], bar=self._target[2])
 
     def show_selection(
-        self, rects: Sequence[Rect], *, primary: Rect | None = None, handles: bool = False
+        self,
+        rects: Sequence[Rect],
+        *,
+        primary: Rect | None = None,
+        handles: bool | dict[Edge, HandleKind] = False,
     ) -> None:
         """Outline every rect (two-tone: visible on any widget colour); empty hides them.
 
-        ``handles`` adds the resize handles around ``primary`` (a grid child, spec 8).
+        ``handles`` adds handles around ``primary``: True = all 8 size handles, or a kind per
+        shown edge (spec direct-manipulation 2.2).
         """
         self._selected, self.primary = tuple(rects), primary
-        self._resizable = handles and primary is not None
-        if not self._colours["focus"]:
+        size: HandleKind = "size"
+        kinds = dict.fromkeys((e for e, _c in HANDLES), size) if handles is True else handles
+        self.kinds = dict(kinds or {}) if primary is not None else {}
+        if not self._colours["ring"]:
             self.selection.draw([])
             self.handles.draw([])
             return
@@ -218,7 +232,7 @@ class Overlay:
         for rect in self._selected:
             pieces += [(r, self._colours["bg"]) for r in _ring(rect, inner)]
             grown = Rect(rect.x - inner, rect.y - inner, rect.w + 2 * inner, rect.h + 2 * inner)
-            pieces += [(r, self._colours["focus"]) for r in _ring(grown, outer)]
+            pieces += [(r, self._colours["ring"]) for r in _ring(grown, outer)]
         self.selection.draw(pieces)
         self._show_handles()
 
@@ -238,13 +252,14 @@ class Overlay:
         self.empty.draw(pieces if colour else [])
 
     def show_band(self, rect: Rect | None) -> None:
-        """The rubber band (D5): a 1 px focus-coloured rectangle; None hides it."""
-        colour = self._colours["focus"]
+        """The rubber band (D5): a 1 px ring-coloured rectangle; None hides it."""
+        colour = self._colours["ring"]
         self.band.draw([(r, colour) for r in _ring(rect, 1)] if rect and colour else [])
 
     def _show_handles(self) -> None:
-        rect = self.primary
-        if rect is None or not self._resizable:
+        rect, colours = self.primary, self._colours
+        self._edges = [edge for edge, _cursor in HANDLES if edge in self.kinds]
+        if rect is None or not self._edges:
             self.handles.draw([])
             return
         size, out = max(self._scale(_HANDLE), 8), 1 + self._scale(2)  # on the outline's ring
@@ -252,19 +267,28 @@ class Overlay:
         xs = {"w": rect.x, "e": rect.x + rect.w}
         ys = {"n": rect.y, "s": rect.y + rect.h}
         pieces: list[tuple[Rect, str]] = []
-        for edge, _cursor in HANDLES:
+        for edge in self._edges:
             x = next((xs[c] for c in edge if c in xs), rect.x + rect.w // 2)
             y = next((ys[c] for c in edge if c in ys), rect.y + rect.h // 2)
             square = Rect(x - size // 2, y - size // 2, size, size)
-            pieces.append((square, self._colours["primary"]))
-        self.handles.draw(pieces, cursors=[cursor for _edge, cursor in HANDLES])
-        for handle in self.handles.shown():  # a 1 px bg border: visible on any widget colour
-            handle.configure(highlightthickness=1, highlightbackground=self._colours["bg"])
+            pieces.append((square, colours["primary" if self.kinds[edge] == "size" else "bg"]))
+        cursor = dict(HANDLES)
+        self.handles.draw(pieces, cursors=[cursor[edge] for edge in self._edges])
+        # Shape, not only colour: a size handle is filled with a 1 px bg border (visible on any
+        # widget colour), a span handle hollow, a 2 px primary ring on bg.
+        for handle, edge in zip(self.handles.shown(), self._edges, strict=True):
+            span = self.kinds[edge] == "span"
+            ring = colours["primary"] if span else colours["bg"]
+            handle.configure(highlightthickness=2 if span else 1, highlightbackground=ring)
 
     def _bind_handle(self, index: int, strip: tkinter.Frame) -> None:
         """A handle holds the pointer grab of its own drag: its events go to ``on_handle``."""
         if index < len(HANDLES) and self._on_handle is not None:
-            edge, callback = HANDLES[index][0], self._on_handle
+            callback = self._on_handle
+
+            def edge() -> Edge:  # what this strip shows now, not when it was created
+                return self._edges[index] if index < len(self._edges) else HANDLES[index][0]
+
             for sequence, phase in _PHASES:
                 strip.bind(sequence, _relay(callback, edge, phase))
 
@@ -297,7 +321,7 @@ class Overlay:
         if rect is None or not self._colours["primary"]:
             self.target.draw([])
             return
-        colour = {"allowed": "primary", "denied": "danger", "pending": "border"}[state]
+        colour = {"allowed": "allowed", "denied": "denied", "pending": "border"}[state]
         strips = [rect] if bar else _ring(rect, self._scale(2))
         if state == "denied":
             strips = [piece for strip in strips for piece in _dashed(strip, self._scale(_DASH))]

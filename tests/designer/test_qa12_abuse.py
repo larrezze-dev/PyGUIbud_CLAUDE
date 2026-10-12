@@ -59,7 +59,7 @@ def test_panels_paint_the_readable_tag_colours(shell: DesignerApp, role: str) ->
     expected = tag_colours(spec)
     tree = shell.shell.tree.tree
     assert tree is not None
-    muted = ttk.Style().lookup("Muted.TLabel", "foreground")  # the inspector's default rows
+    muted = ttk.Style().lookup("Designer.Muted.TLabel", "foreground")
     assert str(muted).upper() == expected["muted"]
     assert str(tree.tag_configure("error", "foreground")).upper() == expected["error"]
 

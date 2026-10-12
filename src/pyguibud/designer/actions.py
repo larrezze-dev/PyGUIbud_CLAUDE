@@ -10,7 +10,7 @@ import logging
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass, field
 
-from pyguibud.core.keys import format_chord, parse_chord, split_mnemonic
+from pyguibud.core.keys import format_chord, parse_chord, split_mnemonic, tk_shortcut
 from pyguibud.designer.signals import Signal
 from pyguibud.i18n import N_, _, pgettext
 
@@ -20,6 +20,7 @@ __all__ = [
     "CheatRow",
     "MenuDef",
     "Separator",
+    "action_hint",
     "label_of",
 ]
 
@@ -28,6 +29,9 @@ _M_FAILED = N_("The action could not be completed: {reason}")
 # Translators: {label} is an action ("Delete"); {scope} lists the panels where its key works.
 _M_SCOPED = N_("{label} ({scope})")
 SCOPE_LABELS = {"canvas": N_("canvas"), "tree": N_("object tree")}
+# Translators: a toolbar tooltip and hint: {action} is a menu label ("Save"), {shortcut} its
+# key ("Ctrl+S").
+M_ACTION_SHORTCUT = N_("{action} ({shortcut})")
 
 
 def _always() -> bool:
@@ -56,6 +60,8 @@ class ActionDef:
     #: Why the shortcut does nothing while the action is disabled (a translated status-bar
     #: text), or None to stay silent.
     refusal: Callable[[], str | None] | None = None
+    #: The icon name (``designer/icons``) of a toolbar button; "" = text only.
+    icon: str = ""
 
     @property
     def chords(self) -> tuple[str, ...]:
@@ -102,6 +108,16 @@ def label_of(action: ActionDef, *, live: bool = True) -> str:
     if action.context is not None:
         return pgettext(action.context, action.label)
     return _(action.label)
+
+
+def action_hint(action: ActionDef, *, aqua: bool = False) -> str:
+    """ "Save (Ctrl+S)" in the current language (tooltips, hints); the bare label without a
+    shortcut. The static label is used: a live "Undo Add element" would go stale."""
+    label = split_mnemonic(label_of(action, live=False))[0]
+    if action.shortcut is None:
+        return label
+    shortcut = tk_shortcut(action.shortcut, aqua=aqua).accelerator
+    return _(M_ACTION_SHORTCUT).format(action=label, shortcut=shortcut)
 
 
 @dataclass(slots=True)

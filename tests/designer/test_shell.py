@@ -49,10 +49,10 @@ def _open_hello(shell: DesignerApp) -> None:
 
 def test_shell_has_menus_toolbar_four_panels_and_status_bar(shell: DesignerApp) -> None:
     bar = shell.shell.menubar
-    assert _labels(bar) == ["File", "Edit", "Document", "View", "Help"]
+    assert _labels(bar) == ["File", "Edit", "Document", "Preview", "View", "Help"]
     assert _labels(_submenu(bar, "File")) == [
-        "New from template…", "Open…", "Open recent", "Recover…", "Save", "Save as…", "Close",
-        "Quit",
+        "New from template…", "Open…", "Open recent", "Recover…", "Save", "Save as…",
+        "Export Python code…", "Close", "Quit",
     ]  # fmt: skip
     assert _labels(_submenu(_submenu(bar, "View"), "Theme")) == ["Light", "Dark", "High contrast"]
     languages = _labels(_submenu(_submenu(bar, "View"), "Language"))
@@ -97,7 +97,7 @@ def test_language_switch_retranslates_everything(shell: DesignerApp) -> None:
     assert first_button.cget("text").startswith("[")
     shell.registry.invoke("view.language.en_GB")
     assert shell.root.title() == "hello — PyGUIbud"
-    assert _labels(shell.shell.menubar) == ["File", "Edit", "Document", "View", "Help"]
+    assert _labels(shell.shell.menubar) == ["File", "Edit", "Document", "Preview", "View", "Help"]
     assert shell.shell._radio["view.language"].get() == "view.language.en_GB"
 
 

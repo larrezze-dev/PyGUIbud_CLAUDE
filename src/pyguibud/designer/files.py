@@ -12,7 +12,6 @@ import dataclasses
 import hashlib
 import os
 import stat
-import tempfile
 import time
 from collections.abc import Iterable
 from dataclasses import dataclass
@@ -27,6 +26,7 @@ from pyguibud.core import (
     ReadResult,
     read_ui,
 )
+from pyguibud.core.atomic import create_temporary
 from pyguibud.core.commands import Command, Macro, SetField, SetResource
 from pyguibud.core.errors import format_message
 from pyguibud.core.files import is_network_or_device_path
@@ -89,7 +89,7 @@ def write_atomic(path: Path, data: bytes) -> None:
     Raises:
         OSError: nothing was replaced (the temporary file is removed).
     """
-    handle, temporary = tempfile.mkstemp(dir=path.parent, prefix=f".{path.name}.", suffix=".tmp")
+    handle, temporary = create_temporary(path.parent, prefix=f".{path.name}.", suffix=".tmp")
     try:
         with os.fdopen(handle, "wb") as stream:
             stream.write(data)

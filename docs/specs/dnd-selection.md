@@ -436,7 +436,7 @@ The keys in §7.3 would clash with `Treeview` navigation if they were bound with
 | any → other container | reparent with placement conversion (§5.3) | that of the target |
 
 - **Drag-move:** a press on a selected widget followed by more than 4 px of motion is a `Moving` payload. It then follows the same target, check and execute path as §6.
-- **Resize (D2 = A):** grid children only, through the handles.
+- **Resize (D2 = A):** grid children only, through the handles. *Amended by Step 14b (`docs/specs/direct-manipulation.md` D1, ADR-010 Addendum 4): solid handles now set the widget size; hollow handles or Ctrl+drag set the grid span.*
   - Right, bottom and corner handles change `columnspan`/`rowspan`. Left and top handles change `column`/`row` and the span together, keeping the far edge.
   - The handle snaps to cell boundaries, with a minimum span of 1. Collisions are denied with the reason (live `check()`, as in §6).
   - Pack and page children show no handles. Their size is `fill`/`expand` and `width`/`height`, which are edited in the Step 14 inspector.
@@ -626,7 +626,7 @@ The keys in §7.3 would clash with `Treeview` navigation if they were bound with
   - **B (recommended): two sub-steps with two UATs.** 13a covers the engine, design mode, palette insertion (drag + Enter), single selection, undo/redo and the tree highlight. 13b covers move, reorder, reparent, span resize, multi-select and the rubber band. This means smaller sessions, and the parity-critical engine is approved before the gestures land on it.
   - A: one step, one UAT. That is a larger session with a higher risk of crossing the context limit.
   - C: three sub-steps (engine / insert / rearrange). That means extra UAT overhead.
-- **D2 — Resize semantics** (ADR-005 has no pixel position).
+- **D2 — Resize semantics** (ADR-005 has no pixel position). *Amended 2026-10-10 by Step 14b, see `direct-manipulation.md` D1.*
   - **A (recommended): grid spans only** (handles change `rowspan`/`columnspan`, and the left/top handles also change `row`/`column`). There are no handles for pack or page children; their sizes go to the Step 14 inspector.
   - B: A plus a drag on pack children that writes their `width`/`height` properties. The units are characters for Button/Entry/Label and pixels for others, so the result is inconsistent and confusing.
   - C: no resize in Step 13.

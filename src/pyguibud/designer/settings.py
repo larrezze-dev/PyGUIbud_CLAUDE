@@ -18,7 +18,7 @@ from pathlib import Path
 
 from pyguibud.designer.files import MAX_RECENT, RecentFiles, path_key, write_atomic
 from pyguibud.designer.theme import ROLES
-from pyguibud.i18n import LANGUAGES, N_, detect_language, normalise_language
+from pyguibud.i18n import LANGUAGES, N_, PSEUDO_LANGUAGE, detect_language, normalise_language
 
 __all__ = [
     "MAX_SETTINGS_BYTES",
@@ -28,6 +28,7 @@ __all__ = [
     "load_settings",
     "merge_recent",
     "parse_settings",
+    "remember_export",
     "resolve_language",
     "resolve_theme",
     "save_settings",
@@ -44,10 +45,15 @@ _SASH_KEY = re.compile(r"[a-z][a-z0-9_]{0,31}")
 _CLI_THEMES = {"light": "light", "dark": "dark", "high-contrast": "high_contrast"}
 _KNOWN = frozenset(
     {"version", "language", "theme", "window", "sashes", "recent_files", "autosave_seconds"}
+    | {"preview_lang", "exports"}
 )
 _DEFAULT_AUTOSAVE = 60
 #: What the user chooses (menus, settings); the window layout is state, not a preference.
-_PREFERENCES = ("language", "theme", "autosave_seconds")
+_PREFERENCES = ("language", "theme", "autosave_seconds", "preview_lang", "exports")
+MAX_EXPORTS = 50
+#: Longer remembered export keys or paths are dropped on load: no real path is this long, and
+#: a huge one froze the Export dialog's entry (QA-15b-03).
+MAX_EXPORT_PATH = 4096
 
 
 def _platform() -> str:
@@ -95,6 +101,12 @@ class Settings:
     sashes: dict[str, tuple[int, ...]] = field(default_factory=dict)
     recent_files: tuple[str, ...] = ()
     autosave_seconds: int = _DEFAULT_AUTOSAVE
+    #: Preview > Language: a code of ``LANGUAGES`` or the pseudo-locale; None = the document's.
+    preview_lang: str | None = None
+    #: The preview toolkit; fixed until Step 16 adds Preview > Toolkit (not stored yet).
+    preview_backend: str = "ttkbootstrap"
+    #: File > Export: the last output per ``.ui`` (``path_key`` -> path), oldest first, <= 50.
+    exports: dict[str, str] = field(default_factory=dict)
     #: Unknown top-level keys, written back unchanged (forks).
     extra: dict[str, object] = field(default_factory=dict)
     #: Not stored: the file exists but could not be read at start-up (locked by another
@@ -142,6 +154,22 @@ def _from_mapping(data: Mapping[str, object]) -> Settings:
     recent = data.get("recent_files")
     if isinstance(recent, list):
         result.recent_files = RecentFiles(e for e in recent if isinstance(e, str)).entries
+    preview_lang = data.get("preview_lang")
+    if isinstance(preview_lang, str) and (
+        preview_lang in LANGUAGES or preview_lang == PSEUDO_LANGUAGE
+    ):
+        result.preview_lang = preview_lang
+    exports = data.get("exports")
+    if isinstance(exports, dict):
+        valid = [
+            (k, v)
+            for k, v in exports.items()
+            if isinstance(k, str)
+            and isinstance(v, str)
+            and len(k) <= MAX_EXPORT_PATH
+            and len(v) <= MAX_EXPORT_PATH
+        ]
+        result.exports = dict(valid[-MAX_EXPORTS:])
     seconds = _whole(data.get("autosave_seconds"), 15, 3600)
     result.autosave_seconds = _DEFAULT_AUTOSAVE if seconds is None else seconds
     return result
@@ -208,6 +236,10 @@ def _encode(settings: Settings, recent: tuple[str, ...]) -> bytes:
     data["sashes"] = {key: list(value) for key, value in settings.sashes.items()}
     data["recent_files"] = list(recent)
     data["autosave_seconds"] = settings.autosave_seconds
+    if settings.preview_lang is not None:
+        data["preview_lang"] = settings.preview_lang
+    if settings.exports:
+        data["exports"] = dict(settings.exports)
     return (json.dumps(data, ensure_ascii=False, indent=2, sort_keys=True) + "\n").encode()
 
 
@@ -269,6 +301,14 @@ def _adopt(settings: Settings, merged: Settings) -> None:
     for name in ("geometry", "zoomed", "sashes", *_PREFERENCES):
         setattr(settings, name, getattr(merged, name))
     settings.extra, settings.unread = dict(merged.extra), False
+
+
+def remember_export(settings: Settings, key: str, output: str) -> None:
+    """Remember ``output`` for the ``.ui`` with path key ``key``; the oldest of 50 goes."""
+    settings.exports.pop(key, None)
+    settings.exports[key] = output
+    for old in list(settings.exports)[:-MAX_EXPORTS]:
+        del settings.exports[old]
 
 
 def resolve_language(cli: str | None, settings: Settings) -> str:

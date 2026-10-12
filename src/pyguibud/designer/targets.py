@@ -49,7 +49,8 @@ Payload = NewWidget | Moving
 
 @dataclass(frozen=True, slots=True)
 class Target:
-    """Where a drop would go. ``index`` is the gap in the container's children (None appends).
+    """Where a drop would go. ``index`` is the gap in the container's children (None appends);
+    on a grid it marks a tree drop before or after a sibling, which makes room (QA-14b2-12).
 
     ``rect``/``bar`` only describe the indicator and are not part of the identity.
     """

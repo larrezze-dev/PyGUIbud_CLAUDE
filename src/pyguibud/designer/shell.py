@@ -7,30 +7,54 @@ them, so a live language switch needs no rebuild.
 
 from __future__ import annotations
 
+import functools
 import logging
 import tkinter
+import tkinter.font
 from collections.abc import Callable
 from tkinter import ttk
 from typing import Any
 
+from ttkbootstrap.widgets.tooltip import ToolTip
+
 from pyguibud.core.keys import split_mnemonic, tk_shortcut
-from pyguibud.designer.actions import ActionDef, ActionRegistry, MenuDef, Separator, label_of
+from pyguibud.core.model import Include
+from pyguibud.designer.actions import (
+    ActionDef,
+    ActionRegistry,
+    MenuDef,
+    Separator,
+    action_hint,
+    label_of,
+)
 from pyguibud.designer.canvas.drag import DragController
+from pyguibud.designer.icons_tk import icons
 from pyguibud.designer.panels.base import PanelBase
 from pyguibud.designer.panels.canvas import CanvasPanel
 from pyguibud.designer.panels.inspector import InspectorPanel
 from pyguibud.designer.panels.palette import PalettePanel
 from pyguibud.designer.panels.tree import TreePanel
 from pyguibud.designer.panels.variables import VariablesPanel
+from pyguibud.designer.present import fit_text
 from pyguibud.designer.present.focus import cycle
 from pyguibud.designer.present.status import findings_summary, selection_path
 from pyguibud.designer.session import DesignerSession
 from pyguibud.designer.theme import ThemeSpec
+from pyguibud.designer.theme_tk import FONT_CAPTION, GHOST_STYLE, STYLE_DIVIDER, space
 from pyguibud.i18n import _, ngettext
 
 __all__ = ["MESSAGE_MS", "Shell"]
 
 _log = logging.getLogger(__name__)
+
+
+class _FullText(ToolTip):
+    """The status bar's tooltip: only while the message is elided (it has a text then)."""
+
+    def show_tip(self, *args: Any) -> None:  # noqa: ANN401 - Tk event arguments
+        if self.text:
+            super().show_tip(*args)
+
 
 #: How long a transient status-bar message stays (milliseconds).
 MESSAGE_MS = 5000
@@ -38,6 +62,9 @@ MESSAGE_MS = 5000
 #: Text-input classes keep their own keys: the document's undo must not steal a typed Ctrl+Z.
 _TEXT_CLASSES = frozenset({"TEntry", "Entry", "Text", "TCombobox", "TSpinbox", "Spinbox"})
 _TEXT_OWNED = frozenset({"edit.undo", "edit.redo"})
+#: Bind tag placed before ``TButton`` on the toolbar buttons: a mouse click must not take the
+#: keyboard focus from the canvas or the tree, whose clipboard keys would stop (QA-14p-03).
+_NO_CLICK_FOCUS = "PyGUIbudNoClickFocus"
 #: Act once per physical key press: a held Delete or Ctrl+X must not cascade onto the parent
 #: that the removal selects (QA-13b-04), nor a held Ctrl+V/Ctrl+D multiply the pasted widgets.
 _ONCE_PER_PRESS = frozenset({"edit.delete", "edit.cut", "edit.paste", "edit.duplicate"})
@@ -55,9 +82,20 @@ _FLUSH_FIRST = frozenset(
         "edit.delete",
         "document.rename",
         "document.delete",
+        "preview.run",
+        "preview.use_theme",
+        "file.export",
     }
 )
 _FLUSH_FIRST_GROUPS = ("edit.insert.", "document.add_")
+#: The toolbar groups (spec 14p D4), each followed by a separator; any other toolbar action
+#: goes into a last group of its own.
+TOOLBAR_GROUPS = (
+    ("file.new", "file.open", "file.save"),
+    ("edit.undo", "edit.redo"),
+    ("edit.cut", "edit.copy", "edit.paste", "edit.delete"),
+    ("preview.run", "file.export"),
+)
 
 
 def _flush_first(action_id: str) -> bool:
@@ -124,10 +162,12 @@ class Shell:
         self._entries: list[_Entry] = []
         self._radio: dict[str, tkinter.StringVar] = {}
         self._buttons: list[tuple[ttk.Button, ActionDef]] = []
+        self._tips: list[tuple[Any, ActionDef]] = []
         self._bound: list[str] = []
         self._held: tuple[str, str, int] | None = None  # (keysym, widget, release time or -1)
         self._active = -1  # index in ``panels`` of the panel that holds the focus, or -1
         self._message = ""
+        self._hint = ""  # the toolbar hint on show, which the next one may replace
         self._in_command = False  # a command's own selection change keeps its message
         self._message_id: str | None = None
         self._clamp_id: str | None = None
@@ -162,15 +202,10 @@ class Shell:
         self.palette.drag = self.drag
         self.canvas.drag = self.drag
         self.canvas.status = self.show_message
+        self.tree.mover, self.tree.status = self.drag.move, self.show_message
 
-        bar = ttk.Frame(root, padding=(6, 2))
-        bar.columnconfigure(0, weight=1)
-        self._status = ttk.Label(bar, anchor="w")
-        self._summary = ttk.Label(bar, anchor="e")
-        self._status.grid(row=0, column=0, sticky="ew")
-        self._summary.grid(row=0, column=1, sticky="e", padx=(12, 0))
-        bar.grid(row=2, column=0, sticky="ew")
-        self.statusbar = bar
+        self.statusbar = self._build_statusbar()
+        self.statusbar.grid(row=2, column=0, sticky="ew")
 
         self._disconnects = [
             # A new selection supersedes a transient message about the old one (QA-13b-11),
@@ -299,6 +334,10 @@ class Shell:
             variable = self._radio.get(item.menu)
             if variable is not None and self.registry.is_checked(item):
                 variable.set(item.id)
+        self._refresh_buttons()
+
+    def _refresh_buttons(self) -> None:
+        """Grey out the toolbar buttons whose action is disabled (the menus refresh on post)."""
         for button, action in self._buttons:
             button.state(["!disabled"] if self.registry.is_enabled(action) else ["disabled"])
 
@@ -314,25 +353,77 @@ class Shell:
         self.refresh_states()
 
     # ------------------------------------------------------------ toolbar
+    def _toolbar_groups(self) -> list[list[ActionDef]]:
+        actions = [a for a in self.registry.actions() if a.toolbar]
+        groups = [[a for i in ids for a in actions if a.id == i] for ids in TOOLBAR_GROUPS]
+        grouped = {a.id for group in groups for a in group}
+        groups.append([a for a in actions if a.id not in grouped])
+        return [group for group in groups if group]
+
     def _build_toolbar(self) -> ttk.Frame:
-        bar = ttk.Frame(self.root, padding=(4, 2))
-        for action in self.registry.actions():
-            if not action.toolbar:
-                continue
-            button = ttk.Button(
-                bar,
-                text=split_mnemonic(label_of(action))[0],
-                command=self._invoker(action.id),
-                takefocus=True,
-            )
-            button.pack(side="left", padx=2)
-            self._buttons.append((button, action))
+        """Icon-only ghost buttons in groups (D3, D4), a tooltip each, a divider below.
+
+        A button keeps its label as text: it is shown when the icon is unavailable.
+        """
+        bar = ttk.Frame(self.root)
+        cache = icons(self.root)
+        gap, column = space(self.root, "xs"), 0
+        # ttk focuses a button on click when its -takefocus says so; Tab reads the same option.
+        # So it is 0 only while the class binding of this very press runs (QA-14p-03).
+        self.root.bind_class(_NO_CLICK_FOCUS, "<ButtonPress-1>", self._press_without_focus)
+        for index, group in enumerate(self._toolbar_groups()):
+            if index:
+                separator = ttk.Separator(bar, orient="vertical")
+                separator.grid(row=0, column=column, sticky="ns", padx=gap * 2, pady=gap * 2)
+                column += 1
+            for action in group:
+                command = self._invoker(action.id)
+                button: Any = ttk.Button(bar, command=command, takefocus=True, style=GHOST_STYLE)
+                tags = list(button.bindtags())
+                tags.insert(tags.index("TButton"), _NO_CLICK_FOCUS)
+                button.bindtags(tuple(tags))
+                image = cache.get(action.icon) if action.icon else None
+                if image is not None:
+                    grey = cache.get(action.icon, disabled=True)
+                    button.configure(image=(image, "disabled", grey or image), compound="image")
+                button.grid(row=0, column=column, padx=(0, gap), pady=gap)
+                hint = functools.partial(action_hint, action, aqua=self.aqua)
+                # Keyboard users get the tooltip text in the status bar (there is no hover).
+                button.bind("<FocusIn>", lambda _e, h=hint: self._show_hint(h()), add="+")
+                self._buttons.append((button, action))
+                self._tips.append((ToolTip(button, text=hint()), action))
+                column += 1
+        divider = ttk.Frame(bar, style=STYLE_DIVIDER, height=1)
+        divider.grid(row=1, column=0, columnspan=column + 1, sticky="ew")
+        bar.columnconfigure(column, weight=1)
+        self.retranslate_toolbar()
         return bar
 
+    def _press_without_focus(self, event: Any) -> None:  # noqa: ANN401 - a Tk event
+        button = event.widget
+        button.configure(takefocus=False)
+
+        def restore() -> None:
+            try:
+                button.configure(takefocus=True)
+            except tkinter.TclError:  # the toolbar was destroyed meanwhile
+                _log.debug("Could not restore takefocus", exc_info=True)
+
+        self.root.after_idle(restore)
+
+    def _show_hint(self, text: str) -> None:
+        """Name a focused toolbar button, unless that would hide a result or a refusal (the
+        focus also returns to the button when the action's dialog closes)."""
+        if not self._message or self._message == self._hint:
+            self.show_message(text)
+            self._hint = text
+
     def retranslate_toolbar(self) -> None:
-        """Re-read the toolbar button texts."""
+        """Re-read the toolbar button texts and tooltips."""
         for button, action in self._buttons:
-            button.configure(text=split_mnemonic(label_of(action))[0])
+            button.configure(text=split_mnemonic(label_of(action, live=False))[0])
+        for tip, action in self._tips:
+            tip.configure(text=action_hint(action, aqua=self.aqua))
 
     # ------------------------------------------------------------ keys
     def _bind_shortcuts(self) -> None:
@@ -356,7 +447,8 @@ class Shell:
     def _invoker(self, action_id: str) -> Callable[[], None]:
         def run() -> None:
             self.clear_message()  # a new command supersedes an earlier refusal (QA-13b-11)
-            self._invoke(action_id)
+            if not self._invoke(action_id):  # disabled (a stale button): say why, as the keys do
+                self._explain_refusal(action_id)
 
         return run
 
@@ -456,6 +548,7 @@ class Shell:
         self._held = None  # a focus change ends a held key (QA-13b-04)
         if self._disposed or not self._in_main_window(event.widget):
             return
+        self.canvas.refresh_includes()  # an included file edited elsewhere (spec 6.2)
         index = self._panel_index_of(event.widget)
         if str(event.widget) == str(self.root.winfo_toplevel()):
             return  # the window itself gained the focus; the focused child follows
@@ -551,6 +644,22 @@ class Shell:
                 paned.sashpos(index, max(0, new))
 
     # ------------------------------------------------------------ status bar
+    def _build_statusbar(self) -> ttk.Frame:
+        """The message (left) and the findings summary with a severity icon (right), under a
+        1 px divider."""
+        bar = ttk.Frame(self.root)
+        bar.columnconfigure(0, weight=1)
+        xs, m = space(self.root, "xs"), space(self.root, "m")
+        self._status = ttk.Label(bar, anchor="w")
+        self._status_tip, self._status_width = _FullText(self._status, text=""), 0
+        self._status.bind("<Configure>", self._refit_status, add="+")
+        self._summary = ttk.Label(bar, anchor="e", compound="left", font=FONT_CAPTION)
+        self._status.grid(row=1, column=0, sticky="ew", padx=(m, 0), pady=xs)
+        self._summary.grid(row=1, column=1, sticky="e", padx=m, pady=xs)
+        divider = ttk.Frame(bar, style=STYLE_DIVIDER, height=1)  # created last: labels first
+        divider.grid(row=0, column=0, columnspan=2, sticky="ew")
+        return bar
+
     def show_message(self, text: str) -> None:
         """Show a transient message in the status bar for a few seconds."""
         if self._disposed:
@@ -563,6 +672,7 @@ class Shell:
     def _on_selection(self) -> None:
         if not self._in_command:
             self.clear_message()
+        self._refresh_buttons()  # Cut/Copy/Delete follow the selection (QA-14p-01)
 
     def clear_message(self) -> None:
         """Drop the transient message (also on a language switch: it would stay untranslated)."""
@@ -582,18 +692,43 @@ class Shell:
     def _refresh_status(self) -> None:
         count = len(self.session.selection.nodes)
         path = selection_path(self.session.selection.node, self.session.document)
+        if count == 1 and isinstance(node := self.session.selection.node, Include):
+            path = self.canvas.engine.includes.describe(node)
         if count > 1:
             path = ngettext("{count} element selected", "{count} elements selected", count).format(
                 count=count
             )
-        self._status.configure(text=self._message or path)
+        self._fit_status(self._message or path)
+
+    def _refit_status(self, _event: object = None) -> None:
+        if self._status.winfo_width() != self._status_width:  # not on a text change: no loop
+            self._refresh_status()
+
+    def _fit_status(self, text: str) -> None:
+        """Elide ``text`` with "…" at a word boundary to the label's width; the full text is
+        the tooltip (spec direct-manipulation 11 Q13). An unmapped label shows it whole."""
+        self._status_width = width = self._status.winfo_width()
+        name = str(ttk.Style(self.root).lookup("TLabel", "font") or "TkDefaultFont")
+        try:
+            font = tkinter.font.nametofont(name)
+        except tkinter.TclError:
+            font = tkinter.font.nametofont("TkDefaultFont")
+        room = width - font.measure("m")  # the label's own padding
+        shown = fit_text(text, room, font.measure, words=True) if width > 1 else text
+        self._status.configure(text=shown)
+        self._status_tip.configure(text=text if shown != text else "")
+        if shown == text:  # QA-14b1-07: a shown tip would stay up as an empty box
+            self._status_tip.hide_tip()
 
     def _on_report(self) -> None:
         self._refresh_summary()
         self.refresh_states()  # the Undo/Redo labels and the enabled state follow the stack
 
     def _refresh_summary(self) -> None:
-        self._summary.configure(text=findings_summary(self.session.report()))
+        report = self.session.report()
+        severity = "error" if report.errors else "warning" if report.warnings else "ok"
+        image = icons(self.root).get(severity)
+        self._summary.configure(text=findings_summary(report), image=image or "")
 
     def retranslate_status(self) -> None:
         """Re-render the side tab labels and the validator summary (the selection path is not
@@ -641,6 +776,7 @@ class Shell:
         try:
             for sequence in (*self._bound, "<FocusIn>", "<KeyRelease>"):
                 self.root.unbind_all(sequence)
+            self.root.unbind_class(_NO_CLICK_FOCUS, "<ButtonPress-1>")
             self.root.configure(menu="")
             for widget in (self.menubar, self.tree_menu, self.toolbar, self.body, self.statusbar):
                 widget.destroy()
