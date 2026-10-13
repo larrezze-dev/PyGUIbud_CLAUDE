@@ -325,6 +325,8 @@ class Shell:
         """Bring enabled state and radio selection of every menu entry and button up to date."""
         for menu, index, item in self._entries:
             if not isinstance(item, ActionDef):
+                if item.enabled is not None:
+                    menu.entryconfigure(index, state="normal" if item.enabled() else "disabled")
                 continue
             state = "normal" if self.registry.is_enabled(item) else "disabled"
             menu.entryconfigure(index, state=state)

@@ -44,6 +44,8 @@ from pyguibud.designer.recovery import RecoveryEntry, RecoverySession
 from pyguibud.designer.screen import desktop_bounds
 from pyguibud.designer.session import DesignerSession, TemplateError
 from pyguibud.designer.settings import (
+    BACKEND_NAME,
+    DEFAULT_BACKEND,
     Settings,
     load_settings,
     resolve_language,
@@ -156,7 +158,7 @@ class DesignerApp:
         self.preview = PreviewController(
             root, self.session, self.settings, post=self.message.emit,
             tell=lambda text: self._tell(lambda: text), save_settings=self._save_settings,
-            current_window=self._canvas_window,
+            current_window=self._canvas_window, toolkits=self._toolkit_names,
         )  # fmt: skip
         preview = self.preview
         self.exporter = ExportController(
@@ -213,6 +215,10 @@ class DesignerApp:
                     lambda: self.settings.preview_lang,
                     preview.use_theme,
                     preview.can_use_theme,
+                    self._toolkit_names(),
+                    preview.set_toolkit,
+                    preview.toolkit,
+                    preview.installed,
                 ),
             ),
         )
@@ -368,6 +374,14 @@ class DesignerApp:
             return str(self.root.clipboard_get())
         except tkinter.TclError:
             return ""
+
+    def _toolkit_names(self) -> tuple[str, ...]:
+        """Preview > Toolkit: the backends the registry lists (never loaded here), ttkbootstrap
+        first; a name outside the id grammar is not offered."""
+        listed = {
+            b.name for b in self.session.registry.backends() if BACKEND_NAME.fullmatch(b.name)
+        }
+        return (DEFAULT_BACKEND, *sorted(listed - {DEFAULT_BACKEND}))
 
     def _canvas_window(self) -> object | None:
         """The window of the visible canvas tab (the paste target when nothing is selected)."""

@@ -26,7 +26,11 @@ from pyguibud.designer.present.inspector import display_value, inspector_rows
 from pyguibud.designer.present.palette import palette_groups
 from pyguibud.designer.present.status import findings_summary, selection_path
 from pyguibud.designer.present.tree import tree_rows
-from pyguibud.designer.standard_actions import ShellCallbacks, register_standard_actions
+from pyguibud.designer.standard_actions import (
+    PreviewCallbacks,
+    ShellCallbacks,
+    register_standard_actions,
+)
 from tests.designer.conftest import best_of
 
 EXAMPLES = Path(__file__).resolve().parents[2] / "examples"
@@ -216,8 +220,12 @@ def test_selection_path_and_findings_summary() -> None:
 
 
 # ---------------------------------------------------------------- standard actions
-def _callbacks(log: list[str]) -> ShellCallbacks:
+def _callbacks(log: list[str], *, preview: bool = False) -> ShellCallbacks:
+    """``preview=True`` adds the Preview menu with its Toolkit sub-menu (the mnemonic gates)."""
     state = {"theme": "light", "lang": "en_GB"}
+    menu = PreviewCallbacks(*(lambda *_a: None,) * 2, *(lambda: True,) * 2, lambda _code: None,
+                            lambda: None, lambda: None, lambda: True,
+                            toolkits=("ttkbootstrap", "tkinter"))  # fmt: skip
     return ShellCallbacks(
         new_document=lambda: log.append("new"),
         show_shortcuts=lambda: log.append("keys"),
@@ -228,6 +236,7 @@ def _callbacks(log: list[str]) -> ShellCallbacks:
         current_theme=lambda: state["theme"],
         set_language=lambda code: state.update(lang=code),
         current_language=lambda: state["lang"],
+        preview=menu if preview else None,
     )
 
 
@@ -277,7 +286,7 @@ def test_pseudo_locale_is_listed_when_it_is_the_start_language() -> None:
 
 def test_every_menu_mnemonic_survives_the_pseudo_locale() -> None:
     registry = ActionRegistry()
-    register_standard_actions(registry, _callbacks([]))
+    register_standard_actions(registry, _callbacks([], preview=True))
     for menu_id in registry.menu_ids():
         items = [registry.menu(menu_id), *registry.menu_items(menu_id)]
         for item in items:
@@ -298,7 +307,8 @@ def test_every_menu_mnemonic_survives_the_pseudo_locale() -> None:
 def test_mnemonics_are_unique_per_menu(lang: str) -> None:
     i18n.set_language(lang)
     registry = ActionRegistry()
-    register_standard_actions(registry, _callbacks([]))
+    register_standard_actions(registry, _callbacks([], preview=True))
+    assert "preview.toolkit" in registry.menu_ids()
     for menu_id in registry.menu_ids():
         marks: list[str] = []
         for item in registry.menu_items(menu_id):

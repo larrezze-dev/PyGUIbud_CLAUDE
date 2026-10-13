@@ -20,6 +20,7 @@ _FORBIDDEN = repr(
     "imports",
     [
         "pyguibud_runtime, pyguibud.backends.ttkbootstrap, pyguibud.backends._tk",
+        "pyguibud.backends.tkinter",
         "pyguibud.core",
         # ADR-013: the preview child loads its toolkit only inside run()
         "pyguibud.preview, pyguibud.preview._host, pyguibud.preview._describe",

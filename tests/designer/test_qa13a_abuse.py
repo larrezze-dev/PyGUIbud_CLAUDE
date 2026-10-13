@@ -58,7 +58,8 @@ def _registry(session: DesignerSession, lang: str) -> ActionRegistry:
         edit=EditActions(session, lambda _question, _then: None, lambda _text: None),
         # Step 15a: the Preview menu joins the collision check of every locale
         preview=PreviewCallbacks(*(lambda *_a: None,) * 2, *(lambda: True,) * 2,
-                                 lambda _code: None, lambda: None, lambda: None, lambda: True),
+                                 lambda _code: None, lambda: None, lambda: None, lambda: True,
+                                 toolkits=("ttkbootstrap", "tkinter")),  # Step 16a: Toolkit
     )  # fmt: skip
     registry = ActionRegistry()
     register_standard_actions(registry, callbacks)

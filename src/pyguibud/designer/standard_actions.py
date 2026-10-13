@@ -14,6 +14,7 @@ from pyguibud.designer.actions import ActionDef, ActionRegistry, MenuDef
 from pyguibud.designer.clipboard_actions import ClipboardActions
 from pyguibud.designer.edit import EditActions
 from pyguibud.designer.editing import MenuItem
+from pyguibud.designer.preview import M_NOT_INSTALLED, toolkit_label
 from pyguibud.designer.windows import WindowActions, WindowKind
 from pyguibud.i18n import LANGUAGES, N_, PSEUDO_LANGUAGE
 
@@ -108,6 +109,8 @@ _M_CLOSE_PREVIEW = N_("_Close preview")
 # Translators: Preview > Language: show the texts as written in the document (no translation).
 _M_DOCUMENT_LANGUAGE = N_("Document language")
 _M_USE_THEME = N_("_Use this theme in the document")
+# Translators: Preview > Toolkit: the sub-menu that chooses the GUI toolkit of the preview.
+_M_TOOLKIT = N_("Tool_kit")
 
 #: ``(role, label msgid)``; the roles are the ones of ``ThemeSpec.role``.
 THEME_ROLES: tuple[tuple[str, str], ...] = (
@@ -162,6 +165,11 @@ class PreviewCallbacks:
     language: Callable[[], str | None]
     use_theme: Callable[[], None]
     can_use_theme: Callable[[], bool]
+    #: Preview > Toolkit (Step 16a): the listed backend names (empty: no sub-menu).
+    toolkits: tuple[str, ...] = ()
+    set_toolkit: Callable[[str], None] = lambda _name: None
+    toolkit: Callable[[], str] = lambda: "ttkbootstrap"  # the toolkit in use
+    toolkit_installed: Callable[[str], bool] = lambda _name: True
 
 
 def register_standard_actions(registry: ActionRegistry, callbacks: ShellCallbacks) -> None:
@@ -479,11 +487,41 @@ def _register_preview(registry: ActionRegistry, preview: PreviewCallbacks) -> No
                 translate=translate,
             )
         )
-    registry.add_menu(MenuDef("preview.theme", _M_THEME, parent="preview"))
+    if preview.toolkits:
+        _register_toolkits(registry, preview)
+    registry.add_menu(  # only ttkbootstrap has themes (QA-16a-10)
+        MenuDef("preview.theme", _M_THEME, "preview", lambda: preview.toolkit() == "ttkbootstrap")
+    )
     registry.add(
         ActionDef("preview.use_theme", "preview", _M_USE_THEME, preview.use_theme,
                   enabled=preview.can_use_theme)
     )  # fmt: skip
+
+
+def _register_toolkits(registry: ActionRegistry, preview: PreviewCallbacks) -> None:
+    """Preview > Toolkit: one radio per listed backend; an optional toolkit that is not
+    installed is greyed and says so. Names are proper nouns (untranslated)."""
+    registry.add_menu(MenuDef("preview.toolkit", _M_TOOLKIT, parent="preview"))
+    for name in preview.toolkits:
+        label = toolkit_label(name)
+        registry.add(
+            ActionDef(
+                f"preview.toolkit.{name}",
+                "preview.toolkit",
+                label.replace("_", "__"),  # a "_" in a fork's name is not a mnemonic mark
+                functools.partial(preview.set_toolkit, name),
+                enabled=functools.partial(preview.toolkit_installed, name),
+                checked=functools.partial(lambda n: preview.toolkit() == n, name),
+                translate=False,
+                dynamic_label=functools.partial(_toolkit_label, preview, name, label),
+            )
+        )
+
+
+def _toolkit_label(
+    preview: PreviewCallbacks, name: str, label: str
+) -> tuple[str, dict[str, str]] | None:
+    return None if preview.toolkit_installed(name) else (M_NOT_INSTALLED, {"name": label})
 
 
 def _theme_handler(callbacks: ShellCallbacks, role: str) -> Callable[[], None]:

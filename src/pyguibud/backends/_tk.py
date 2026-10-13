@@ -43,7 +43,7 @@ from pyguibud.core.model import (
     Window,
 )
 from pyguibud.core.validate import MAX_TEXT_LENGTH
-from pyguibud.i18n import N_
+from pyguibud.i18n import N_, NP_
 
 __all__ = ["Embed", "TkSession", "event_wiring"]
 
@@ -55,6 +55,10 @@ Tk: TypeAlias = Any
 _M_SHORTCUT = N_("The shortcut '{shortcut}' of '{id}' is already used in this window.")
 # Translators: a text (usually a translation) is too long to display; {length} and {limit} are
 # numbers of characters.
+_M_IGNORED_STYLES = NP_(
+    "{count} ttkbootstrap style (tb:bootstyle) is ignored by the {toolkit} toolkit.",
+    "{count} ttkbootstrap styles (tb:bootstyle) are ignored by the {toolkit} toolkit.",
+)
 _M_CLIPPED = N_("The text of '{id}' has {length} characters; only the first {limit} are shown.")
 
 
@@ -116,6 +120,7 @@ class TkSession:
         self._armed = False
         self._after: str | None = None
         self._aqua = False
+        self._ignored = 0  # tb:bootstyle attributes met with ``bootstyle=False`` (D5)
 
     # ------------------------------------------------------------ build
     def build(self) -> TkSession:
@@ -147,6 +152,8 @@ class TkSession:
             main = main if window.kind != "main" else top
         self.apply_texts(plan.text, plan.runtime_text)
         self._after = self._root.after_idle(self._arm)
+        if self._ignored:
+            plan.log(_M_IGNORED_STYLES, count=self._ignored, toolkit=self._backend)
         if main is not None and self._embed is None:
             main.deiconify()
 
@@ -483,6 +490,7 @@ class TkSession:
     def _create(self, name: str, parent: Tk, options: dict[str, Any], node: Widget) -> Tk:
         factory = self._classes[name]
         style = node.extra_attrs.get(_BOOTSTYLE) if self._bootstyle else None
+        self._ignored += not self._bootstyle and _BOOTSTYLE in node.extra_attrs
         if style is None:
             return factory(parent, **options)
         if name in _TK_BASED or len(style) > 64 or not _BOOTSTYLE_RE.fullmatch(style):

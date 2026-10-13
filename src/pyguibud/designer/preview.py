@@ -8,6 +8,7 @@ Tk runner is :mod:`pyguibud.designer.preview_tk`.
 from __future__ import annotations
 
 import gettext
+import importlib.util
 import json
 import os
 import sys
@@ -21,10 +22,12 @@ from pyguibud.core.files import DiskFiles
 from pyguibud.core.model import Document, GridCell, GridLine, Include, Layout, Prop, Window
 from pyguibud.core.xml_io import dump_ui, read_ui_bytes
 from pyguibud.designer.files import FileStamp, rebase_paths
+from pyguibud.designer.settings import DEFAULT_BACKEND
 from pyguibud.i18n import N_, PSEUDO_LANGUAGE, _, ngettext
 
 __all__ = [
     "SNAPSHOT",
+    "TOOLKIT_NAMES",
     "PreparedPreview",
     "PreviewRequest",
     "PreviewState",
@@ -36,6 +39,8 @@ __all__ = [
     "read_ready",
     "read_result",
     "stderr_tail",
+    "toolkit_installed",
+    "toolkit_label",
 ]
 
 SNAPSHOT = "preview.ui"
@@ -62,13 +67,38 @@ M_CRASHED = N_("The preview stopped unexpectedly (exit code {code}).")
 M_TEMP = N_("The preview needs a temporary folder: {reason}.")
 M_NO_WINDOW = N_("The document has no window to preview.")
 M_NO_PYTHON = N_("The preview cannot start: no Python interpreter was found.")
+# Translators: Preview > Toolkit: {name} is a toolkit name (ttkbootstrap, tkinter, PySide6).
+M_NOT_INSTALLED_USE = N_("{name} is not installed; the preview uses ttkbootstrap.")
+# Translators: Preview > Toolkit menu entry of a toolkit that is not installed.
+M_NOT_INSTALLED = N_("{name} (not installed)")
+#: Toolkit names that are written differently from their backend name (proper nouns).
+TOOLKIT_NAMES = {"pyside6": "PySide6"}
+_IMPORT_NAMES = {"pyside6": "PySide6"}  # the importable top-level module of an optional toolkit
 # Translators: the reasons that complete "This preview differs from the exported module: ...".
 R_PSEUDO = N_("the exported module cannot show the pseudo-locale")
 R_THEME = N_("the theme is chosen for the preview only")
+R_TOOLKIT = N_("the exported module uses ttkbootstrap")
 R_COMPONENT = N_("a component is shown inside a host dialog")
 R_SNAPSHOT = N_("included files from other folders show their source texts until it is saved")
 _MAX_RESULT = 64 * 1024
 _TAIL_BYTES, _TAIL_LINES = 8 * 1024, 20
+
+
+def toolkit_label(backend: str) -> str:
+    """The toolkit's display name (a proper noun, never translated)."""
+    return TOOLKIT_NAMES.get(backend, backend)
+
+
+def toolkit_installed(backend: str) -> bool:
+    """False only for a known optional toolkit whose package is missing (find_spec: nothing is
+    imported, and a toolkit-less designer stays toolkit-less)."""
+    module = _IMPORT_NAMES.get(backend)
+    if module is None:
+        return True
+    try:
+        return importlib.util.find_spec(module) is not None
+    except (ImportError, ValueError):
+        return False
 
 
 @dataclass(frozen=True, slots=True)
@@ -83,7 +113,7 @@ class PreviewRequest:
     lang: str | None
     theme: str | None
     stamp: FileStamp | None = None
-    backend: str = "ttkbootstrap"
+    backend: str = DEFAULT_BACKEND
 
 
 @dataclass(frozen=True, slots=True)
@@ -175,7 +205,9 @@ def prepare_preview(
         return Refusal(_(M_NO_WINDOW))
     component = window.kind == "component"
     differences = [R_PSEUDO] if req.lang == PSEUDO_LANGUAGE else []
-    differences += [R_THEME] if req.theme else []
+    toolkit = req.backend == DEFAULT_BACKEND
+    differences += [R_TOOLKIT] if not toolkit else []
+    differences += [R_THEME] if req.theme and toolkit else []
     differences += [R_COMPONENT] if component else []
     stamp, path = req.stamp, req.path
     clean = path is not None and stamp is not None and not (req.dirty or component)
@@ -203,7 +235,7 @@ def child_argv(
     ui_lang: str,
     lang: str | None,
     theme: str | None,
-    backend: str = "ttkbootstrap",
+    backend: str = DEFAULT_BACKEND,
 ) -> list[str]:
     """``python -m pyguibud.preview ...``; the file comes after ``--`` (a leading ``-`` is safe)."""
     argv = [sys.executable, "-m", "pyguibud.preview", "--ui-lang", ui_lang, "--backend", backend]

@@ -52,6 +52,7 @@ core = "pyguibud.core.widgets:core_widgets"
 
 [project.entry-points."pyguibud.backends"]
 ttkbootstrap = "pyguibud.backends.ttkbootstrap:TtkbootstrapBackend"
+tkinter = "pyguibud.backends.tkinter:TkinterBackend"
 
 [dependency-groups]
 dev = [

@@ -16,11 +16,13 @@ from collections.abc import Collection, Mapping
 from dataclasses import dataclass, field, replace
 from pathlib import Path
 
+from pyguibud.backends import BACKEND_NAME  # anything else falls back (spec backends B14)
 from pyguibud.designer.files import MAX_RECENT, RecentFiles, path_key, write_atomic
 from pyguibud.designer.theme import ROLES
 from pyguibud.i18n import LANGUAGES, N_, PSEUDO_LANGUAGE, detect_language, normalise_language
 
 __all__ = [
+    "BACKEND_NAME",
     "MAX_SETTINGS_BYTES",
     "M_SETTINGS_RESET",
     "Settings",
@@ -45,11 +47,14 @@ _SASH_KEY = re.compile(r"[a-z][a-z0-9_]{0,31}")
 _CLI_THEMES = {"light": "light", "dark": "dark", "high-contrast": "high_contrast"}
 _KNOWN = frozenset(
     {"version", "language", "theme", "window", "sashes", "recent_files", "autosave_seconds"}
-    | {"preview_lang", "exports"}
+    | {"preview_lang", "preview_backend", "exports"}
 )
 _DEFAULT_AUTOSAVE = 60
 #: What the user chooses (menus, settings); the window layout is state, not a preference.
-_PREFERENCES = ("language", "theme", "autosave_seconds", "preview_lang", "exports")
+_PREFERENCES = (
+    "language", "theme", "autosave_seconds", "preview_lang", "preview_backend", "exports",
+)  # fmt: skip
+DEFAULT_BACKEND = "ttkbootstrap"
 MAX_EXPORTS = 50
 #: Longer remembered export keys or paths are dropped on load: no real path is this long, and
 #: a huge one froze the Export dialog's entry (QA-15b-03).
@@ -103,8 +108,9 @@ class Settings:
     autosave_seconds: int = _DEFAULT_AUTOSAVE
     #: Preview > Language: a code of ``LANGUAGES`` or the pseudo-locale; None = the document's.
     preview_lang: str | None = None
-    #: The preview toolkit; fixed until Step 16 adds Preview > Toolkit (not stored yet).
-    preview_backend: str = "ttkbootstrap"
+    #: Preview > Toolkit: a backend name; malformed values load as ``ttkbootstrap``, while a
+    #: well-formed name that is not listed or installed is kept but not used (spec §14).
+    preview_backend: str = DEFAULT_BACKEND
     #: File > Export: the last output per ``.ui`` (``path_key`` -> path), oldest first, <= 50.
     exports: dict[str, str] = field(default_factory=dict)
     #: Unknown top-level keys, written back unchanged (forks).
@@ -159,6 +165,9 @@ def _from_mapping(data: Mapping[str, object]) -> Settings:
         preview_lang in LANGUAGES or preview_lang == PSEUDO_LANGUAGE
     ):
         result.preview_lang = preview_lang
+    backend = data.get("preview_backend")
+    if isinstance(backend, str) and BACKEND_NAME.fullmatch(backend):
+        result.preview_backend = backend
     exports = data.get("exports")
     if isinstance(exports, dict):
         valid = [
@@ -238,6 +247,10 @@ def _encode(settings: Settings, recent: tuple[str, ...]) -> bytes:
     data["autosave_seconds"] = settings.autosave_seconds
     if settings.preview_lang is not None:
         data["preview_lang"] = settings.preview_lang
+    if settings.preview_backend != DEFAULT_BACKEND and BACKEND_NAME.fullmatch(
+        settings.preview_backend
+    ):
+        data["preview_backend"] = settings.preview_backend
     if settings.exports:
         data["exports"] = dict(settings.exports)
     return (json.dumps(data, ensure_ascii=False, indent=2, sort_keys=True) + "\n").encode()

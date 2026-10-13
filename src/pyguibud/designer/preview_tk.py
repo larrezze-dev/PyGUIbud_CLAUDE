@@ -23,7 +23,7 @@ from pyguibud.core.commands import SetField
 from pyguibud.core.model import Window
 from pyguibud.designer import preview as pv
 from pyguibud.designer.session import DesignerSession
-from pyguibud.designer.settings import Settings
+from pyguibud.designer.settings import DEFAULT_BACKEND, Settings
 from pyguibud.i18n import PSEUDO_LANGUAGE, _, get_language
 from pyguibud.preview import READY, RESULT, STDERR
 
@@ -195,8 +195,10 @@ class PreviewController:
         tell: Callable[[str], None],
         save_settings: Callable[[], None],
         current_window: Callable[[], object | None],
+        toolkits: Callable[[], tuple[str, ...]],
     ) -> None:
         self.root, self.session, self.settings = root, session, settings
+        self.toolkits = toolkits  # the listed backend names (Preview > Toolkit)
         self.post, self.tell, self.save_settings = post, tell, save_settings
         self.current_window = current_window
         self.state = pv.PreviewState()
@@ -208,6 +210,7 @@ class PreviewController:
         self._var: Any = None
         self._stopped = False  # the user (or a document change) asked the child to quit
         self._differs = False  # the theme shown differs from the document's (QA-15a-05)
+        self._told: str | None = None  # the missing toolkit the status bar already named
         self._disconnects = (
             session.document_changed.connect(lambda _s: self._replaced()),
             session.report_changed.connect(lambda _r: self._theme_changed()),
@@ -237,7 +240,7 @@ class PreviewController:
             return
         request = pv.PreviewRequest(
             document, session.path, session.dirty, session.stack.read_only, window_id,
-            self.settings.preview_lang, self.theme, session.stamp, self.settings.preview_backend,
+            self.settings.preview_lang, self._theme_override(), session.stamp, self.toolkit(),
         )  # fmt: skip
         try:  # QA-15a-02: whatever happens, a refused or failed preview leaves no folder
             findings = pv.preview_findings(document, session.registry, session.path, folder)
@@ -268,7 +271,7 @@ class PreviewController:
         (prepared, folder), self._next = self._next, None
         lang = self.settings.preview_lang
         argv = pv.child_argv(prepared, folder, ui_lang=get_language(), lang=lang,
-                             theme=self.theme, backend=self.settings.preview_backend)  # fmt: skip
+                             theme=self._theme_override(), backend=self.toolkit())  # fmt: skip
         try:
             self.runner.start(argv, folder)
         except OSError as exc:
@@ -294,7 +297,11 @@ class PreviewController:
 
     def _theme_differs(self) -> bool:
         document = self.session.document
-        return bool(self.theme) and document is not None and document.meta.theme != self.theme
+        return (
+            bool(self._theme_override())
+            and document is not None
+            and document.meta.theme != self.theme
+        )
 
     def _theme_changed(self) -> None:
         """Re-judge "differs from the export" when the document theme changes (QA-15a-05)."""
@@ -322,6 +329,9 @@ class PreviewController:
         lang = self.settings.preview_lang
         reasons = [r for r in current.differences if r not in (pv.R_THEME, pv.R_PSEUDO)]
         reasons += [pv.R_THEME] if self._theme_differs() else []
+        if (saved := self.settings.preview_backend) != self.toolkit() and self._told != saved:
+            self._told = saved  # once per missing toolkit (spec backends D17)
+            parts.append(_(pv.M_NOT_INSTALLED_USE).format(name=pv.toolkit_label(saved)))
         reasons += [pv.R_PSEUDO] if lang == PSEUDO_LANGUAGE else []
         parts += [_(pv.M_DIFFERS).format(reason=_(r)) for r in reasons]
         path = self.session.path
@@ -359,10 +369,35 @@ class PreviewController:
         if self.running:
             self.run()
 
+    def toolkit(self) -> str:
+        """The toolkit the preview uses: the saved one, or ttkbootstrap while it is not listed
+        or not installed (the setting itself is kept, spec backends D17)."""
+        saved = self.settings.preview_backend
+        return saved if self._usable(saved) else DEFAULT_BACKEND
+
+    def _usable(self, name: str) -> bool:
+        return name in self.toolkits() and pv.toolkit_installed(name)
+
+    def installed(self, name: str) -> bool:
+        return pv.toolkit_installed(name)
+
+    def set_toolkit(self, name: str) -> None:
+        """Preview > Toolkit: remembered; a running preview restarts with ``--backend``."""
+        if not self._usable(name):  # the listed names all have the backend-name grammar
+            return
+        self.settings.preview_backend = name
+        self.save_settings()
+        if self.running:
+            self.run()
+
+    def _theme_override(self) -> str | None:
+        """The preview-only theme, which only ttkbootstrap has (other hosts list none)."""
+        return self.theme if self.toolkit() == DEFAULT_BACKEND else None
+
     def can_use_theme(self) -> bool:
         stack, document = self.session.stack, self.session.document
         return (
-            bool(self.theme)
+            bool(self._theme_override())
             and stack is not None
             and not stack.read_only
             and (document is not None and document.meta.theme != self.theme)
@@ -384,7 +419,8 @@ class PreviewController:
         if self._var is None:
             self._var = tkinter.StringVar(menu)
         self._var.set(self.theme or "")
-        state = "normal" if self.state.phase == "running" else "disabled"
+        ready = self.state.phase == "running" and self.toolkit() == DEFAULT_BACKEND
+        state = "normal" if ready else "disabled"
         menu.delete(0, "end")
         for value, label in [("", _(pv.M_DOCUMENT_THEME)), *((t, t) for t in self.themes)]:
             menu.add_radiobutton(label=label, value=value, variable=self._var, state=state,

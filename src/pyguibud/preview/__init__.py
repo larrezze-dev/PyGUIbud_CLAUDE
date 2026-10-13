@@ -22,11 +22,13 @@ from collections.abc import Callable, Iterator, Mapping
 from pathlib import Path
 from typing import Any
 
+from pyguibud.backends import BACKEND_NAME
 from pyguibud.i18n import LANGUAGE_CODE_RE, N_, _, set_language
 
-__all__ = ["READY", "RESULT", "STDERR", "NoHandlers", "run"]
+__all__ = ["BACKEND_RE", "READY", "RESULT", "STDERR", "NoHandlers", "run"]
 
 READY, RESULT, STDERR = "ready.json", "result.json", "stderr.txt"
+BACKEND_RE = BACKEND_NAME  # the one backend-name rule; host_for refuses any other name (D16)
 _MAX_LINE = 256  # bytes of one stdin command
 _POLL_MS = 50
 _MAX_WARNINGS = 20
@@ -65,16 +67,15 @@ def _code(value: str) -> str:
 
 
 def _parser() -> argparse.ArgumentParser:
-    from pyguibud.preview._host import HOSTS
-
     parser = argparse.ArgumentParser(prog="pyguibud.preview", description=_(_M_DESCRIPTION))
     parser.add_argument("--ui-lang", type=_code, metavar="CODE")
     parser.add_argument("--lang", type=_code, metavar="CODE")
     parser.add_argument("--theme", metavar="NAME")
     parser.add_argument("--window", metavar="ID")
     parser.add_argument("--localedir", metavar="DIR")
-    parser.add_argument("--backend", choices=sorted(HOSTS), default="ttkbootstrap")
+    parser.add_argument("--backend", metavar="NAME", default="ttkbootstrap")  # see host_for
     parser.add_argument("--describe", action="store_true", help=argparse.SUPPRESS)
+    parser.add_argument("--portable", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("file", metavar="FILE")
     return parser
 
@@ -125,10 +126,10 @@ def _read_commands(commands: queue.Queue[str]) -> None:
 
 class _Child:
     def __init__(self, args: argparse.Namespace, folder: Path) -> None:
-        from pyguibud.preview._host import HOSTS
+        from pyguibud.preview._host import host_for
 
         self.args, self.folder = args, folder
-        self.host = HOSTS[args.backend]()
+        self.host = host_for(args.backend)
         self.commands: queue.Queue[str] = queue.Queue()
         self.collect = _Collect()
         self.ui: Any = None
@@ -165,10 +166,11 @@ class _Child:
         window = args.window if args.window in self.ui.windows else None
         self.host.attach(self.ui, main, window, self.quit)
         if args.describe:
-            from pyguibud.preview._describe import describe
+            from pyguibud.preview._describe import describe, portable_describe
 
             self.host.update()
-            print(json.dumps(describe(self.ui), sort_keys=True))
+            view = (portable_describe if args.portable else describe)(self.ui, args.backend)
+            print(json.dumps(view, sort_keys=True))
             self._ready()
             self.host.close()
             return 0

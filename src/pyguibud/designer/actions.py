@@ -76,6 +76,8 @@ class MenuDef:
     id: str
     label: str
     parent: str | None = None
+    #: A sub-menu's cascade entry is greyed while this says False (None: always enabled).
+    enabled: Callable[[], bool] | None = None
 
 
 @dataclass(frozen=True, slots=True)
