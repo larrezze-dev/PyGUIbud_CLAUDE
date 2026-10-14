@@ -7,10 +7,12 @@ marked with ``N_()`` and are translated only when read.
 
 from __future__ import annotations
 
-from pyguibud.core.model import WIDGET_API_VERSION, PropertyDef, WidgetSpec
+from typing import Any, Literal
+
+from pyguibud.core.model import WIDGET_API_VERSION, PropertyDef, PropertyType, WidgetSpec
 from pyguibud.i18n import N_
 
-__all__ = ["core_widgets"]
+__all__ = ["core_widgets", "tb_widgets"]
 
 # ---------------------------------------------------------------- categories
 _CONTAINERS = N_("Containers")
@@ -343,3 +345,166 @@ _CORE_WIDGETS: tuple[WidgetSpec, ...] = (
 def core_widgets() -> tuple[WidgetSpec, ...]:
     """Return the built-in widget specifications (entry point ``pyguibud.widgets:core``)."""
     return _CORE_WIDGETS
+
+
+# ---------------------------------------------------------------- ttkbootstrap extensions (tb:)
+# Translators: the name of the ttkbootstrap library (a palette category); do not translate.
+_TTKBOOTSTRAP = N_("ttkbootstrap")
+_AMOUNT_RE = r"[^{}]*\{(:\.[0-6]f)?\}[^{}]*"
+_AMOUNT_HINT = N_("use '{{}}' once, optionally as '{{:.2f}}' with 0 to 6 decimals")
+# DateEntry refuses a format without day, month and year; a repeated code makes strptime raise
+# re.error on focus-out. The lookaheads step over whole tokens, so '%%d' is no day.
+_TOKENS = r"(?:[^%]|%.)*?"
+_DATE_FORMAT_RE = (
+    rf"(?={_TOKENS}%d)(?={_TOKENS}%[mbB])(?={_TOKENS}%[Yy])(?!{_TOKENS}(%[^%]){_TOKENS}\1)"
+    r"(?:[^%{}\x00-\x1f]|%[dmyYbBaAj%])*"
+)
+_BIND_NUMBER: tuple[Literal["double", "int"], ...] = ("double", "int")
+
+
+def _prop(name: str, kind: PropertyType, display_name: str, **kw: Any) -> PropertyDef:  # noqa: ANN401 - PropertyDef fields
+    return PropertyDef(name=name, type=kind, display_name=display_name, **kw)
+
+
+def _int(name: str, display_name: str, low: int, high: int, default: str) -> PropertyDef:
+    return _prop(name, "int", display_name, minimum=low, maximum=high, default=default)
+
+
+def _bool(name: str, display_name: str, default: str = "false") -> PropertyDef:
+    return _prop(name, "bool", display_name, default=default)
+
+
+def _shared(fallback: str, *names: str) -> tuple[PropertyDef, ...]:
+    """Properties shared with the fallback keep its definitions (the fallback shows them too)."""
+    spec = next(s for s in _CORE_WIDGETS if s.name == fallback)
+    return tuple(d for name in names if (d := spec.property(name)) is not None)
+
+
+def _tb(name: str, display_name: str, fallback: str, **kw: Any) -> WidgetSpec:  # noqa: ANN401 - WidgetSpec fields
+    return WidgetSpec(
+        api_version=WIDGET_API_VERSION,
+        name=f"tb:{name}",
+        display_name=display_name,
+        category=_TTKBOOTSTRAP,
+        fallback=fallback,
+        **kw,
+    )
+
+
+_TB_WIDGETS: tuple[WidgetSpec, ...] = (
+    _tb(
+        "Meter",
+        N_("Meter"),
+        "Progressbar",
+        bind_types=_BIND_NUMBER,
+        properties=(
+            *_shared("Progressbar", "value", "maximum"),
+            _prop("subtext", "string", N_("Subtext"), translatable=True),
+            _prop("meter_type", "enum", N_("Meter type"), choices=("full", "semi"), default="full"),
+            _int("meter_size", N_("Meter size"), 50, 1000, "200"),
+            _int("meter_thickness", N_("Meter thickness"), 1, 100, "10"),
+            _prop(
+                "amount_format",
+                "string",
+                N_("Amount format"),
+                default="{}",
+                pattern=_AMOUNT_RE,
+                max_length=32,
+                hint=_AMOUNT_HINT,
+            ),
+            _bool("show_text", N_("Show text"), "true"),
+            _bool("interactive", N_("Interactive")),
+        ),
+    ),
+    _tb(
+        "Floodgauge",
+        N_("Flood gauge"),
+        "Progressbar",
+        bind_types=_BIND_NUMBER,
+        properties=(
+            *_shared("Progressbar", "value", "maximum", "mode", "orient", "length"),
+            _TEXT,
+            _prop(
+                "mask",
+                "string",
+                N_("Text mask"),
+                pattern=_AMOUNT_RE,
+                max_length=32,
+                hint=_AMOUNT_HINT,
+            ),
+        ),
+    ),
+    _tb(
+        "DateEntry",
+        N_("Date entry"),
+        "Entry",
+        bind_types=("string",),
+        events=("change", "activate", *_FOCUS),
+        properties=(
+            *_shared("Entry", "width", "state"),
+            # ASCII classes, not \d: a non-ASCII digit would pass here and fail at build time.
+            _prop(
+                "value",
+                "string",
+                N_("Date"),
+                pattern="[0-9]{4}-[0-9]{2}-[0-9]{2}",
+                max_length=10,
+                hint=N_("a date written as YYYY-MM-DD"),
+            ),
+            _prop(
+                "date_format",
+                "string",
+                N_("Date format"),
+                default="%Y-%m-%d",
+                pattern=_DATE_FORMAT_RE,
+                max_length=32,
+                # Translators: keep the %-codes exactly as written.
+                hint=N_("one each of day %d, month %m %b or %B, year %Y or %y; also %a %A %j %%"),
+            ),
+            _int("first_weekday", N_("First day of the week"), 0, 6, "0"),
+        ),
+    ),
+    _tb(
+        "Tableview",
+        N_("Table view"),
+        "Treeview",
+        events=("select", "activate", *_FOCUS),
+        properties=(
+            *_shared("Treeview", "height", "selectmode"),
+            _prop(
+                "columns",
+                "string",
+                N_("Column headings"),
+                translatable=True,
+                pattern="[^;]{1,64}(;[^;]{1,64}){0,63}",
+                max_length=64 * 64 + 63,
+                hint=N_("up to 64 column headings separated by ';', each up to 64 characters"),
+            ),
+            _bool("paginated", N_("Paginated")),
+            _bool("searchable", N_("Searchable")),
+            _bool("yscrollbar", N_("Vertical scrollbar")),
+            _bool("autofit", N_("Fit columns")),
+            _int("pagesize", N_("Page size"), 1, 1000, "10"),
+        ),
+    ),
+    _tb(
+        "ToggleButton",
+        N_("Toggle button"),
+        "Checkbutton",
+        bind_types=("bool", "int"),
+        events=("command", "change", *_FOCUS),
+        properties=(
+            _TEXT,
+            _STATE,
+            _prop("shape", "enum", N_("Shape"), choices=("round", "square"), default="round"),
+        ),
+    ),
+)
+
+
+def tb_widgets() -> tuple[WidgetSpec, ...]:
+    """The built-in ttkbootstrap extensions (entry point ``pyguibud.widgets:tb``).
+
+    Their factories arrive with the backends (Step 17b); until then they render as fallbacks.
+    """
+    return _TB_WIDGETS

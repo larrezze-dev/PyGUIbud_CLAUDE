@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<pyguibud-ui schema_version="1.0" xmlns="urn:pyguibud:ui:1" xmlns:tb="urn:pyguibud:ext:ttkbootstrap:1">
+  <window id="main">
+    <layout type="grid"/>
+    <widget class="tb:ToggleButton" id="a" fallback="Checkbutton" tb:bootstyle="primary;x"><cell row="0" column="0"/></widget>
+    <widget class="Button" id="b" tb:bootstyle="Primary"><cell row="1" column="0"/></widget>
+  </window>
+</pyguibud-ui>

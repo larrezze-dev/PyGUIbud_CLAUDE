@@ -28,7 +28,10 @@ def test_import_core_leaves_toolkits_out() -> None:
 def test_loading_registry_leaves_toolkits_out() -> None:
     code = (
         "import sys; from pyguibud.core import default_registry;"
-        "r = default_registry(); assert len(r.specs()) == 24 and not r.diagnostics();"
+        "r = default_registry(); names = {s.name for s in r.specs()};"
+        "assert len(names & {'Frame', 'tb:Meter', 'tb:ToggleButton'}) == 3, names;"
+        "assert not [d for d in r.diagnostics() if d.distribution == 'pyguibud'];"
+        "assert r.load_factory(r.require('tb:Meter'), 'tkinter') is None;"
         "r.backends();"
         f"bad = sorted(m for m in sys.modules if m.split('.')[0] in {_TOOLKITS!r});"
         "print(bad); sys.exit(1 if bad else 0)"

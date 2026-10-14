@@ -132,8 +132,8 @@ def test_oriented_classes_and_extensions() -> None:
     scale, bar = REGISTRY.require("Scale"), REGISTRY.require("Progressbar")
     assert sizing.size_axes(_widget("Scale", orient="vertical"), scale) == (None, ("length", "px"))
     assert sizing.size_axes(_widget("Progressbar", orient="vertical"), bar)[1] == ("length", "px")
-    plugin = replace(REGISTRY.require("Frame"), name="tb:Meter")
-    assert sizing.size_axes(_widget("tb:Meter"), plugin) == (None, None)
+    plugin = replace(REGISTRY.require("Frame"), name="zz:Gauge")
+    assert sizing.size_axes(_widget("zz:Gauge"), plugin) == (None, None)
     assert sizing.size_axes(_widget("Frame"), None) == (None, None)
 
 

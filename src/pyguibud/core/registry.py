@@ -9,18 +9,22 @@ one imports a GUI toolkit; :meth:`Registry.load_backend` loads them on demand.
 from __future__ import annotations
 
 import dataclasses
+import importlib
 import importlib.metadata
 import traceback
-from collections.abc import Callable, Iterable, Mapping
+from collections.abc import Callable, Collection, Iterable, Mapping
 from dataclasses import dataclass, field
 from types import MappingProxyType
 from typing import Final, Literal, Protocol
 
 from pyguibud.core.errors import ModelError, RegistryError, format_message
 from pyguibud.core.model import (
+    BACKEND_NAME,
     CORE_CLASS_NAMES,
+    FACTORY_REF,
     WIDGET_API_VERSION,
     WidgetSpec,
+    canonical_distribution,
     is_extension,
     split_class_name,
 )
@@ -34,6 +38,7 @@ __all__ = [
     "Diagnostic",
     "EntryPointLike",
     "EntryPointSource",
+    "FactoryStage",
     "Registry",
     "Resolved",
     "default_registry",
@@ -44,7 +49,33 @@ WIDGETS_GROUP: Final = "pyguibud.widgets"
 BACKENDS_GROUP: Final = "pyguibud.backends"
 
 _BUILTIN_PREFIX = "pyguibud.core.widgets:"
+_BUILTIN_DISTRIBUTION = "pyguibud"
 _UNKNOWN_DISTRIBUTION = "unknown"
+#: Class-name prefix only the built-in entry points may use (spec plugins D2).
+_RESERVED_PREFIX = "tb"
+#: Isolation: a plugin may raise anything, or call ``sys.exit``; KeyboardInterrupt propagates.
+_PLUGIN_ERRORS = (Exception, SystemExit)
+FactoryStage = Literal["import", "create", "check", "wire"]
+_STAGE_MSGIDS: Final[Mapping[str, str]] = MappingProxyType(
+    {
+        "import": N_(
+            "The factory of widget '{name}' from '{distribution}' for backend '{backend}' "
+            "could not be imported: {error}"
+        ),
+        "create": N_(
+            "The factory of widget '{name}' from '{distribution}' failed to create the widget "
+            "with backend '{backend}': {error}"
+        ),
+        "check": N_(
+            "The factory of widget '{name}' from '{distribution}' returned an unusable widget "
+            "with backend '{backend}': {error}"
+        ),
+        "wire": N_(
+            "The widget '{name}' from '{distribution}' could not be set up with backend "
+            "'{backend}': {error}"
+        ),
+    }
+)
 
 
 class _DistributionLike(Protocol):
@@ -125,17 +156,53 @@ def _distribution(ep: EntryPointLike) -> str:
 
 
 def _is_builtin(ep: EntryPointLike) -> bool:
-    return ep.value.startswith(_BUILTIN_PREFIX)
+    """Both conditions: a value prefix alone is spoofable by a third-party module (D2)."""
+    builtin_dist = canonical_distribution(_distribution(ep)) == _BUILTIN_DISTRIBUTION
+    return builtin_dist and ep.value.startswith(_BUILTIN_PREFIX)
+
+
+def _traceback(exc: BaseException) -> str:
+    return "".join(traceback.format_exception(type(exc), exc, exc.__traceback__))
+
+
+def _factory_problem(spec: WidgetSpec) -> str | None:
+    """The first invalid factory key or reference of ``spec`` (D3), or None."""
+    for key, ref in spec.factories.items():
+        value: object = ref  # object: a plugin may put anything here
+        if not isinstance(key, str) or BACKEND_NAME.fullmatch(key) is None:
+            return repr(key)
+        if isinstance(value, str):
+            if FACTORY_REF.fullmatch(value) is None:
+                return f"{key}: {value!r}"
+        elif not callable(value):
+            return f"{key}: {type(value).__name__}"
+    return None
 
 
 class Registry:
     """Widget specifications and backends discovered through entry points.
 
-    The constructor does no I/O; the first lookup calls :meth:`load` once.
+    The constructor does no I/O; the first lookup calls :meth:`load` once. ``disabled`` names
+    distributions whose widget entry points are skipped before they are loaded; ``"all"`` skips
+    every non-built-in one (safe mode); any other bare string is one name, not its letters.
     """
 
-    def __init__(self, entry_points: EntryPointSource | None = None) -> None:
+    def __init__(
+        self,
+        entry_points: EntryPointSource | None = None,
+        *,
+        disabled: Collection[str] | Literal["all"] = (),
+    ) -> None:
         self._source: EntryPointSource = entry_points or _metadata_entry_points
+        names = [disabled] if isinstance(disabled, str) else disabled  # never split a str
+        self._disabled_filter: frozenset[str] | None = (
+            None if disabled == "all" else frozenset(map(canonical_distribution, names))
+        )
+        self._disabled: set[str] = set()
+        self._factories: dict[tuple[str, str], Callable[..., object] | None] = {}
+        self._failures: set[tuple[str, str, str]] = set()
+        #: Bumped on every load and every new factory failure (the designer refreshes on it).
+        self.revision = 0
         self._loaded = False
         self._specs: dict[str, WidgetSpec] = {}
         # Entry point each spec came from; None for core specs added by the safety net.
@@ -154,9 +221,14 @@ class Registry:
         self._backend_eps.clear()
         self._backends.clear()
         self._backend_cache.clear()
+        self._disabled.clear()
+        self._factories.clear()
+        self._failures.clear()
+        self.revision += 1
         self._loaded = True
         for ep in self._sorted(WIDGETS_GROUP):
-            self._load_widget_entry_point(ep)
+            if not self._skip_disabled(ep):
+                self._load_widget_entry_point(ep)
         self._ensure_core()
         self._check_extensions()
         for ep in self._sorted(BACKENDS_GROUP):
@@ -174,6 +246,22 @@ class Registry:
             self._backends.append(
                 BackendInfo(name=name, value=ep.value, distribution=_distribution(ep))
             )
+
+    def _skip_disabled(self, ep: EntryPointLike) -> bool:
+        """True when ``ep`` is filtered out (before it is loaded); warns once per distribution."""
+        name = canonical_distribution(_distribution(ep))
+        wanted = self._disabled_filter
+        if _is_builtin(ep) or (wanted is not None and name not in wanted):
+            return False
+        if name not in self._disabled:
+            self._disabled.add(name)
+            self._diagnose(
+                ep,
+                "registry.disabled",
+                N_("The plugin '{distribution}' is disabled and was not loaded."),
+                severity="warning",
+            )
+        return True
 
     def _sorted(self, group: str) -> list[EntryPointLike]:
         """Entry points of ``group``: the built-in first, then by (distribution, name)."""
@@ -218,11 +306,7 @@ class Registry:
                 params=values,
                 severity=severity,
                 exception=repr(exc) if exc is not None else None,
-                traceback=(
-                    "".join(traceback.format_exception(type(exc), exc, exc.__traceback__))
-                    if exc is not None
-                    else None
-                ),
+                traceback=_traceback(exc) if exc is not None else None,
             )
         )
 
@@ -251,7 +335,7 @@ class Registry:
     def _load_widget_entry_point(self, ep: EntryPointLike) -> None:
         try:
             items = self._collect(ep)
-        except Exception as exc:  # isolation point: a plugin must never crash the designer
+        except _PLUGIN_ERRORS as exc:  # isolation point: a plugin must never crash the designer
             self._diagnose(
                 ep,
                 "registry.load_failed",
@@ -311,6 +395,30 @@ class Registry:
                 name=spec.name,
             )
             return
+        if prefix == _RESERVED_PREFIX and not builtin:
+            self._diagnose(
+                ep,
+                "registry.reserved_prefix",
+                N_(
+                    "The widget '{name}' from '{distribution}' uses the prefix '{prefix}', which "
+                    "is reserved for PyGUIbud's own widgets; it was ignored."
+                ),
+                name=spec.name,
+                prefix=_RESERVED_PREFIX,
+            )
+            return
+        if (problem := _factory_problem(spec)) is not None:
+            self._diagnose(
+                ep,
+                "registry.bad_factory",
+                N_(
+                    "The widget '{name}' from '{distribution}' has an invalid factory "
+                    "({factory}) and was ignored."
+                ),
+                name=spec.name,
+                factory=problem,
+            )
+            return
         # Checked here, not in WidgetSpec.__post_init__: raising there would fail the whole entry
         # point (and its valid siblings) and hide the specific reason.
         if not isinstance(spec.display_name, str) or not spec.display_name.strip():
@@ -342,16 +450,15 @@ class Registry:
         self._origins[spec.name] = ep
 
     def _ensure_core(self) -> None:
-        """Safety net: register missing core specs directly (broken install or metadata)."""
-        missing = CORE_CLASS_NAMES - self._specs.keys()
-        if not missing:
-            return
+        """Safety net: register missing built-in specs directly (broken install, stale metadata)."""
+        missing: set[str] = set()
         try:
-            # Lazy import keeps ``registry`` free of the widget data unless it is needed.
+            # Lazy import keeps ``registry`` free of the widget data until it loads.
             from pyguibud.core import widgets
 
-            for spec in widgets.core_widgets():
-                if spec.name in missing:
+            for spec in (*widgets.core_widgets(), *widgets.tb_widgets()):
+                if spec.name not in self._specs:
+                    missing.add(spec.name)
                     self._specs[spec.name] = spec
                     self._origins[spec.name] = None
         except Exception as exc:  # isolation point: still never raise from load()
@@ -367,6 +474,8 @@ class Registry:
                     traceback=traceback.format_exc(),
                 )
             )
+            return
+        if not missing:
             return
         self._diagnostics.append(
             Diagnostic(
@@ -384,6 +493,9 @@ class Registry:
         )
 
     def _check_extensions(self) -> None:
+        # Lazy: ``validate`` imports this module's neighbours; the table is only read here.
+        from pyguibud.core.validate import BIND_TYPES
+
         for name, spec in list(self._specs.items()):
             if not spec.is_extension:
                 continue
@@ -402,12 +514,32 @@ class Registry:
                     "The widget '{name}' from '{distribution}' and its fallback '{fallback}' "
                     "disagree on whether they are containers; the widget was ignored."
                 )
+            elif not set(spec.events) <= set(fallback.events) or not set(
+                spec.bind_types or ()
+            ) <= set(BIND_TYPES.get(fallback.name, ())):
+                # D5: a file valid with the plugin must stay valid without it (R25).
+                code = "registry.not_fallback_compatible"
+                msgid = N_(
+                    "The widget '{name}' from '{distribution}' supports events or variable "
+                    "types that its fallback '{fallback}' does not; the widget was ignored."
+                )
             if code is not None:
                 del self._specs[name]
                 ep = self._origins.pop(name)
-                # Extensions always come from an entry point; the safety net adds core names only.
-                assert ep is not None
-                self._diagnose(ep, code, msgid, name=name, fallback=spec.fallback or "")
+                params = {"name": name, "fallback": spec.fallback or ""}
+                if ep is not None:
+                    self._diagnose(ep, code, msgid, name=name, fallback=params["fallback"])
+                else:  # a built-in spec added by the safety net (a packaging bug)
+                    self._diagnostics.append(
+                        Diagnostic(
+                            group=WIDGETS_GROUP,
+                            entry_point="",
+                            distribution=_BUILTIN_DISTRIBUTION,
+                            code=code,
+                            msgid=msgid,
+                            params=params | {"distribution": _BUILTIN_DISTRIBUTION},
+                        )
+                    )
 
     def _origin_name(self, name: str) -> str:
         ep = self._origins.get(name)
@@ -453,8 +585,90 @@ class Registry:
         self._ensure_loaded()
         return tuple(self._backends)
 
-    def resolve(self, class_name: str, backend: str, fallback: str | None = None) -> Resolved:
+    def failed_distributions(self) -> frozenset[str]:
+        """Normalised names of plugin distributions with a load or factory error (R87)."""
+        self._ensure_loaded()
+        return frozenset(
+            canonical_distribution(d.distribution)
+            for d in self._diagnostics
+            if d.severity == "error"
+            and d.group == WIDGETS_GROUP
+            and d.distribution not in (_BUILTIN_DISTRIBUTION, _UNKNOWN_DISTRIBUTION)
+        )
+
+    def disabled_distributions(self) -> frozenset[str]:
+        """Normalised names of the distributions skipped by the ``disabled`` filter (R88)."""
+        self._ensure_loaded()
+        return frozenset(self._disabled)
+
+    def load_factory(self, spec: WidgetSpec, backend: str) -> Callable[..., object] | None:
+        """The factory of ``spec`` for ``backend``, importing a string reference once.
+
+        Returns None when there is none or it fails to import (then reported, see
+        :meth:`report_failure`); the caller renders the fallback.
+        """
+        self._ensure_loaded()
+        key = (spec.name, backend)
+        if key in self._factories:
+            return self._factories[key]
+        ref = spec.factories.get(backend)
+        factory: Callable[..., object] | None = None
+        if callable(ref):
+            factory = ref
+        elif isinstance(ref, str):
+            module, _sep, attribute = ref.partition(":")
+            try:
+                loaded = getattr(importlib.import_module(module), attribute)
+                if not callable(loaded):
+                    raise TypeError(f"{ref} is not callable")
+                factory = loaded
+            except _PLUGIN_ERRORS as exc:  # isolation point: fall back, never crash
+                self.report_failure(spec.name, backend, "import", exc)
+        self._factories[key] = factory
+        return factory
+
+    def report_failure(
+        self, class_name: str, backend: str, stage: FactoryStage, exc: BaseException
+    ) -> None:
+        """Record a factory failure once per (class, backend, stage) and bump ``revision``."""
+        self._ensure_loaded()  # a later first load would clear the record
+        key = (class_name, backend, stage)
+        if key in self._failures:
+            return
+        self._failures.add(key)
+        distribution = self._origin_name(class_name)
+        self._diagnostics.append(
+            Diagnostic(
+                group=WIDGETS_GROUP,
+                entry_point=(ep.name if (ep := self._origins.get(class_name)) else ""),
+                distribution=distribution,
+                code="registry.factory_failed",
+                msgid=_STAGE_MSGIDS[stage],
+                params={
+                    "name": class_name,
+                    "distribution": distribution,
+                    "backend": backend,
+                    "stage": stage,
+                    "error": repr(exc),
+                },
+                exception=repr(exc),
+                traceback=_traceback(exc),
+            )
+        )
+        self.revision += 1
+
+    def resolve(
+        self,
+        class_name: str,
+        backend: str,
+        fallback: str | None = None,
+        *,
+        plugin: str | None = None,
+    ) -> Resolved:
         """Choose the spec to render ``class_name`` with ``backend``. Never returns None.
+
+        ``plugin`` (the ``plugin=`` text of the file) only picks the diagnostic code of a missing
+        class: ``registry.plugin_failed`` when that distribution failed to load.
 
         Raises:
             RegistryError: ``registry.unknown_class`` if nothing can render the class.
@@ -473,11 +687,14 @@ class Registry:
         if is_extension(class_name) and fallback in CORE_CLASS_NAMES:
             core = self._specs.get(fallback or "")
             if core is not None:
+                failed = plugin is not None and (
+                    canonical_distribution(plugin) in self.failed_distributions()
+                )
                 return Resolved(
                     spec=core,
                     requested=class_name,
                     is_fallback=True,
-                    code="registry.plugin_missing",
+                    code="registry.plugin_failed" if failed else "registry.plugin_missing",
                 )
         raise _unknown_class(class_name)
 
@@ -498,7 +715,7 @@ class Registry:
             )
         try:
             backend = ep.load()
-        except Exception as exc:  # isolation point: report, then raise a domain error
+        except _PLUGIN_ERRORS as exc:  # isolation point: report, then raise a domain error
             msgid = N_("The backend '{name}' from '{distribution}' failed to load: {error}")
             self._diagnose(
                 ep, "registry.backend_failed", msgid, exc=exc, name=name, error=repr(exc)

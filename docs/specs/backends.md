@@ -106,8 +106,8 @@ Not counted: tests (≈ 1,100), `.po` updates, `pyproject`/CI edits.
 - **Session:**
   - `alive()`: every window passes `shiboken6.isValid` and the main window was not closed.
   - `show(id)`: `show()` + `raise_()` + `activateWindow()`; returns None.
-  - `run()`: `exec()` when the session owns the app and no loop is running (otherwise it returns at once).
-  - `destroy()` (idempotent): `deleteLater` on what it created, `processEvents`, and `quit()` if owned.
+  - `run()`: `exec()` whenever no event loop runs in the main thread (`QThread.loopLevel() == 0`), whoever created the `QApplication`; otherwise it returns at once.
+  - `destroy()` (idempotent): `deleteLater` on what it created, `processEvents`, and `quit()` if the backend created the `QApplication` (remembered across sessions).
   - Closing the main window → `destroy()` (Tk parity).
 
 ### 4.2 Layouts (ADR-005)
@@ -243,6 +243,12 @@ Not counted: tests (≈ 1,100), `.po` updates, `pyproject`/CI edits.
 - the Theme items are disabled for tkinter/pyside6; `R_TOOLKIT` appears; B14.
 
 ## 8. Step 17 seam (not built here)
+> **Resolved by Step 17** (spec `docs/specs/plugins.md`, ADR-015, accepted 2026-10-14):
+> - the factory contract "renders as itself, behaves as its fallback" (plugins D4): Tk `factory(parent, props, variable, bootstyle)`, Qt `factory(parent, props)`, plus a per-widget guard that falls back to the core class;
+> - `bind_types` (D8);
+> - the FEATURES §3 mismatch: no Qt factories for `tb:` widgets, so PySide6 shows the core fallbacks (D11).
+>
+> The proposal below is kept for history.
 - **The extension point:** `TkSession._create` and the Qt adapter lookup are the only places where a class becomes a toolkit object. Step 17 plugs `spec.factories[backend]` in there. The keys are exactly `ttkbootstrap`, `tkinter` and `pyside6`.
 - **Proposed factory contracts:**
   - Tk: `factory(parent, options) -> widget`;
@@ -303,4 +309,25 @@ Not counted: tests (≈ 1,100), `.po` updates, `pyproject`/CI edits.
 - **Access keys (QA-16a-01):** `Tool_kit` (K), so it no longer clashes with `_Theme`.
 - **`show_ui.py` (QA-16a-08):** a dialog-only document gets a hidden root, so it doubles as the 16b viewer.
 - **Theme greying (QA-16a-10):** the Preview ▸ Theme cascade entry itself is disabled for non-ttkbootstrap toolkits.
+- **16b scope rulings (orchestrator, 2026-10-13):**
+  - **Static menus in 16b:** the 16b UAT compares menus, so 16b builds the menu tree: `QMenuBar`/`QMenu`/`QAction` with text + mnemonic, separators, enabled state and icon, and the session owns their text slots for `apply_texts`. 16c adds `triggered`, shortcuts and the duplicate-shortcut log.
+  - **Variables and events stay 16c:** in 16b `Instance.vars`/`ui.vars` stay empty, a bound widget shows its `.ui` property value (not the variable default), and no handler is wired (no signal is connected, so building can fire nothing). `_vars.py` is not created in 16b.
+  - **`_qtmap` in 16b:** layout, text, units, select-mode and range helpers only; `qt_key_sequences`/`qt_shortcut` are 16c.
+- **16b budget (orchestrator, 2026-10-13):** T3, T4 and T5 applied at the checkpoint (projection ≈ 985). As built: ≈ 952 physical production lines (≈ 807 non-blank) vs cap 850: `_qt.py` 614, `_qtmap.py` 172, `pyside6.py` 98, `show_ui.py` +55, `_tk.py` +12 (`apply_slots` shared by both sessions), `__init__` +1. The overshoot is accepted rather than compressing the code; 16c keeps its cap of 700. Trim effects: padding ignored (one log per build), requested sizes are minimum sizes (a Listbox cannot shrink below its `height` lines), and a Label with image + text shows the image only (logged). Until `QtHost` exists (16c), Preview ▸ Toolkit ▸ PySide6 + F5 is refused with `backend_unavailable` ("no preview host").
+- **16b test findings (orchestrator, 2026-10-13):**
+  - **`run()` after an earlier session quit (bug, fixed in 16b):** §4.1 `run()` now reads: `exec()` whenever no event loop is running in the main thread (`QThread.loopLevel() == 0`), whoever created the `QApplication`; otherwise it returns at once. `destroy()` still calls `quit()` only for an application the backend created. A second `load_ui` + `run()` in the same process therefore blocks, as with Tk.
+  - **`quit()` only by the last live session (ruling):** Qt 6 `quit()` closes every window, so `destroy()` quits a backend-created `QApplication` only when no other live `QtSession` remains (a module-level `WeakSet`; sessions whose windows were deleted do not count). Closing one interface leaves the others alive; closing the last ends the loop (Tk parity: `mainloop` runs until all roots are gone).
+  - QA-16b-01 (Qt platform plugin missing or its display absent → qFatal) deferred to 16c, before the preview child runs Qt.
+  - **B9 clarified:** only the Qt build checks for a live Tk root, so the mixed-toolkit warning is logged when Qt is built after Tk (once), and not when Tk is built after Qt. The Tk backends stay Qt-unaware.
+- **16c as built (orchestrator, 2026-10-13):**
+  - **Supersedes two 16b notes:** `QtHost` exists (`preview/_host_qt.py`, lazy `HOSTS["pyside6"]`), so the "no preview host" refusal is gone; QA-16b-01 is fixed in 16c.
+  - **QA-16b-01 / D8 widened:** the guard runs on every platform before Qt is constructed. It refuses (`runtime.no_display`) when no `QT_QPA_PLATFORM` entry (the name before `:`, caseless) equals the key of an installed platform plugin file (`[lib]q<key>[d].dll|.so|.dylib`, `libqwayland-egl.so` also serving `wayland`; exact match since QA-16c-01, so `win` or `off` is refused) (never refuses when no plugin folder is readable); on Linux/BSD `xcb` needs `DISPLAY` and `wayland*` needs `WAYLAND_DISPLAY`. Residual (→ Step 19): a plugin that exists but fails to initialise on Windows still hangs until the designer's ready timeout; a set but unreachable `DISPLAY` still aborts (crash dialog with the stderr tail).
+  - **QA-16c-02 ruling (Tk parity):** Esc is ignored by `.ui` dialogs in Qt (a Tk Toplevel ignores it; a rejected QDialog would hide without a Close event, so the preview or `run()` would go on with no window). The title-bar X still closes them and widget `key:Escape` handlers still fire.
+  - **QA-16c-06 ruling (Tk parity):** Enter in a `.ui` dialog clicks no button (Qt's default/auto-default button behaviour is off: the dialog swallows Return/Enter after its widgets saw it, and buttons are not auto-default). An Entry's `activate` (`returnPressed`) still fires.
+  - **Deferred → Step 19:** a handler hiding a dialog (`hide`/`accept`/`reject`) leaves the loop running with no window (as Tk `withdraw`; document it); `_Collect.emit` in the preview child has no `handleError`; leading-zero integers in `_vars` read as decimal (Tcl 9 behaviour, Tk 8.6 reads octal).
+  - **Variables:** callbacks and `str(var)` use the `.ui` id as the name (not `PY_VARn`); a bound Label shows its variable (16b ruling flipped). `qt_key_sequences(seq, *, mac=False)`; Tk `Command` off macOS → Qt `Meta`.
+  - **Portable schema (both readers):** window `status` field; shortcuts in `.ui` chord form; Tk Entry/Combobox/Spinbox report no `text`; `value` only for declared variables; pack `fill` along the axis dropped without `expand`; minimum size ≤ 1 reads 0; Tk `kind` = "is the Tk root".
+  - **Accepted differences (parity allow-list):** D13 unbound radios; D11 resolution; T5 Label image + text; a duplicate shortcut is set only on the first Qt action (Tk shows the accelerator text on both); the Windows Tk 120 px minimum-width clamp.
+  - **Known gaps (→ Step 19):** `key:` matching is exact in Qt (`<Control-s>` does not fire on Ctrl+Alt+S; `<Control-plus>` not on Ctrl+Shift+=); a bound Combobox whose items are added after the build selects the first item and overwrites the variable; a destroyed session's binding traces stay on its variables (silent no-ops).
+  - **Budget:** part 1 (variables, events, menus) +401, QA-16a-12 ≈ +30, part 2 (QtHost, Qt reader, guard) +463 → ≈ 894 physical production lines vs cap 700. T6/T7 not applied (−45 would not reach the cap); the overshoot is reported to the user for a ruling at UAT. **User ruling (UAT, 2026-10-14):** overshoot accepted (≈ 985 / 700 final).
 - **Deferred:** QA-16a-13 (`show_ui.py --backend ttkbootstrap` on a dialog-only document ignores `meta/@theme` because the hidden root is a plain `tkinter.Tk()`; use a `ttkbootstrap` root there) → 16b, with the Qt hidden root. QA-16a-11 → 16b UAT item 1; QA-16a-12 (the designer shows `ready.json` warnings such as the D5 bootstyle note in the status bar) → 16c, with the Qt degradation warnings of D6.

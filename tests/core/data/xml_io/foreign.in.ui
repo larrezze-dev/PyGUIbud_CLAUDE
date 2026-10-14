@@ -2,7 +2,7 @@
 <pyguibud-ui schema_version="1.0" xmlns="urn:pyguibud:ui:1" xmlns:acme="urn:acme:x" xmlns:tb="urn:pyguibud:ext:ttkbootstrap:1" acme:tag="root">
   <window id="main" acme:flag="1" xml:lang="en">
     <acme:note when="now">kept <b xmlns="urn:other">bold</b> text</acme:note>
-    <widget class="tb:Meter" id="meter" fallback="Progressbar" xmlns:loc="urn:local" loc:v="3">
+    <widget class="zz:Gauge" id="meter" fallback="Progressbar" xmlns:loc="urn:local" loc:v="3">
       <cell row="0" column="0">
         <loc:hint>inside cell</loc:hint>
       </cell>

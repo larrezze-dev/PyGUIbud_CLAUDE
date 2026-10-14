@@ -35,7 +35,7 @@ def sample(definition: PropertyDef) -> str:
 
 def widget_classes(registry: Registry) -> list[str]:
     """Every registered core widget class that can be a ``<widget>``."""
-    return sorted(s.name for s in registry.specs() if s.name not in CHROME and not s.plugin)
+    return sorted(s.name for s in registry.specs() if s.name not in CHROME and not s.is_extension)
 
 
 def _prop(name: str, value: str, *, ref: bool = False) -> str:

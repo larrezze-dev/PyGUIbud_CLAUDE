@@ -6,10 +6,10 @@ Importing this package never imports a toolkit (ADR-007).
 from __future__ import annotations
 
 import importlib
-import re
 
 from pyguibud.backends.base import Backend, BuildPlan, Session, TextSlot
 from pyguibud.core.errors import RegistryError
+from pyguibud.core.model import BACKEND_NAME
 from pyguibud.core.registry import Registry
 
 __all__ = [
@@ -22,13 +22,11 @@ __all__ = [
     "load_backend",
 ]
 
-#: The one backend-name rule (designer settings and menu, preview child; spec backends D16).
-BACKEND_NAME = re.compile(r"[a-z][a-z0-9_-]{0,31}")
-
 #: Safety net: built-in backends load even when the entry points are missing (editable installs).
 BUILTIN_BACKENDS: dict[str, str] = {
     "ttkbootstrap": "pyguibud.backends.ttkbootstrap:TtkbootstrapBackend",
     "tkinter": "pyguibud.backends.tkinter:TkinterBackend",
+    "pyside6": "pyguibud.backends.pyside6:PySide6Backend",
 }
 
 

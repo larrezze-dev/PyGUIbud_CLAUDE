@@ -552,7 +552,7 @@ class _Ui(_Scope):
     def _command(self, widget: Any, handler: str) -> None:  # noqa: ANN401 - a Tk widget
         fn = self._fns.get(handler)
         if fn is not None:
-            widget.configure(command=fn)
+            widget.configure(command=_call(fn))
 
     def _trace(self, var: Any, handler: str) -> None:  # noqa: ANN401 - a Tk variable
         fn = self._fns.get(handler)

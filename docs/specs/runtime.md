@@ -178,13 +178,13 @@ Build order:
 ### 4.2 Abstract event → Tk (from the built-in specs; an extension uses its fallback's row)
 | Event | Classes | Tk wiring |
 |---|---|---|
-| `command` | Button, Checkbutton, Radiobutton | `command=` |
+| `command` | Button, Checkbutton, Radiobutton | `command=` through the no-argument wrapper `_call(fn)` |
 |  | Action | `add_command(command=)` on the menu entry |
 | `change` | Entry, Combobox, Spinbox | `trace_add("write")` on the bound variable, or on a private `StringVar` set as `textvariable` when unbound |
 |  | Checkbutton / Radiobutton | trace on the bound variable, or on a private `BooleanVar` / `StringVar` |
 |  | Scale | trace on the bound variable, or on a private `DoubleVar` |
 |  | Text | `<<Modified>>`; the wrapper calls `edit_modified(False)` afterwards |
-|  | Scrollbar | `command=` (the v1 schema has no scrollbar↔widget link; when one is added, the backend chains link first, then handler) |
+|  | Scrollbar | `command=` through `_call(fn)`, which drops Tk's `("scroll", n, "units")` / `("moveto", f)` arguments (Step 16c fix) (the v1 schema has no scrollbar↔widget link; when one is added, the backend chains link first, then handler) |
 | `select` | Notebook | `<<NotebookTabChanged>>` |
 |  | Combobox | `<<ComboboxSelected>>` |
 |  | Listbox | `<<ListboxSelect>>` |

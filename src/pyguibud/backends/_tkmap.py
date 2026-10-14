@@ -7,11 +7,10 @@ literals. Toolkit-free and side-effect-free (ADR-007): nothing here imports ``tk
 
 from __future__ import annotations
 
-import re
 from typing import Literal
 
 from pyguibud.core.model import NS_TB
-from pyguibud.core.validate import MAX_TEXT_LENGTH
+from pyguibud.core.validate import BOOTSTYLE_RE, MAX_TEXT_LENGTH
 from pyguibud.i18n import N_
 
 __all__ = ["Wiring", "clip_text", "event_wiring"]
@@ -41,7 +40,7 @@ _OPTION = {
 _MNEMONIC = frozenset({"Button", "Checkbutton", "Radiobutton"})  # underline only (trim 2)
 _TK_BASED = frozenset({"Text", "Listbox", "Canvas"})  # no ``bootstyle``
 _PADDED = frozenset({"Frame", "LabelFrame", "ScrolledFrame"})
-_BOOTSTYLE_RE = re.compile(r"[a-z]+(-[a-z]+)*( [a-z]+(-[a-z]+)*)*")
+_BOOTSTYLE_RE = BOOTSTYLE_RE  # the grammar lives in core (R83)
 _BOOTSTYLE = f"{{{NS_TB}}}bootstyle"
 # Core class -> ttkbootstrap attribute (runtime spec 8.4); the rest use the same name.
 _RENAMED = {"LabelFrame": "Labelframe", "PanedWindow": "Panedwindow"}

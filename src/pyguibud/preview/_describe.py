@@ -10,7 +10,9 @@ from __future__ import annotations
 import re
 from typing import Any
 
-__all__ = ["describe", "portable_describe"]
+from pyguibud.core.keys import Chord, format_chord, parse_chord
+
+__all__ = ["describe", "min_size", "pack_fill", "portable_describe", "portable_shortcut"]
 
 _OPTIONS = (
     *("text", "underline", "compound", "state", "padding", "style", "orient", "from", "to"),
@@ -96,8 +98,11 @@ def describe(ui: Any, backend: str = "ttkbootstrap") -> dict[str, Any]:  # noqa:
     """Windows (title, minimum size, state, menu bar), every widget by id, and the theme.
 
     ``backend`` only chooses where the theme is read: ttkbootstrap's ``Style`` (the default, also
-    for generated modules) or the ``ttk.Style`` of a plain ``tkinter`` interface.
+    for generated modules) or the ``ttk.Style`` of a plain ``tkinter`` interface. A ``pyside6``
+    interface has no Tk view: it gets the portable one.
     """
+    if backend == "pyside6":
+        return portable_describe(ui, backend)
     windows: dict[str, Any] = {}
     for key, top in ui.windows.items():
         bar = top.cget("menu")
@@ -138,6 +143,35 @@ _CORE = {
     "TSeparator": "Separator",
     "TScrollbar": "Scrollbar",
 }  # the rest (Text, Listbox, Treeview, Canvas) keep their Tk class name
+_NO_TEXT = {"Entry", "Combobox", "Spinbox"}  # their ``text`` is Tk's abbreviated textvariable
+#: Qt key names (``QKeySequence`` PortableText) -> chord key names.
+_QT_KEYS = {
+    **{"Esc": "Escape", "Del": "Delete", "Ins": "Insert", "PgUp": "PageUp", "PgDown": "PageDown"},
+    **{"+": "Plus", "-": "Minus", ",": "Comma", ".": "Period", "/": "Slash"},
+}
+
+
+def portable_shortcut(text: str) -> str:
+    """A Tk accelerator or a Qt ``PortableText`` sequence in the ``.ui`` chord form.
+
+    ``Return`` and ``Enter`` are one key (``Chord.identity``); anything else stays verbatim.
+    """
+    cut = len(text) - 1 if text.endswith("+") else text.rfind("+") + 1  # ``Ctrl++``
+    key = text[cut:]
+    chord = parse_chord(text[:cut] + _QT_KEYS.get(key, key))
+    return text if chord is None else format_chord(Chord(*chord.identity))
+
+
+def min_size(width: int, height: int) -> list[int]:
+    """A window's minimum size; Tk reports an unset one as 1, Qt as 0 (both mean none)."""
+    return [value if value > 1 else 0 for value in (width, height)]
+
+
+def pack_fill(fill_x: bool, fill_y: bool, vertical: bool, expand: bool) -> str:
+    """``fill`` as seen: along the packing axis a child that does not expand fills nothing."""
+    if not expand:
+        fill_x, fill_y = fill_x and vertical, fill_y and not vertical
+    return "both" if fill_x and fill_y else "x" if fill_x else "y" if fill_y else "none"
 
 
 def _flat(scope: Any, prefix: str = "") -> dict[str, Any]:  # noqa: ANN401 - a UiScope
@@ -166,7 +200,7 @@ def _portable_menu(menu: Any) -> list[dict[str, Any]]:  # noqa: ANN401 - a tkint
         item: dict[str, Any] = {
             "text": str(menu.entrycget(index, "label")),
             "mnemonic": _mnemonic(menu.entrycget(index, "underline")),
-            "shortcut": str(menu.entrycget(index, "accelerator")),
+            "shortcut": portable_shortcut(str(menu.entrycget(index, "accelerator"))),
             "enabled": str(menu.entrycget(index, "state")) != "disabled",
             "image": bool(menu.entrycget(index, "image")),
         }
@@ -198,7 +232,13 @@ def _placement(outer: Any) -> dict[str, Any]:  # noqa: ANN401 - a Tk widget
         }
     info = outer.pack_info()
     index = [str(w) for w in parent.pack_slaves()].index(str(outer))
-    return {"pack": index, "fill": str(info["fill"]), "expand": bool(int(info["expand"]))}
+    fill, expand = str(info["fill"]), bool(int(info["expand"]))
+    vertical = str(info["side"]) in ("top", "bottom")
+    return {
+        "pack": index,
+        "fill": pack_fill(fill in ("x", "both"), fill in ("y", "both"), vertical, expand),
+        "expand": expand,
+    }
 
 
 def _parent_id(widget: Any, ids: dict[str, str]) -> str | None:  # noqa: ANN401 - a Tk widget
@@ -211,27 +251,35 @@ def _parent_id(widget: Any, ids: dict[str, str]) -> str | None:  # noqa: ANN401 
 def portable_describe(ui: Any, backend: str = "ttkbootstrap") -> dict[str, Any]:  # noqa: ANN401
     """A toolkit-neutral view of a built interface, read from the toolkit objects (spec 7).
 
-    Per window: kind, title, minimum size and menu tree. Per id: core class, text and mnemonic,
-    ``.ui`` state, image flag, parent id, placement (grid cell and spans with sticky, pack index
-    with fill and expand, or page) and the value of the bound variable. It leaves out what is
-    toolkit specific on purpose: the look, the theme, paddings, bindings, and the status bar as
-    a window attribute (it appears as a Label). The ttkbootstrap and plain tkinter interfaces
-    share this Tk reader.
+    Per window: kind, title, minimum size, menu tree and status text (its id reads
+    ``"<status bar>"``). Per id: core class, text and mnemonic, ``.ui`` state, image flag, parent
+    id, placement (grid cell and spans with sticky, pack index with fill and expand, or page) and
+    the value of the bound variable. Shortcuts, minimum sizes and pack fills are normalised so the
+    Tk reader (both Tk backends) and the Qt reader (``_describe_qt``) compare equal. It leaves out
+    what is toolkit specific on purpose: the look, the theme, paddings and bindings. With a
+    ``master``, Tk builds the main window as a Toplevel, which reads as a dialog here.
     """
+    if backend == "pyside6":
+        from pyguibud.preview._describe_qt import qt_portable_describe
+
+        return qt_portable_describe(ui)
     if backend not in {"ttkbootstrap", "tkinter"}:
         raise ValueError(f"no portable reader for {backend!r}")
+    import tkinter
+
     windows: dict[str, Any] = {}
     for key, top in ui.windows.items():
         bar = top.cget("menu")
         windows[key] = {
-            "kind": "main" if top is getattr(ui, "main", None) else "dialog",
+            "kind": "main" if isinstance(top, tkinter.Tk) else "dialog",
             "title": top.title(),
-            "minsize": list(top.minsize()),
+            "minsize": min_size(*top.minsize()),
             "menubar": _portable_menu(top.nametowidget(bar)) if bar else None,
+            "status": None,
         }
     found = _flat(ui)
     ids = {str(w): k for k, w in found.items() if hasattr(w, "winfo_class")}
-    typed = {str(v): v for v in vars(ui.vars).values()}
+    typed = _typed(ui)
     widgets: dict[str, Any] = {}
     for key, widget in found.items():
         if isinstance(widget, int):
@@ -240,9 +288,34 @@ def portable_describe(ui: Any, backend: str = "ttkbootstrap") -> dict[str, Any]:
             continue
         elif widget.winfo_class() == "Menu":
             widgets[key] = {"class": "Menu", "items": _portable_menu(widget)}
+        elif (top := _status_top(widget)) is not None:  # the label of a window's status bar
+            windows[ids[str(top)]]["status"] = str(widget.cget("text"))
+            widgets[key] = "<status bar>"
         else:
             widgets[key] = _portable_widget(widget, ids, typed)
     return {"windows": windows, "widgets": widgets}
+
+
+def _typed(scope: Any) -> dict[str, Any]:  # noqa: ANN401 - a UiScope
+    """The declared variables of ``scope`` and its include scopes, by Tcl name."""
+    found = {str(var): var for var in vars(scope.vars).values()}
+    for obj in scope.widgets.values():
+        if hasattr(obj, "vars") and hasattr(obj, "widgets"):  # an include's scope
+            found.update(_typed(obj))
+    return found
+
+
+def _status_top(widget: Any) -> Any:  # noqa: ANN401 - Tk widgets
+    """The window whose status bar ``widget`` is (``_tk`` grids its frame in row 2), or None."""
+    frame = widget.master
+    top = getattr(frame, "master", None)
+    if (
+        top is None
+        or frame.winfo_manager() != "grid"
+        or top.winfo_class() not in ("Tk", "Toplevel")
+    ):
+        return None
+    return top if int(frame.grid_info()["row"]) == 2 else None
 
 
 def _portable_widget(widget: Any, ids: dict[str, str], typed: dict[str, Any]) -> dict[str, Any]:  # noqa: ANN401
@@ -255,15 +328,16 @@ def _portable_widget(widget: Any, ids: dict[str, str], typed: dict[str, Any]) ->
         "place": _placement(outer),
         "image": bool(_option(widget.cget, "image")),
     }
-    for option in ("text", "state"):
+    for option in ("state",) if info["class"] in _NO_TEXT else ("text", "state"):
         if (value := _option(widget.cget, option)) is not None:
             info[option] = value
     if (mnemonic := _mnemonic(_option(widget.cget, "underline"))) is not None:
         info["mnemonic"] = mnemonic
     for option in ("textvariable", "variable"):
-        if _option(widget.cget, option) and (name := str(widget.cget(option))):
-            var = typed.get(name)
-            info["value"] = var.get() if var is not None else widget.getvar(name)
+        name = str(widget.cget(option)) if _option(widget.cget, option) is not None else ""
+        var = typed.get(name)  # declared variables only, not ttk's own auto variables
+        if var is not None:
+            info["value"] = var.get()
             if option == "textvariable":
                 info.pop("text", None)  # the text option then only names the variable
     return info

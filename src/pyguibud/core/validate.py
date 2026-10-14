@@ -5,7 +5,7 @@ document), iterative (an explicit stack, so deeply nested documents cannot overf
 stack) and never fails fast: every finding is returned, in a deterministic order. The registry is
 passed in, so the reader stays registry-free.
 
-Rule codes are stable (``validate.*``, R01 to R82). R49 to R53 (includes) and R75 to R76 (image
+Rule codes are stable (``validate.*``, R01 to R90). R49 to R53 (includes) and R75 to R76 (image
 files) need disk access, which is injected as ``files=`` (:class:`FileAccess`). Without it only
 the same-file includes (``src="#"``) are followed, for R51 to R53 (ADR-006 amendment,
 2026-10-09: the command guards see them too); every other rule is pure. The command guards
@@ -39,6 +39,7 @@ from pyguibud.core.files import (
 )
 from pyguibud.core.model import (
     CORE_CLASS_NAMES,
+    NS_TB,
     NS_UI,
     Action,
     Document,
@@ -61,6 +62,7 @@ from pyguibud.core.model import (
     Widget,
     WidgetSpec,
     Window,
+    canonical_distribution,
     is_extension,
     is_valid_event,
     split_class_name,
@@ -86,6 +88,8 @@ if TYPE_CHECKING:
 
 __all__ = [
     "BIND_TYPES",
+    "BOOTSTYLE_RE",
+    "BOOTSTYLE_TOKENS",
     "MAX_DEFAULT_LENGTH",
     "MAX_FINDINGS",
     "MAX_GRID_INDEX",
@@ -155,6 +159,20 @@ BIND_TYPES: Final[Mapping[str, tuple[str, ...]]] = MappingProxyType(
     }
 )
 
+#: The ``tb:bootstyle`` grammar (R83; at most 64 characters), shared with the Tk backend.
+BOOTSTYLE_RE: Final = re.compile(r"[a-z]+(-[a-z]+)*( [a-z]+(-[a-z]+)*)*")
+#: The ttkbootstrap 2.2 bootstyle tokens: colours, orients, modifiers and families (R84).
+BOOTSTYLE_TOKENS: Final = frozenset(
+    {"primary", "secondary", "success", "info", "warning", "danger", "light", "dark"}
+    | {"neutral", "default", "horizontal", "vertical", "outline", "link", "ghost", "round"}
+    | {"square", "striped", "thin", "inverse", "button", "checkbutton", "radiobutton"}
+    | {"toggle", "toolbutton", "combobox", "entry", "spinbox", "scale", "progressbar"}
+    | {"floodgauge", "scrollbar", "separator", "sizegrip", "label", "labelframe", "frame"}
+    | {"notebook", "panedwindow", "treeview", "menubutton", "calendar", "optionmenu"}
+)
+_BOOTSTYLE_KEY: Final = f"{{{NS_TB}}}bootstyle"
+_NO_BOOTSTYLE: Final = frozenset({"Text", "Listbox", "Canvas"})  # plain Tk widgets
+_PLUGIN_NAME_RE: Final = re.compile(r"[A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9._-]{0,98}[A-Za-z0-9]")
 _STRUCTURAL: Final = frozenset({"Menubar", "Menu", "Action", "Statusbar"})
 # The closed sets the writer accepts (xml_io keeps its own copy; a test keeps them in step).
 _WINDOW_KINDS: Final = ("main", "dialog", "component")
@@ -170,6 +188,7 @@ _FLOAT_RE: Final = re.compile(r"-?(?:[0-9]{1,15}(?:\.[0-9]{1,15})?|\.[0-9]{1,15}
 _STICKY_RE: Final = re.compile(r"(?!.*(.).*\1)[nsew]{0,4}")
 _SPLIT_PATH_RE: Final = re.compile(r"[\\/]")
 _CLIP: Final = 100  # longest user text echoed in a message
+_MAX_BOOTSTYLE: Final = 64
 _SMALL_AREA: Final = 1024  # grid cells covered by a rectangle that is tracked cell by cell
 
 # ---------------------------------------------------------------- messages (msgids)
@@ -247,6 +266,32 @@ _M_PLUGIN_MISSING: Final = N_(
 )
 _M_PLUGIN_MISSING_NAMELESS: Final = N_(
     "'{class_name}' is not installed, so '{fallback}' is shown instead."
+)
+# Translators: {plugin} is a distribution name; "Help ▸ Plugins" is the menu path.
+_M_PLUGIN_FAILED: Final = N_(
+    "'{class_name}' comes from '{plugin}', which failed to load, so '{fallback}' is shown "
+    "instead. See Help ▸ Plugins."
+)
+_M_PLUGIN_DISABLED: Final = N_(
+    "'{class_name}' comes from '{plugin}', which is disabled, so '{fallback}' is shown instead. "
+    "See Help ▸ Plugins."
+)
+_M_BAD_PLUGIN_NAME: Final = N_("'{plugin}' on '{id}' is not a valid distribution name.")
+# Translators: "bootstyle" is a ttkbootstrap term; keep it untranslated.
+_M_BAD_BOOTSTYLE: Final = N_(
+    "The bootstyle '{value}' of '{id}' is not valid: use lower-case words joined by '-' or "
+    "spaces, at most {limit} characters."
+)
+_M_BOOTSTYLE_TOKEN: Final = N_("The bootstyle '{value}' of '{id}' has the unknown word '{token}'.")
+_M_BOOTSTYLE_IGNORED: Final = N_("{class_name} has no bootstyle; the one on '{id}' is ignored.")
+_M_UNKNOWN_TB_ATTR: Final = N_(
+    "The attribute '{name}' on '{id}' is not a ttkbootstrap attribute; it is kept but ignored."
+)
+# Translators: {hint} describes the expected format and is already translated.
+_M_BAD_PATTERN: Final = N_("The value of '{prop}' on '{id}' is not valid: {hint}")
+_M_BAD_PATTERN_NO_HINT: Final = N_("The value of '{prop}' on '{id}' is not valid.")
+_M_VALUE_TOO_LONG: Final = N_(
+    "The value of '{prop}' on '{id}' has {length} characters; at most {limit} are allowed."
 )
 _M_EXTENSION_ATTR_IGNORED: Final = N_(
     "'{attribute}' only applies to extension widgets and is ignored on '{id}'."
@@ -573,6 +618,11 @@ def _escapes(path: str) -> bool:
     return False
 
 
+@lru_cache(maxsize=256)
+def _compiled(pattern: str) -> re.Pattern[str]:
+    return re.compile(pattern)  # PropertyDef checked that it compiles
+
+
 def _core_name(class_name: object, fallback: object) -> str | None:
     """The core class whose behaviour a widget has (itself, or the fallback of an extension)."""
     name = class_name if isinstance(class_name, str) and not is_extension(class_name) else fallback
@@ -865,12 +915,68 @@ class _Validator:
         self.first_main: Window | None = None
         self._specs: dict[str, WidgetSpec | None] = {}
         self._defs: dict[int, tuple[WidgetSpec | None, dict[str, PropertyDef]]] = {}
+        self._dists: dict[str, frozenset[str]] = {}
 
     # ------------------------------------------------ small services
     def spec(self, name: str) -> WidgetSpec | None:
         if name not in self._specs:
             self._specs[name] = self.registry.get(name)
         return self._specs[name]
+
+    def distributions(self, method: str) -> frozenset[str]:
+        """R87/R88: the registry's failed or disabled distributions (a plain lookup has none)."""
+        if method not in self._dists:
+            found = getattr(self.registry, method, None)
+            self._dists[method] = frozenset(found()) if callable(found) else frozenset()
+        return self._dists[method]
+
+    def check_tb_attrs(self, widget: Widget, core_name: str | None) -> None:
+        """R83 to R85 for the ``tb:`` attributes of a widget."""
+        attrs = widget.extra_attrs
+        if not attrs or not isinstance(attrs, Mapping):
+            return  # a non-mapping is R65 (check_extras)
+        label = _clip(widget.id)
+        for key in sorted(attrs, key=str):
+            value: object = attrs[key]  # object: a hand-built model may hold anything
+            if not isinstance(key, str) or not key.startswith(f"{{{NS_TB}}}"):
+                continue
+            if key != _BOOTSTYLE_KEY:
+                name = "tb:" + key.rpartition("}")[2]
+                self.sink.warning(
+                    "validate.unknown_extension_attr",
+                    _M_UNKNOWN_TB_ATTR,
+                    widget,
+                    name=name,
+                    id=label,
+                )
+            elif not isinstance(value, str):
+                continue  # R62 (check_extras)
+            elif len(value) > _MAX_BOOTSTYLE or BOOTSTYLE_RE.fullmatch(value) is None:
+                self.sink.error(
+                    "validate.bad_bootstyle",
+                    _M_BAD_BOOTSTYLE,
+                    widget,
+                    value=_clip(value),
+                    id=label,
+                    limit=_MAX_BOOTSTYLE,
+                )
+            elif core_name in _NO_BOOTSTYLE:
+                self.sink.warning(
+                    "validate.bootstyle_ignored",
+                    _M_BOOTSTYLE_IGNORED,
+                    widget,
+                    class_name=_clip(widget.class_name),
+                    id=label,
+                )
+            elif unknown := sorted(set(re.split("[- ]", value)) - BOOTSTYLE_TOKENS):
+                self.sink.warning(
+                    "validate.bootstyle_ignored",
+                    _M_BOOTSTYLE_TOKEN,
+                    widget,
+                    value=value,
+                    id=label,
+                    token=unknown[0],
+                )
 
     def defs_of(self, properties: tuple[PropertyDef, ...]) -> dict[str, PropertyDef]:
         return {definition.name: definition for definition in properties}
@@ -1528,6 +1634,7 @@ class _Validator:
         self.check_props(widget, widget.props, defs, class_label)
         self.check_events(widget, label, None if effective.fallback_mode else spec)
         self.check_bind(widget, effective)
+        self.check_tb_attrs(widget, effective.core_name)
         self.chars(widget.fallback, widget, "", "fallback")
         self.chars(widget.plugin, widget, "", "plugin")
         self.check_extras(widget, "widget", widget)
@@ -1595,6 +1702,16 @@ class _Validator:
             fallback_valid = True
             fallback_spec = self.spec(fallback)
         core = fallback if fallback_valid and isinstance(fallback, str) else None
+        plugin = widget.plugin
+        if isinstance(plugin, str) and _PLUGIN_NAME_RE.fullmatch(plugin) is None:
+            sink.warning(
+                "validate.bad_plugin_name",
+                _M_BAD_PLUGIN_NAME,
+                widget,
+                plugin=_clip(plugin),
+                id=label,
+            )
+            plugin = None  # R28 then uses its nameless text: never a pip hint with junk
         if registered is not None:
             if (
                 fallback_spec is not None
@@ -1611,8 +1728,26 @@ class _Validator:
                 )
             return _Effective(registered, False, core)
         if fallback_valid and fallback_spec is not None:
-            plugin = widget.plugin
-            if plugin:
+            known = canonical_distribution(plugin) if isinstance(plugin, str) else ""
+            if known and known in self.distributions("failed_distributions"):
+                sink.warning(
+                    "validate.plugin_failed",
+                    _M_PLUGIN_FAILED,
+                    widget,
+                    class_name=_clip(name),
+                    fallback=_clip(fallback),
+                    plugin=_clip(plugin),
+                )
+            elif known and known in self.distributions("disabled_distributions"):
+                sink.warning(
+                    "validate.plugin_disabled",
+                    _M_PLUGIN_DISABLED,
+                    widget,
+                    class_name=_clip(name),
+                    fallback=_clip(fallback),
+                    plugin=_clip(plugin),
+                )
+            elif plugin:
                 sink.warning(
                     "validate.plugin_missing",
                     _M_PLUGIN_MISSING,
@@ -1714,7 +1849,10 @@ class _Validator:
         if variable is None:
             sink.error("validate.unknown_variable", _M_UNKNOWN_VARIABLE, widget, bind=bind)
             return
-        row = BIND_TYPES.get(effective.core_name or "")
+        spec = effective.spec
+        row: tuple[str, ...] | None = BIND_TYPES.get(effective.core_name or "")
+        if spec is not None and spec.is_extension and spec.bind_types is not None:
+            row = spec.bind_types  # D8: a registered extension narrows its fallback's row
         if row is None:
             return
         if not row:
@@ -1966,6 +2104,37 @@ class _Validator:
                 name=name,
                 length=len(text),
                 limit=MAX_TEXT_LENGTH,
+            )
+        elif kind == "string" and text is not None:
+            self.check_pattern(owner, part, name, text, definition)
+
+    def check_pattern(
+        self, owner: object, part: str, name: str, text: str, definition: PropertyDef
+    ) -> None:
+        """R90 then R89: the length is checked first, so the regex never sees a long input."""
+        owner_id = _clip(getattr(owner, "id", ""))
+        limit = definition.max_length
+        if limit is not None and len(text) > limit:
+            self.sink.error(
+                "validate.value_too_long",
+                _M_VALUE_TOO_LONG,
+                owner,
+                part,
+                prop=name,
+                id=owner_id,
+                length=len(text),
+                limit=limit,
+            )
+        elif definition.pattern is not None and not _compiled(definition.pattern).fullmatch(text):
+            hint = definition.hint
+            self.sink.error(
+                "validate.bad_pattern",
+                _M_BAD_PATTERN if hint else _M_BAD_PATTERN_NO_HINT,
+                owner,
+                part,
+                prop=name,
+                id=owner_id,
+                hint=LazyMessage(hint) if hint else "",
             )
 
 

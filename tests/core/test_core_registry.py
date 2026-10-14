@@ -23,7 +23,10 @@ from pyguibud.core import (
     default_registry,
     reset_default_registry,
 )
-from pyguibud.core.widgets import core_widgets
+from pyguibud.core.widgets import core_widgets, tb_widgets
+
+#: Every built-in class: the core vocabulary and the ttkbootstrap extensions (Step 17a).
+BUILTIN_NAMES = CORE_CLASS_NAMES | {s.name for s in tb_widgets()}
 
 
 @dataclass
@@ -78,6 +81,10 @@ def _spec(
     )
 
 
+def _tb_ep() -> _EP:
+    return _wep("tb", tb_widgets, "pyguibud", "pyguibud.core.widgets:tb_widgets")
+
+
 def _codes(reg: Registry) -> list[str]:
     return [d.code for d in reg.diagnostics()]
 
@@ -107,20 +114,21 @@ def test_constructor_does_no_io() -> None:
 
 def test_empty_source_falls_back_to_core_with_warning() -> None:
     reg = Registry(entry_points=_source())
-    assert {s.name for s in reg.specs()} == CORE_CLASS_NAMES
+    assert {s.name for s in reg.specs()} == BUILTIN_NAMES
     diag = _only(reg, "registry.core_fallback")
     assert diag.severity == "warning"
     assert diag.entry_point == ""
     assert diag.distribution == "pyguibud"
     assert "Frame" in diag.message and "Statusbar" in diag.message
+    assert "tb:Meter" in diag.message
 
 
 def test_builtin_entry_point_no_diagnostics() -> None:
     builtin = _wep("core", core_widgets, "pyguibud", "pyguibud.core.widgets:core_widgets")
-    reg = Registry(entry_points=_source(builtin))
+    reg = Registry(entry_points=_source(builtin, _tb_ep()))
     assert reg.diagnostics() == ()
-    assert len(reg.specs()) == 24
-    assert reg.specs()[0].plugin is None
+    assert len(reg.specs()) == 29
+    assert all(spec.plugin is None for spec in reg.specs())
 
 
 def test_valid_plugin_spec_registered_with_distribution_as_plugin() -> None:
@@ -194,7 +202,7 @@ def test_loader_exception_becomes_diagnostic() -> None:
     assert diag.exception is not None and "boom" in diag.exception
     assert diag.traceback is not None and "RuntimeError" in diag.traceback
     assert "boom" in diag.message
-    assert {s.name for s in reg.specs()} == CORE_CLASS_NAMES  # designer still works
+    assert {s.name for s in reg.specs()} == BUILTIN_NAMES  # designer still works
 
 
 def test_callable_raising_is_isolated() -> None:
@@ -225,7 +233,7 @@ def test_source_raising_gives_load_failed_with_empty_entry_point() -> None:
     assert {d.group for d in failed} == {WIDGETS_GROUP, BACKENDS_GROUP}
     assert all(d.entry_point == "" for d in failed)
     assert all("metadata gone" in d.message for d in failed)
-    assert {s.name for s in reg.specs()} == CORE_CLASS_NAMES
+    assert {s.name for s in reg.specs()} == BUILTIN_NAMES
     assert reg.backends() == ()
 
 
@@ -314,11 +322,12 @@ def test_load_order_builtin_first_then_distribution_then_name() -> None:
         _wep("z", _spec("z:One"), "zeta"),
         _wep("b", _spec("b:Two"), "alpha"),
         _wep("a", _spec("a:Three"), "alpha"),
+        _tb_ep(),
         builtin,
     ]
     names = [s.name for s in Registry(entry_points=_source(*eps)).specs()]
-    assert names[:24] == [s.name for s in core_widgets()]
-    assert names[24:] == ["a:Three", "b:Two", "z:One"]
+    assert names[:29] == [s.name for s in (*core_widgets(), *tb_widgets())]
+    assert names[29:] == ["a:Three", "b:Two", "z:One"]
 
 
 def test_core_safety_net_runs_before_extension_check() -> None:
@@ -346,11 +355,11 @@ def test_core_safety_net_failure_is_diagnosed(monkeypatch: pytest.MonkeyPatch) -
 def test_core_safety_net_only_fills_missing() -> None:
     partial = [s for s in core_widgets() if s.name != "Statusbar"]
     reg = Registry(
-        entry_points=_source(_wep("core", partial, "pyguibud", "pyguibud.core.widgets:x"))
+        entry_points=_source(_wep("core", partial, "pyguibud", "pyguibud.core.widgets:x"), _tb_ep())
     )
     diag = _only(reg, "registry.core_fallback")
     assert diag.params["names"] == "Statusbar"
-    assert len(reg.specs()) == 24
+    assert len(reg.specs()) == 29
 
 
 # ------------------------------------------------------------------ fallbacks
@@ -567,13 +576,12 @@ def test_default_registry_caches_and_resets() -> None:
     assert default_registry() is not first
 
 
-def test_real_entry_point_loads_24_specs_without_diagnostics() -> None:
+def test_real_entry_point_loads_the_builtin_specs_without_diagnostics() -> None:
     reg = default_registry()
-    assert reg.diagnostics() == ()
-    specs = reg.specs()
-    assert len(specs) == 24
-    assert {s.name for s in specs} == CORE_CLASS_NAMES
-    assert [s.name for s in specs] == [s.name for s in core_widgets()]
+    # An installed third-party plugin may add specs and diagnostics; the built-ins never do.
+    assert not [d for d in reg.diagnostics() if d.distribution == "pyguibud"]
+    specs = [s for s in reg.specs() if s.name in BUILTIN_NAMES]
+    assert [s.name for s in specs] == [s.name for s in (*core_widgets(), *tb_widgets())]
     assert all(s.plugin is None for s in specs)
     assert reg.backends() == () or all(b.name for b in reg.backends())
 

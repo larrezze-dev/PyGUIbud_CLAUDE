@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<pyguibud-ui schema_version="1.0" xmlns="urn:pyguibud:ui:1" xmlns:tb="urn:pyguibud:ext:ttkbootstrap:1">
+  <meta generator="pyguibud" source_locale="en_GB" i18n_domain="acme_demo" theme="flatly"/>
+  <variables>
+    <var id="level" type="double" default="40"/>
+    <var id="enabled" type="bool" default="true"/>
+    <var id="day" type="string" default="2026-10-14"/>
+  </variables>
+  <window id="main" kind="main" min_width="480" min_height="360">
+    <prop name="title" translatable="true" context="window title">PyGUIbud plugin demo</prop>
+    <layout type="grid" padding="8" gap="6">
+      <column index="1" weight="1"/>
+    </layout>
+    <widget class="tb:Meter" id="mtr_level" bind="level" fallback="Progressbar" tb:bootstyle="success">
+      <prop name="amount_format">{:.0f}%</prop>
+      <prop name="meter_size">160</prop>
+      <prop name="subtext" translatable="true">Level</prop>
+      <cell row="0" column="0" rowspan="3"/>
+    </widget>
+    <widget class="tb:ToggleButton" id="tgl_enabled" bind="enabled" fallback="Checkbutton" tb:bootstyle="primary">
+      <prop name="text" translatable="true">_Enabled</prop>
+      <event name="command" handler="on_toggle"/>
+      <cell row="0" column="1" sticky="w"/>
+    </widget>
+    <widget class="tb:DateEntry" id="ent_day" bind="day" fallback="Entry">
+      <prop name="first_weekday">0</prop>
+      <event name="change" handler="on_day"/>
+      <cell row="1" column="1" sticky="ew"/>
+    </widget>
+    <widget class="tb:Floodgauge" id="flg_level" bind="level" fallback="Progressbar" tb:bootstyle="info">
+      <prop name="mask">{}%</prop>
+      <cell row="2" column="1" sticky="ew"/>
+    </widget>
+    <widget class="tb:Tableview" id="tbl_items" fallback="Treeview">
+      <prop name="columns" translatable="true" comment="Column headings separated by ';'; keep the count.">Name;Colour;Amount</prop>
+      <prop name="height">5</prop>
+      <prop name="searchable">true</prop>
+      <event name="select" handler="on_select"/>
+      <cell row="3" column="0" columnspan="2" sticky="nsew"/>
+    </widget>
+    <widget class="acme:ColourSwatch" id="swt_colour" fallback="Label" plugin="acme-pyguibud">
+      <prop name="text" translatable="true">Swatch</prop>
+      <cell row="4" column="0" columnspan="2" sticky="ew"/>
+    </widget>
+  </window>
+</pyguibud-ui>

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<pyguibud-ui schema_version="1.0" xmlns="urn:pyguibud:ui:1" xmlns:tb="urn:pyguibud:ext:ttkbootstrap:1">
+  <window id="main">
+    <layout type="grid"/>
+    <widget class="tb:Meter" id="a" fallback="Progressbar"><prop name="amount_format">{0.__class__}</prop><cell row="0" column="0"/></widget>
+    <widget class="tb:DateEntry" id="b" fallback="Entry"><prop name="value">14/10/2026</prop><cell row="1" column="0"/></widget>
+  </window>
+</pyguibud-ui>

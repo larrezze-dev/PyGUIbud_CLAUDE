@@ -23,6 +23,7 @@ from typing import Final, Literal, Protocol, TypeAlias, cast
 from pyguibud.core.diagnostics import Finding
 from pyguibud.core.errors import ModelError, XmlIoError
 from pyguibud.core.model import (
+    NS_UI,
     Action,
     Document,
     Event,
@@ -54,7 +55,7 @@ from pyguibud.core.validate import (
     validate,
 )
 from pyguibud.core.xml_io import dump_ui
-from pyguibud.core.xmltree import LazyMessage
+from pyguibud.core.xmltree import LazyMessage, check_attribute_key
 from pyguibud.i18n import N_, _
 
 __all__ = [
@@ -71,6 +72,7 @@ __all__ = [
     "RemoveResource",
     "RemoveVariable",
     "SetEvents",
+    "SetExtraAttr",
     "SetField",
     "SetProp",
     "SetResource",
@@ -149,6 +151,7 @@ EDITABLE_FIELDS: Final[Mapping[type, Mapping[str, tuple[type, ...]]]] = MappingP
 _PARENTS: Final = (Document, Window, Widget, Menubar, Menu)
 _CHILDREN: Final = (Window, Widget, Include, Menu, Action, MenuSeparator)
 _PROP_OWNERS: Final = (Window, Widget, Menu, Action, Statusbar)
+_EXTRA_OWNERS: Final = (Window, Widget, Include, Menubar, Menu, Action, MenuSeparator, Statusbar)
 
 #: Safety net against hand-built, cyclic parent chains.
 _MAX_CLIMB: Final = 1_000_000
@@ -531,6 +534,65 @@ class RemoveProp(Command):
                 props.update(entries)
         self._removed = None
         self._applied = False
+
+
+class SetExtraAttr(Command):
+    """Set (or, with ``value=None``, remove) one extension attribute such as ``tb:bootstyle``.
+
+    ``key`` is a Clark name ``{namespace}local`` outside the ``.ui`` namespace (spec plugins D15).
+    """
+
+    label = N_("Change attribute")
+
+    def __init__(self, node: object, key: str, value: str | None) -> None:
+        super().__init__()
+        if not isinstance(node, _EXTRA_OWNERS):
+            raise TypeError(f"{type(node).__name__} has no extension attributes")
+        uri, _sep, _local = key.partition("}") if isinstance(key, str) else ("", "", "")
+        try:
+            check_attribute_key(key, "")
+        except (XmlIoError, TypeError):
+            uri = ""
+        if not uri.startswith("{") or uri[1:] in ("", NS_UI):
+            raise TypeError(f"{key!r} is not an extension attribute name")
+        if not isinstance(value, str | _NONE):
+            raise TypeError("value must be a str or None")
+        self.node = node
+        self.key = key
+        self.value = value
+        self._old: str | None = None
+
+    def targets(self) -> tuple[object, ...]:
+        return (self.node,)
+
+    def is_noop(self) -> bool:
+        return self.node.extra_attrs.get(self.key) == self.value
+
+    def apply(self) -> None:
+        self._begin_apply()
+        attrs = self.node.extra_attrs
+        self._old = attrs.get(self.key)
+        if self.value is None:
+            attrs.pop(self.key, None)
+        else:
+            attrs[self.key] = self.value
+        self._applied = True
+
+    def revert(self) -> None:
+        self._begin_revert()
+        attrs = self.node.extra_attrs
+        if self._old is None:
+            attrs.pop(self.key, None)
+        else:
+            attrs[self.key] = self._old
+        self._old = None
+        self._applied = False
+
+    def merge(self, newer: Command) -> bool:
+        if type(newer) is SetExtraAttr and newer.node is self.node and newer.key == self.key:
+            self.value = newer.value
+            return True
+        return False
 
 
 class SetField(Command):

@@ -1,12 +1,12 @@
 # PyGUIbud scoreboard
 
-_Last updated: 2026-10-13 00:50:10 UTC+0200_
+_Last updated: 2026-10-14 17:39:14 UTC+0200_
 
-- **Steps done:** 17/23
-- **Current step:** 16 tkinter + PySide6 backends (🧪)
-- **Tests:** 4286/4298 passed, 2 failing (pytest exited with code 1)
-- **Coverage:** 91.6 %
-- **Test detail:** 4298 collected, 2 failed, 0 errors, 10 skipped, 690.45 s
+- **Steps done:** 18/23
+- **Current step:** 17 Widget plugin API + ttkbootstrap extensions (🔄)
+- **Tests:** 5004/5019 passed, 3 failing (pytest exited with code 1)
+- **Coverage:** 91.1 %
+- **Test detail:** 5019 collected, 3 failed, 0 errors, 12 skipped, 902.85 s
 
 ## Quality gates
 
@@ -37,8 +37,8 @@ _Last updated: 2026-10-13 00:50:10 UTC+0200_
 | 14p | Designer visual polish | FRONTEND | ✅ done |
 | 14b | Direct-manipulation sizing & structure | FRONTEND + BACKEND | ✅ done |
 | 15 | Preview & export | FRONTEND + BACKEND | ✅ done |
-| 16 | tkinter + PySide6 backends | BACKEND + FRONTEND | 🧪 awaiting UAT |
-| 17 | Widget plugin API + ttkbootstrap extensions | ARCHITECT + BACKEND (opus) | ⏳ pending |
+| 16 | tkinter + PySide6 backends | BACKEND + FRONTEND | ✅ done |
+| 17 | Widget plugin API + ttkbootstrap extensions | ARCHITECT + BACKEND (opus) + FRONTEND | 🔄 in progress |
 | 18 | Translations (7 languages) | TRANSLATOR + QA | ⏳ pending |
 | 19 | QA hardening ("idiot-proof") | QA + DEBUGGER | ⏳ pending |
 | 20 | Packaging & release candidate | DEPLOYER | ⏳ pending |
@@ -46,8 +46,8 @@ _Last updated: 2026-10-13 00:50:10 UTC+0200_
 
 ## Recent commits
 
+- `f5f5af9 008`
 - `2621983 007`
 - `ff016eb 006`
 - `0685c94 005`
 - `e172188 004`
-- `6d3a99c 003`

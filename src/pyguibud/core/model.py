@@ -19,7 +19,9 @@ from pyguibud.i18n import N_, _
 
 __all__ = [
     "ABSTRACT_EVENTS",
+    "BACKEND_NAME",
     "CORE_CLASS_NAMES",
+    "FACTORY_REF",
     "KNOWN_NAMESPACES",
     "NS_TB",
     "NS_UI",
@@ -28,6 +30,7 @@ __all__ = [
     "ContainerExtras",
     "Document",
     "Event",
+    "FactoryRef",
     "GridCell",
     "GridLine",
     "ImageResource",
@@ -50,6 +53,7 @@ __all__ = [
     "Widget",
     "WidgetSpec",
     "Window",
+    "canonical_distribution",
     "is_extension",
     "is_valid_event",
     "qualify",
@@ -63,6 +67,13 @@ KNOWN_NAMESPACES: Final[Mapping[str, str]] = MappingProxyType({"tb": NS_TB})
 
 #: Version of the widget plugin API (provisional until 1.0; compatible means equal).
 WIDGET_API_VERSION: Final = 1
+
+#: The one backend-name rule (factory keys, designer settings, preview child; spec plugins D3).
+BACKEND_NAME: Final = re.compile(r"[a-z][a-z0-9_-]{0,31}")
+#: A lazy factory reference ``"module.path:attr"`` (spec plugins D3), checked at registration.
+FACTORY_REF: Final = re.compile(r"[A-Za-z_][\w.]*:[A-Za-z_]\w*", re.ASCII)
+#: Upper bound of ``PropertyDef.max_length`` (the validator's MAX_TEXT_LENGTH).
+_MAX_LENGTH_LIMIT: Final = 100_000
 
 CORE_CLASS_NAMES: Final[frozenset[str]] = frozenset(
     {
@@ -724,9 +735,16 @@ class PropertyDef:
     minimum: float | None = None
     maximum: float | None = None
     display_name: str | None = None
+    #: A regex the whole string value must match (R89); ``hint`` (a msgid) tells the user how.
+    pattern: str | None = None
+    #: The longest accepted string value (R90); 256 when a ``pattern`` is set without one.
+    max_length: int | None = None
+    hint: str | None = None
 
     def __post_init__(self) -> None:
         msgid: str | None = None
+        if self.pattern is not None and self.max_length is None:
+            object.__setattr__(self, "max_length", 256)  # bounds the regex input (ReDoS guard)
         if self.type == "enum":
             if not self.choices:
                 msgid = N_("The enumeration property '{name}' has no choices.")
@@ -736,15 +754,41 @@ class PropertyDef:
             msgid = N_("Only enumeration properties may have choices ('{name}').")
         if msgid is None and self.translatable and self.type != "string":
             msgid = N_("Only string properties can be translatable ('{name}').")
+        if msgid is None and (self.pattern is not None or self.max_length is not None):
+            msgid = self._constraint_problem()
         if msgid is not None:
             raise ModelError("model.bad_property_def", msgid, name=self.name)
+
+    def _constraint_problem(self) -> str | None:
+        if self.type != "string":
+            return N_("Only string properties can have a pattern or a maximum length ('{name}').")
+        length = self.max_length
+        if not isinstance(length, int) or isinstance(length, bool):
+            return N_("The maximum length of property '{name}' must be a whole number.")
+        if not 1 <= length <= _MAX_LENGTH_LIMIT:
+            return N_("The maximum length of property '{name}' is out of range.")
+        try:
+            re.compile(self.pattern or "")
+        except (re.error, TypeError):
+            return N_("The pattern of property '{name}' is not a valid regular expression.")
+        return None
 
     def label(self) -> str:
         """The display name in the current language (or the raw name)."""
         return _(self.display_name) if self.display_name else self.name
 
 
-def _no_factories() -> Mapping[str, Callable[..., object]]:
+#: A factory: a callable, or a lazy ``"module:attr"`` reference resolved by
+#: ``Registry.load_factory`` only when a widget is built (spec plugins D3).
+FactoryRef: TypeAlias = Callable[..., object] | str
+
+
+def canonical_distribution(name: str) -> str:
+    """The PEP 503 normalised form of a distribution name (``Acme_Plugin`` -> ``acme-plugin``)."""
+    return re.sub(r"[-_.]+", "-", name).lower()
+
+
+def _no_factories() -> Mapping[str, FactoryRef]:
     return {}
 
 
@@ -765,10 +809,12 @@ class WidgetSpec:
     events: tuple[str, ...] = ()
     fallback: str | None = None
     icon: str | None = None
-    factories: Mapping[str, Callable[..., object]] = field(
+    factories: Mapping[str, FactoryRef] = field(
         default_factory=_no_factories, compare=False, hash=False
     )
     plugin: str | None = None
+    #: Variable types ``bind`` accepts (extensions only; None = the fallback's row, D8).
+    bind_types: tuple[Literal["string", "int", "double", "bool"], ...] | None = None
 
     def __post_init__(self) -> None:
         _freeze(self, "factories")

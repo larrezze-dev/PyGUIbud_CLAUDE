@@ -79,7 +79,7 @@ def test_new_node_validates_for_every_core_widget_spec() -> None:
 
 def test_new_node_of_an_extension_keeps_fallback_and_plugin() -> None:
     spec = WidgetSpec(
-        name="tb:Meter",
+        name="zz:Meter",
         display_name="Meter",
         category="Display",
         api_version=1,

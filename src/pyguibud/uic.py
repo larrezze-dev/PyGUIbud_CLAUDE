@@ -39,6 +39,9 @@ from .core.xml_io import ReadResult, read_ui
 from .i18n import N_, _, get_language, set_language
 
 _GLOB_CHARS = frozenset("*?[")
+# Control and bidi characters from a .ui value could forge or reorder diagnostic lines.
+_UNSAFE = [*range(0x20), *range(0x7F, 0xA0), *range(0x202A, 0x202F), *range(0x2066, 0x206A)]
+_ESCAPES = {code: repr(chr(code))[1:-1] for code in _UNSAFE}  # "\n", "\x85", "\u202e"
 # Usage errors go through argparse, so the msgids are marked here and translated when used.
 _M_O_CHECK = N_("-o cannot be used with --check")
 _M_FORCE_CHECK = N_("--force cannot be used with --check")
@@ -111,7 +114,7 @@ def _report(finding: Finding) -> None:
         where = f"{finding.source}: {finding.severity}: {finding.path}"
     else:
         where = f"{finding.location}: {finding.severity}"
-    print(f"{where}: {finding.message}", file=sys.stderr)
+    print(f"{where}: {finding.message}".translate(_ESCAPES), file=sys.stderr)
 
 
 def _read(path: str) -> ReadResult | None:
@@ -119,7 +122,7 @@ def _read(path: str) -> ReadResult | None:
     try:
         result = read_ui(path)
     except XmlIoError as exc:
-        print(f"{exc.location}: error: {exc.message}", file=sys.stderr)
+        print(f"{exc.location}: error: {exc.message}".translate(_ESCAPES), file=sys.stderr)
         return None
     for warning in result.warnings:
         _report(warning)
@@ -168,7 +171,7 @@ def _generate(
     except CodegenError as exc:
         for finding in exc.findings:
             _report(finding)
-        print(f"{path}: error: {exc.message}", file=sys.stderr)
+        print(f"{path}: error: {exc.message}".translate(_ESCAPES), file=sys.stderr)
         return False
     if any(same_file(output, source) for source in module.sources):
         return _refuse(output, M_SAME_FILE)

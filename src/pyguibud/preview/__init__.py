@@ -33,6 +33,9 @@ _MAX_LINE = 256  # bytes of one stdin command
 _POLL_MS = 50
 _MAX_WARNINGS = 20
 _MAX_MESSAGE = 2000
+#: The JSON size of the kept warnings: ready.json (ASCII, so a character may take 12 bytes)
+#: stays under the designer's 64 KiB read limit with the themes (QA-16c-04).
+_MAX_WARNING_BYTES = 40 * 1024
 _CRASH = 3
 _M_DESCRIPTION = N_("Show a .ui file in a separate preview window (used by the designer).")
 
@@ -96,10 +99,14 @@ class _Collect(logging.Handler):
     def __init__(self) -> None:
         super().__init__(logging.WARNING)
         self.messages: list[str] = []
+        self._room = _MAX_WARNING_BYTES
 
     def emit(self, record: logging.LogRecord) -> None:
-        if len(self.messages) < _MAX_WARNINGS:
-            self.messages.append(record.getMessage()[:_MAX_MESSAGE])
+        message = record.getMessage()[:_MAX_MESSAGE]
+        size = len(json.dumps(message))  # as ready.json stores it (one message always fits)
+        if len(self.messages) < _MAX_WARNINGS and size <= self._room:
+            self.messages.append(message)
+            self._room -= size
 
 
 def _read_commands(commands: queue.Queue[str]) -> None:

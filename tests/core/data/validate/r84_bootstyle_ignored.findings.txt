@@ -1,0 +1,2 @@
+5:5: warning: validate.bootstyle_ignored: window[main]/widget[a]
+6:5: warning: validate.bootstyle_ignored: window[main]/widget[b]

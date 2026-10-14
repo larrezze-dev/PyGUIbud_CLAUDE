@@ -147,7 +147,7 @@ A real module, type-checked and linted. The generator copies the text between `#
 - `_split_mnemonic`: a copy of `core.keys.split_mnemonic`.
 - `_clip` (`_MAX_TEXT = 100_000`): written by the generator as a literal from `core.validate.MAX_TEXT_LENGTH`. A test asserts they are equal.
 - `_check_lang`, `_resolve`, `_translators`.
-- The wiring helpers `_command`, `_trace`, `_modified`, `_virtual`, `_bind`, `_shortcut`: each no-ops for an unresolved handler, and none is a lambda over a loop variable.
+- The wiring helpers `_command`, `_trace`, `_modified`, `_virtual`, `_bind`, `_shortcut`: each no-ops for an unresolved handler, and none is a lambda over a loop variable. Every wired callback drops Tk's arguments and calls the handler with none: `_command`, `_trace` and `_bind` through `_call(fn)` (`_command` too, because Tk calls a Scrollbar `command` with its scroll arguments; Step 16c fix), `_modified` and `_virtual` through their own `*_args` wrappers.
 - `_create`: tries `bootstyle`, then retries without it.
 - `_image`, `_preview`.
 
@@ -183,6 +183,12 @@ A real module, type-checked and linted. The generator copies the text between `#
 - **Handler names:** sorted and unique across the whole tree → `_HANDLERS`.
 - **Documents:** numbered by first encounter → `_DOCS` index. A text slot carries its document index.
 - **Extensions:** `registry.resolve(class, "ttkbootstrap", fallback)` → the spec. A fallback gives a generation warning (`_M_FALLBACK`, so no new msgid).
+  - **Step 17 amendment** (ADR-015, `docs/specs/plugins.md` §7, D13, accepted 2026-10-14):
+    - the five `tb:` widgets are emitted natively from the pure `_tkmap.TB_EXT` table (`ttkbootstrap.Meter(...)`, inner accessors, variable options);
+    - DateEntry `value` becomes `datetime.date(...)`, and `datetime` joins the fixed import block;
+    - `_support.py` gains `_headings(view, text)`;
+    - third-party plugin widgets still export as their fallback with `codegen.extension_fallback`;
+    - trim T3 reverts `tb:` to the fallback.
 
 ## 6. Emitting rules (`_emit.py`) — injection safety
 1. **Literal gate:** `lit(v)` accepts only `str`, `int`, `bool`, finite `float`, `None` and tuples of these, and returns `repr(v)`. Anything else → `TypeError`. **Every `.ui` string reaches the output only through `lit()`**, never through f-string or `%`/`format` interpolation into code, comments or docstrings.

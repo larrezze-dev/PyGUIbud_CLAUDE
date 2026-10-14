@@ -183,7 +183,7 @@ RICH = """
         <event name="focus_out" handler="on_focus"/><cell row="7" column="1"/></widget>
       <widget class="Label" id="lbl_bound" bind="name"><prop name="text">ignored</prop>
         <cell row="8" column="0"/></widget>
-      <widget class="Button" id="btn_bad" tb:bootstyle="Not Valid!">
+      <widget class="Button" id="btn_bad" tb:bootstyle="not valid">
         <cell row="8" column="1"/></widget>
       <widget class="Button" id="btn_odd" tb:bootstyle="nonsense">
         <cell row="9" column="0"/></widget>
@@ -249,8 +249,11 @@ def test_rich_document_builds_every_class(
     rich: tuple[LoadedUi, Recorder, str], tk_root: Any
 ) -> None:
     ui, handlers, messages = rich
-    for expected in ("darkly", "tb:Meter", "Not Valid!", "nonsense", "Ctrl+O", "'info'"):
+    for expected in ("darkly", "tb:Meter", "Ctrl+O", "'info'"):
         assert expected in messages
+    # The builder's own note, not R84's warning (both reach the same logger).
+    for value, widget_id in (("not valid", "btn_bad"), ("nonsense", "btn_odd")):
+        assert f"The bootstyle '{value}' of '{widget_id}' is ignored." in messages
     assert ui.btn.cget("style") == "success.TButton" and ui.btn.cget("underline") == 0
     assert str(ui.btn.cget("state")) == "disabled"
     assert str(ui.lbl.cget("compound")) == "left"
@@ -351,3 +354,34 @@ def test_output_capture_leaves_the_tcl_std_handles_alone(pytestconfig: pytest.Co
     # Windows then fails a later `image create photo -file` with an empty TclError when the
     # file's new handle reuses one of those values. pyproject.toml sets --capture=sys.
     assert pytestconfig.getoption("capture") in ("sys", "no", "tee-sys")
+
+
+def test_a_bootstyle_the_validator_refuses_is_still_ignored_by_the_builder(
+    tmp_path: Path,
+    tk_root: Any,
+    loaded: list[LoadedUi],
+    caplog: pytest.LogCaptureFixture,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """R83 makes "Not Valid!" an error (Step 17a); the builder's own guard stays as defence."""
+    import dataclasses
+
+    from pyguibud.core.validate import validate as real
+    from pyguibud_runtime import _load
+
+    def lenient(*args: Any, **kwargs: Any) -> Any:
+        report = real(*args, **kwargs)
+        kept = tuple(f for f in report.findings if f.code != "validate.bad_bootstyle")
+        return dataclasses.replace(report, findings=kept)
+
+    monkeypatch.setattr(_load, "validate", lenient)
+    body = (
+        '<widget class="Button" id="btn" tb:bootstyle="Not Valid!">'
+        '<cell row="0" column="0"/></widget>'
+    )
+    path = write_ui(tmp_path / "b.ui", f'<window id="w"><layout type="grid"/>{body}</window>')
+    with caplog.at_level(logging.WARNING, logger="pyguibud_runtime"):
+        ui = load_ui(path, object(), master=tk_root)
+    loaded.append(ui)
+    assert "Not Valid!" in caplog.text
+    assert ui.btn.cget("style") in ("", "TButton")

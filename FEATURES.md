@@ -94,16 +94,16 @@
 | + | Menubar / Menu / Action | `tk.Menu` | `QMenuBar` / `QMenu` / `QAction` | |
 | + | Statusbar | `ttk.Frame` + `Label` (convention) | `QStatusBar` | |
 
-**ttkbootstrap extensions** (namespace `tb:`; each declares a `fallback` for other backends):
+**ttkbootstrap extensions** (namespace `tb:`; each declares a core `fallback`). They have ttkbootstrap factories only, so tkinter and PySide6 show the core fallback (ADR-015, spec `docs/specs/plugins.md` §5, D11):
 
-| Extension | Fallback (tkinter / PySide6) |
+| Extension | Fallback (tkinter and PySide6) |
 |---|---|
 | `tb:Meter` | Progressbar |
 | `tb:Floodgauge` | Progressbar |
-| `tb:DateEntry` | Entry / `QDateEdit` |
-| `tb:Tableview` | Treeview / `QTableWidget` |
-| `tb:ToggleButton` (round/square toggle bootstyle) | Checkbutton |
-| `tb:bootstyle` attribute on any core widget | ignored |
+| `tb:DateEntry` (ISO `YYYY-MM-DD` value) | Entry |
+| `tb:Tableview` (`columns` = one translatable `;`-separated string) | Treeview |
+| `tb:ToggleButton` (a `ttkbootstrap.Checkbutton` with a round/square toggle bootstyle) | Checkbutton |
+| `tb:bootstyle` attribute on any core widget | ignored, with a note (validated: R83 grammar error, R84 unknown-token warning) |
 
 ## 4. `.ui` schema draft (v1.0)
 

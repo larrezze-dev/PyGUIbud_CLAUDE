@@ -1,0 +1,2 @@
+5:60: error: validate.bad_pattern: window[main]/widget[a]/prop[amount_format]
+6:58: error: validate.bad_pattern: window[main]/widget[b]/prop[value]

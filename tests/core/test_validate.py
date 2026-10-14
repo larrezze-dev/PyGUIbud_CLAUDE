@@ -133,9 +133,17 @@ def test_golden_findings_are_translated_on_read(path: Path) -> None:
     assert [f.message for f in report.findings] != english or not english
 
 
+def _without_acme(report: ValidationReport) -> ValidationReport:
+    acme = [f for f in report.findings if f.code == "validate.plugin_missing"]
+    assert [f.path for f in acme] == ["window[main]/widget[swt_colour]"]
+    return ValidationReport(tuple(f for f in report.findings if f not in acme))
+
+
 def test_clean_documents_have_no_findings() -> None:
     for path in (HELLO, *sorted(EXAMPLES.glob("*.ui"))):
         report = validate_read(read_ui(path), default_registry())
+        if path.name == "acme_demo.ui":  # Step 17 UAT: the acme plugin is not installed in tests
+            report = _without_acme(report)
         assert report.findings == () and report.ok and not report.truncated, path.name
     assert (CASES / "clean_menus_statusbar.findings.txt").read_text("utf-8") == ""
 
@@ -829,7 +837,17 @@ def test_dump_is_unchanged_by_validation() -> None:
 
 # ---------------------------------------------------------------- property test
 ID_POOL = ["a", "b", "dup", "", "class", "1x", "ok_id", "x" * 70]
-CLASS_POOL = ["Label", "Frame", "Notebook", "Button", "Entry", "Gizmo", "tb:Meter", "Menu"]
+CLASS_POOL = [
+    "Label",
+    "Frame",
+    "Notebook",
+    "Button",
+    "Entry",
+    "Gizmo",
+    "tb:Meter",
+    "zz:Gauge",
+    "Menu",
+]
 
 placements = st.one_of(
     st.none(),

@@ -1,0 +1,1 @@
+5:65: error: validate.value_too_long: window[main]/widget[a]/prop[mask]

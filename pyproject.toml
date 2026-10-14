@@ -49,10 +49,12 @@ pyguibud-uic = "pyguibud.uic:main"
 
 [project.entry-points."pyguibud.widgets"]
 core = "pyguibud.core.widgets:core_widgets"
+tb = "pyguibud.core.widgets:tb_widgets"
 
 [project.entry-points."pyguibud.backends"]
 ttkbootstrap = "pyguibud.backends.ttkbootstrap:TtkbootstrapBackend"
 tkinter = "pyguibud.backends.tkinter:TkinterBackend"
+pyside6 = "pyguibud.backends.pyside6:PySide6Backend"
 
 [dependency-groups]
 dev = [
@@ -124,6 +126,21 @@ disallow_untyped_calls = false
 module = ["babel", "babel.*"]
 ignore_missing_imports = true
 
+[[tool.mypy.overrides]]
+# PySide6 is an optional extra (spec backends D19): strict mypy passes with and without it.
+module = ["PySide6", "PySide6.*", "shiboken6", "shiboken6.*"]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+# Without the PySide6 stubs, QObject is Any.
+module = [
+    "pyguibud.backends._qt",
+    "pyguibud.preview._host_qt",
+    "pyguibud.preview._describe_qt",
+    "tests.qt.*",
+]
+disallow_subclassing_any = false
+
 [tool.pytest.ini_options]
 minversion = "8.0"
 testpaths = ["tests"]
@@ -132,7 +149,11 @@ testpaths = ["tests"]
 # looks channels up by raw HANDLE value, so a file Tk opens later that reuses one of those values
 # fails with an empty TclError (QA-10-13, Tcl 8.6 win/tclWinChan.c OpenFileChannel).
 addopts = "-ra --strict-markers --strict-config --capture=sys"
-markers = ["gui: needs a Tk display", "slow: slow tests (clean virtual environments)"]
+markers = [
+    "gui: needs a Tk display",
+    "qt: needs PySide6 (run offscreen)",
+    "slow: slow tests (clean virtual environments)",
+]
 
 [tool.coverage.run]
 source = ["pyguibud", "pyguibud_runtime"]

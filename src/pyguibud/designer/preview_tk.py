@@ -72,6 +72,7 @@ class PreviewRunner:
         self.folder: Path | None = None
         self.after_ids: dict[str, str] = {}
         self._polls, self._ready, self._timed_out = 0, False, False
+        self.warnings: list[str] = []  # what the child reported with its ready.json
 
     def start(
         self, argv: list[str], folder: Path, *, cwd: Path | None = None, wait_ready: bool = True
@@ -91,6 +92,7 @@ class PreviewRunner:
                 env={**os.environ, "PYTHONIOENCODING": "utf-8"},
             )
         self.folder, self._polls, self._ready, self._timed_out = folder, 0, not wait_ready, False
+        self.warnings = []
         self._later("poll", POLL_MS, self._poll)
 
     def send(self, line: str) -> None:
@@ -175,6 +177,7 @@ class PreviewRunner:
         self._polls += 1
         if not self._ready and (themes := pv.read_ready(folder / READY)) is not None:
             self._ready = True
+            self.warnings = pv.read_warnings(folder / READY)
             self.on_ready(themes)
         elif not self._ready and self._polls >= _TIMEOUT_POLLS and not self._timed_out:
             self._timed_out = True
@@ -319,7 +322,9 @@ class PreviewController:
         self.state.ready()
         self.themes = themes
         if self.current is not None:
-            self._status([_(pv.M_OPEN).format(window=self.current.window_id), _(pv.M_HANDLERS)])
+            note = pv.warning_note(self.runner.warnings)  # before the long handlers hint (elision)
+            parts = [_(pv.M_OPEN).format(window=self.current.window_id), note, _(pv.M_HANDLERS)]
+            self._status([p for p in parts if p])
 
     def _status(self, parts: list[str]) -> None:
         """Post ``parts`` plus the differences from the export and the missing catalogue (D6)."""

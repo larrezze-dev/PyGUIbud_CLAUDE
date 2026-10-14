@@ -22,6 +22,7 @@ from pyguibud.core.files import DiskFiles
 from pyguibud.core.model import Document, GridCell, GridLine, Include, Layout, Prop, Window
 from pyguibud.core.xml_io import dump_ui, read_ui_bytes
 from pyguibud.designer.files import FileStamp, rebase_paths
+from pyguibud.designer.present import severity_label
 from pyguibud.designer.settings import DEFAULT_BACKEND
 from pyguibud.i18n import N_, PSEUDO_LANGUAGE, _, ngettext
 
@@ -38,9 +39,11 @@ __all__ = [
     "preview_findings",
     "read_ready",
     "read_result",
+    "read_warnings",
     "stderr_tail",
     "toolkit_installed",
     "toolkit_label",
+    "warning_note",
 ]
 
 SNAPSHOT = "preview.ui"
@@ -51,6 +54,9 @@ M_HANDLERS = N_("Preview: handlers are not connected, so buttons and menus do no
 # Translators: {reason} is one of the "differs" reasons below, e.g. "a component is shown ...".
 M_DIFFERS = N_("This preview differs from the exported module: {reason}.")
 M_CLOSED = N_("Preview closed.")
+# Translators: the preview's first warning, then how many more there are; {first} is a sentence,
+# {count} a number (at least 1).
+M_WARNING_MORE = N_("{first} (+{count} more)")
 # Translators: Preview > Theme: the theme that the document itself names.
 M_DOCUMENT_THEME = N_("Document theme")
 # Translators: {lang} is a language code such as de_DE; {folder} is a folder path.
@@ -320,6 +326,31 @@ def read_ready(path: Path) -> list[str] | None:
     if not isinstance(themes, list):
         return None
     return [t for t in themes if isinstance(t, str)][:200]
+
+
+def read_warnings(path: Path) -> list[str]:
+    """The (already translated) warning messages of ``ready.json``; [] when absent or malformed."""
+    try:
+        data = _json(path)
+    except (OSError, ValueError):
+        return []
+    items = data.get("warnings") if isinstance(data, dict) else None
+    found = (
+        [i.get("message") for i in items if isinstance(i, dict)] if isinstance(items, list) else []
+    )
+    return [m.strip() for m in found if isinstance(m, str) and m.strip()][:20]
+
+
+def warning_note(warnings: list[str]) -> str:
+    """ "Warning: first (+N more)" for the status bar; "" without warnings."""
+    if not warnings:
+        return ""
+    first = (
+        warnings[0]
+        if len(warnings) == 1
+        else _(M_WARNING_MORE).format(first=warnings[0], count=len(warnings) - 1)
+    )
+    return f"{severity_label('warning')}: {first}"
 
 
 def read_result(path: Path) -> tuple[str, str]:

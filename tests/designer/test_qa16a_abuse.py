@@ -8,7 +8,6 @@ QA checked and found correct. They run on the real ``DesignerApp`` (the ``app`` 
 # ruff: noqa: F811 - the fixtures of test_preview_gui are re-used by import
 from __future__ import annotations
 
-import importlib.util
 from typing import Any
 
 import pytest
@@ -55,11 +54,10 @@ def test_qa16a_01_preview_menu_access_keys_are_unique_on_the_real_app(app: Any, 
 
 
 def test_the_real_app_lists_only_registered_toolkits(app: Any) -> None:
-    """UAT 16a item 3 note: without a pyside6 entry point (16b) PySide6 is not listed at all."""
+    """Since 16b the pyside6 entry point exists, so PySide6 is always listed (greyed when it is
+    not installed: QA-16a-11, UAT 16b item 1)."""
     names = app._toolkit_names()
-    assert names[0] == "ttkbootstrap" and "tkinter" in names
-    if importlib.util.find_spec("PySide6") is None:
-        assert "pyside6" not in names
+    assert names[0] == "ttkbootstrap" and "tkinter" in names and "pyside6" in names
 
 
 @pytest.mark.parametrize("saved", ["qt5", "my_uninstalled_fork"])

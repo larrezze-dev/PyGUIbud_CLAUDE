@@ -135,7 +135,7 @@ class Ui_Main(_Ui):
         w = self._create(ttkbootstrap.Label, s.frm, {'textvariable': v}, None, 'lbl_bound')
         _attach(s, 'lbl_bound', w)
         s.lbl_bound.grid(row=8, column=0, rowspan=1, columnspan=1, sticky='', padx=(0, 0), pady=(2, 0))
-        w = self._create(ttkbootstrap.Button, s.frm, {}, None, 'btn_bad')
+        w = self._create(ttkbootstrap.Button, s.frm, {}, 'not valid', 'btn_bad')
         _attach(s, 'btn_bad', w)
         s.btn_bad.grid(row=8, column=1, rowspan=1, columnspan=1, sticky='', padx=(2, 0), pady=(2, 0))
         w = self._create(ttkbootstrap.Button, s.frm, {}, 'nonsense', 'btn_odd')

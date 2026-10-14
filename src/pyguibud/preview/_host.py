@@ -1,8 +1,9 @@
 """The toolkit side of the preview child: one ``PreviewHost`` per backend (ADR-013, spec 7).
 
-Step 15 ships the ttkbootstrap host and Step 16 the ``tkinter`` one (``pyside6`` joins
-:data:`HOSTS` in part 16b). The toolkit is imported only by the host's methods; :func:`host_for`
-also finds the optional ``preview_host`` capability of a third-party backend (spec backends D16).
+Step 15 ships the ttkbootstrap host and Step 16 the ``tkinter`` and ``pyside6`` ones (the Qt host
+lives in ``_host_qt``, imported only when asked for). The toolkit is imported only by the host's
+methods; :func:`host_for` also finds the optional ``preview_host`` capability of a third-party
+backend (spec backends D16).
 """
 
 from __future__ import annotations
@@ -19,7 +20,8 @@ __all__ = ["HOSTS", "PreviewHost", "TkinterHost", "TtkbootstrapHost", "host_for"
 _M_DISPLAY = N_("No display is available, so no window can be opened: {reason}")
 _M_BACKEND = N_("The backend '{name}' is not available: {reason}")
 _M_UNKNOWN = N_("Unknown backend '{name}'.")  # the registry's own msgid
-_M_NO_HOST = N_("It cannot be previewed: it provides no preview host.")
+# Translators: the {reason} of "The backend '{name}' is not available: {reason}" (lower case).
+_M_NO_HOST = N_("it has no preview host, so it cannot be previewed.")
 
 
 class PreviewHost(Protocol):
@@ -180,10 +182,25 @@ class TtkbootstrapHost(_TkHost):
         return True
 
 
-#: ``--backend NAME`` -> host class for the built-in toolkits (``pyside6`` joins in Step 16b).
+def _qt_host() -> PreviewHost:
+    """The PySide6 host (spec backends 5); a missing PySide6 is ``backend_unavailable`` (B1)."""
+    try:
+        from pyguibud.preview._host_qt import QtHost
+    except ImportError as exc:
+        from pyguibud.backends.pyside6 import _M_INSTALL
+
+        reason = _(_M_INSTALL).format(extra='pip install "pyguibud[pyside]"')
+        raise UiError(
+            "runtime.backend_unavailable", _M_BACKEND, name="pyside6", reason=reason
+        ) from exc
+    return QtHost()
+
+
+#: ``--backend NAME`` -> host factory for the built-in toolkits.
 HOSTS: dict[str, Callable[[], PreviewHost]] = {
     "ttkbootstrap": TtkbootstrapHost,
     "tkinter": TkinterHost,
+    "pyside6": _qt_host,
 }
 
 

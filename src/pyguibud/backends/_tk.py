@@ -45,7 +45,7 @@ from pyguibud.core.model import (
 from pyguibud.core.validate import MAX_TEXT_LENGTH
 from pyguibud.i18n import N_, NP_
 
-__all__ = ["Embed", "TkSession", "event_wiring"]
+__all__ = ["Embed", "TkSession", "apply_slots", "event_wiring"]
 
 #: A toolkit object; typed loosely because ``tkinter`` is never imported here.
 Tk: TypeAlias = Any
@@ -88,6 +88,32 @@ class _Slot:
     set: Callable[[str, int], object]  # (display text, underline index)
     mnemonic: bool
     label: str  # the id named in the log when the text is clipped
+
+
+def apply_slots(
+    slots: Iterable[_Slot],
+    text: Callable[[TextSlot], str],
+    log: Callable[..., None],
+    clipped: set[int],
+) -> None:
+    """Compute (split, clip) every slot's text first, then set them all: all-or-nothing.
+
+    Shared with the Qt session. ``clipped`` holds the ``id()`` of the slots already logged.
+    """
+    slots = list(slots)
+    shown: list[tuple[str, int]] = []
+    for slot in slots:
+        raw = text(slot.key)
+        value, underline = split_mnemonic(raw) if slot.mnemonic else (raw, -1)
+        cut = clip_text(value, underline)
+        if cut is not None:
+            if id(slot) not in clipped:
+                clipped.add(id(slot))
+                log(_M_CLIPPED, id=slot.label, length=len(value), limit=MAX_TEXT_LENGTH)
+            value, underline = cut
+        shown.append((value, underline))
+    for slot, (value, underline) in zip(slots, shown, strict=True):
+        slot.set(value, underline)
 
 
 class TkSession:
@@ -514,7 +540,7 @@ class TkSession:
                 continue
             kind, details = event_wiring(name, event.name)
             if kind == "command":
-                widget.configure(command=fn)
+                widget.configure(command=_call(fn))
             elif kind == "trace":
                 var.trace_add("write", _call(fn))
             elif kind == "modified":
@@ -562,21 +588,7 @@ class TkSession:
         changes nothing. ``runtime_text`` serves the dialog button bar, which arrives in Step 14
         (trim 1).
         """
-        shown: list[tuple[str, int]] = []
-        for slot in self._slots:
-            raw = text(slot.key)
-            value, underline = split_mnemonic(raw) if slot.mnemonic else (raw, -1)
-            clipped = clip_text(value, underline)
-            if clipped is not None:
-                if id(slot) not in self._clipped:
-                    self._clipped.add(id(slot))
-                    self._plan.log(
-                        _M_CLIPPED, id=slot.label, length=len(value), limit=MAX_TEXT_LENGTH
-                    )
-                value, underline = clipped
-            shown.append((value, underline))
-        for slot, (value, underline) in zip(self._slots, shown, strict=True):
-            slot.set(value, underline)
+        apply_slots(self._slots, text, self._plan.log, self._clipped)
 
     # ------------------------------------------------------------ session
     def alive(self) -> bool:
