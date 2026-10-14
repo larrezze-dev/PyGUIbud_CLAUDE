@@ -160,14 +160,18 @@ def test_design_mode_changes_only_takefocus_and_the_bindtags(
         tags = widget.bindtags()
         if tags != DESIGN_BINDTAGS:
             assert tags == (DESIGN_TAG, str(widget))
-            assert set(widget.bind()) <= {"<Configure>", "<Map>", "<Unmap>"}
+            redraw = {"<Configure>", "<Map>", "<Unmap>", "<<ThemeChanged>>"}  # QA-17b-02
+            assert set(widget.bind()) <= redraw
             kept.append(widget)
     # R3: exactly the ScrolledFrame's content frame and its viewport canvas keep their tag
     scrolled = next(
         n for n in view.nodes.values() if getattr(n, "class_name", "") == "ScrolledFrame"
     )
     content = view.inner[id(scrolled)]
-    assert sorted(map(str, kept)) == sorted([str(content), str(content.master)])
+    redrawn = [w for w in kept if set(w.bind()) == {"<<ThemeChanged>>"}]  # e.g. a Meter
+    assert [type(w).__name__ for w in redrawn] == ["Meter"]
+    rest = [w for w in kept if w not in redrawn]
+    assert sorted(map(str, rest)) == sorted([str(content), str(content.master)])
     view.destroy()
 
 
@@ -319,6 +323,7 @@ def test_rebuilds_leak_nothing(shell: DesignerApp, designer_root: Any) -> None:
 
     def state() -> tuple[Any, ...]:
         designer_root.update_idletasks()
+        gc.collect()  # Step 17b: a destroyed tb:Meter's images live in cycles until collected
         return (
             set(designer_root.winfo_children()),
             len(designer_root.tk.call("image", "names")),

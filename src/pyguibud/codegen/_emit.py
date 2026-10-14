@@ -26,7 +26,11 @@ from pyguibud.backends._tkmap import (
     _TK_BASED,
     _TRACE_VAR,
     _VAR_OPTION,
+    TB_EXT,
+    TbExt,
     event_wiring,
+    iso_date,
+    toggle_style,
 )
 from pyguibud.codegen._errors import M_UNSAFE, CodegenError
 from pyguibud.codegen._plan import DocInfo, Plan
@@ -349,7 +353,7 @@ class Emitter:
         resolved = self.registry.resolve(node.class_name, "ttkbootstrap", node.fallback)
         spec = resolved.spec
         is_fallback = resolved.is_fallback
-        if spec.name not in _TB:  # an extension with its own factory: v0 renders its fallback
+        if spec.name not in _TB and spec.name not in TB_EXT:  # a plugin: its fallback (D13)
             spec, is_fallback = self.registry.require(spec.fallback or ""), True
         if is_fallback and node.class_name not in self._logged:
             self._logged.add(node.class_name)
@@ -385,10 +389,21 @@ class Emitter:
     def _widget(self, doc: DocInfo, node: Widget, parent: str) -> str:
         name_id = ident(node.id)
         name, props, defined = self._resolve(node)
+        ext = TB_EXT.get(name)  # a native tb: widget, wired as its fallback (spec plugins 7)
+        base = (self.registry.require(name).fallback or name) if ext else name
         options: list[tuple[str, str]] = []
         for prop_name, raw, kind in props:
             text = str(raw)
-            if kind == "int":
+            date = iso_date(text) if (name, prop_name) == ("tb:DateEntry", "value") else None
+            if ext is not None and prop_name not in ext.options:
+                continue
+            if date is None and (name, prop_name) == ("tb:DateEntry", "value"):
+                continue  # a calendar-invalid date is left out (logged), as the factory does
+            if date is not None:
+                code = f"datetime.date({lit(date.year)}, {lit(date.month)}, {lit(date.day)})"
+            elif prop_name == "columns":
+                code = lit(tuple(text.split(";")))
+            elif kind == "int":
                 code = lit(int(text))
             elif kind == "float":
                 code = lit(float(text))
@@ -398,17 +413,22 @@ class Emitter:
                 code = f"self._img[{self.plan.image(doc, text)}]"
             else:
                 code = lit(text)
-            options.append((_OPTION.get((name, prop_name), prop_name), code))
+            key = ext.options[prop_name] if ext else _OPTION.get((name, prop_name), prop_name)
+            options.append((key, code))
+        if name == "tb:DateEntry":  # untranslated en-GB, a documented deviation (spec 3.6)
+            options.append(("popup_title", lit("Select a date")))
         var = False
         if node.bind:
             self._line(f"v = s.vars.{ident(node.bind)}")
             var = True
-        elif name in _TRACE_VAR and any(e.name == "change" for e in node.events):
+        elif base in _TRACE_VAR and any(e.name == "change" for e in node.events):
             kind_name = {"string": "StringVar", "bool": "BooleanVar", "double": "DoubleVar"}
-            self._line(f"v = self._private(tkinter.{kind_name[_TRACE_VAR[name]]})")
+            self._line(f"v = self._private(tkinter.{kind_name[_TRACE_VAR[base]]})")
             var = True
-        if var and name in _VAR_OPTION:
+        if var and ext is None and name in _VAR_OPTION:
             options.append((_VAR_OPTION[name], "v"))
+        elif var and ext is not None and ext.link == "option" and ext.variable:
+            options.append((ext.variable, "v"))
         if name == "Radiobutton":
             value = node.props["value"].value if "value" in node.props else ""
             variable = doc.document.variables.get(node.bind) if node.bind else None
@@ -425,21 +445,49 @@ class Emitter:
         ):
             self._warn(node, "codegen.bootstyle_ignored", _M_BOOTSTYLE, value=style, id=node.id)
             style = None
+        if name == "tb:ToggleButton":
+            style = toggle_style(style, next((str(r) for p, r, _k in props if p == "shape"), ""))
+        cls = f"ttkbootstrap.{ext.cls}" if ext else _TB[name]
         self._line(
-            f"w = self._create({_TB[name]}, {parent}, {_dict(options)}, {lit(style)}, "
-            f"{lit(name_id)})"
+            f"w = self._create({cls}, {parent}, {_dict(options)}, {lit(style)}, {lit(name_id)})"
         )
         if "state" in defined and "state" in node.props:
             self._line(f"w.configure(state={lit(node.props['state'].value)})")
+        outer = "w"
+        if ext is not None:
+            self._extension(node, ext, props, var)
+            outer = "outer" if ext.inner else "w"
+            for prop_name in ("subtext", "columns") if ext else ():
+                if prop_name not in defined:
+                    continue
+                kind = "headings" if prop_name == "columns" else "option"
+                extra = lit(prop_name)
+                self._slot(doc, node.props.get(prop_name), False, name_id, kind, outer, extra)
         if text_prop is not None and not (name == "Label" and node.bind):
-            mnemonic = name in _MNEMONIC
+            mnemonic = base in _MNEMONIC
             kind = "text_u" if mnemonic else "text"
             self._slot(doc, text_prop, mnemonic, name_id, kind, "w")
-        self._events(node, name, var)
+        self._events(node, base, var)
         self._line(f"_attach(s, {lit(name_id)}, w)")
         if self.registry.require(name).container:
             self._container(doc, f"s.{name_id}", node.layout, name, node.children)
+        if outer != "w":
+            return outer  # nothing is emitted between here and its placement
         return f"s.{name_id}.container" if name == "ScrolledFrame" else f"s.{name_id}"
+
+    def _extension(
+        self, node: Widget, ext: TbExt, props: list[tuple[str, object, str]], var: bool
+    ) -> None:
+        """A tb: widget's variable and inner widget, as ``backends._tbwidgets`` does."""
+        if var and ext.link == "link":
+            self._line(f"_link(w.{ext.variable}, v)")
+        if ext.inner:
+            self._line(f"outer, w = w, w.{ext.inner}")
+        for prop_name, raw, _kind in props:
+            if prop_name in ext.after:
+                self._line(f"w.configure({prop_name}={lit(str(raw))})")
+        if var and ext.link == "inner":
+            self._line(f"w.configure({ext.variable}=v)")
 
     def _events(self, node: Widget, name: str, var: bool) -> None:
         for event in node.events:

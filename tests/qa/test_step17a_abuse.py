@@ -162,6 +162,10 @@ REFUSED: dict[str, tuple[str, str]] = {
     "date_value_arabic_digits": (_date("value", "٢٠٢٦-١٠-١٤"), "validate.bad_pattern"),  # noqa: RUF001
     "date_value_11_chars": (_date("value", "2026-10-141"), "validate.value_too_long"),
     "date_value_newline": (_date("value", "2026-10-14&#10;"), "validate.value_too_long"),
+    # QA-17b-01/03: years 1900-9998 only (%y on Windows, the picker's month grid)
+    "date_value_year_0001": (_date("value", "0001-01-01"), "validate.bad_pattern"),
+    "date_value_year_1899": (_date("value", "1899-12-31"), "validate.bad_pattern"),
+    "date_value_year_9999": (_date("value", "9999-12-31"), "validate.bad_pattern"),
     # bind_types (R40-R42 with the extension row) and events
     "meter_bound_to_bool": (_meter(attrs=' bind="v_b"'), "validate.bind_type"),
     "meter_bound_to_string": (_meter(attrs=' bind="v_s"'), "validate.bind_type"),
@@ -260,7 +264,9 @@ def test_a_registered_tb_widget_ignores_a_wrong_fallback_everywhere(tmp_path: Pa
     """R91 was trimmed (T4): fallback="Label" on tb:Meter is silent; everything uses the spec."""
     errors, warnings, _f = _findings(tmp_path, _doc(_meter().replace("Progressbar", "Label")))
     assert not errors and not warnings
-    assert _registry().resolve("tb:Meter", "ttkbootstrap", "Label").spec.name == "Progressbar"
+    # Step 17b: ttkbootstrap builds tb:Meter itself; the other backends show the spec fallback.
+    assert _registry().resolve("tb:Meter", "ttkbootstrap", "Label").spec.name == "tb:Meter"
+    assert _registry().resolve("tb:Meter", "tkinter", "Label").spec.name == "Progressbar"
 
 
 # ------------------------------------------------------------------ findings (fixed and open)
@@ -608,7 +614,7 @@ ALL5 = """<?xml version="1.0" encoding="UTF-8"?>
       <prop name="date_format">%Y/%m/%d</prop>
       <prop name="first_weekday">6</prop>
       <prop name="state">readonly</prop>
-      <prop name="value">0000-00-00</prop>
+      <prop name="value">2026-02-30</prop>
       <event name="change" handler="on_c"/>
       <cell row="1" column="0"/>
     </widget>
@@ -630,13 +636,9 @@ ALL5 = """<?xml version="1.0" encoding="UTF-8"?>
   </window>
 </pyguibud-ui>
 """
-FALLBACKS = {
-    "m": "Progressbar",
-    "f": "Progressbar",
-    "d": "Entry",
-    "t": "Treeview",
-    "g": "Checkbutton",
-}
+#: Step 17b: ``ui.<id>`` is the widget that behaves as the fallback (DateEntry and Tableview
+#: own an inner Entry and Treeview).
+NATIVE = {"m": "Meter", "f": "Floodgauge", "d": "Entry", "t": "Treeview", "g": "Checkbutton"}
 
 
 @pytest.mark.gui
@@ -648,8 +650,8 @@ def test_codegen_of_all_five_runs_standalone_with_the_spec_fallbacks(tmp_path: P
     out = tmp_path / "all5_ui.py"
     assert _uic(str(ui), "-o", str(out)).returncode == 0
     code = out.read_text(encoding="utf-8")
-    assert "ttkbootstrap.Label, body" not in code  # the spec fallback wins over fallback="Label"
-    assert "ttkbootstrap.Progressbar, body" in code
+    assert "ttkbootstrap.Label, body" not in code  # fallback="Label" is ignored
+    assert "ttkbootstrap.Meter, body" in code  # Step 17b: native tb: widgets (D13)
     runner = textwrap.dedent(
         """
         import importlib.util, json, sys, tkinter
@@ -659,7 +661,7 @@ def test_codegen_of_all_five_runs_standalone_with_the_spec_fallbacks(tmp_path: P
             def __getattr__(self, name): return lambda *a, **k: None
         ui = module.Ui_Main(); ui.setup_ui(handlers=H())
         root = tkinter._default_root; root.update_idletasks()
-        out = {k: ui.widgets[k].winfo_class() for k in "mfdtg"}
+        out = {k: type(ui.widgets[k]).__name__ for k in "mfdtg"}
         out["pyguibud"] = any(m.split(".")[0] in ("pyguibud", "pyguibud_runtime") for m in sys.modules)
         root.destroy(); print(json.dumps(out))
         """
@@ -672,11 +674,7 @@ def test_codegen_of_all_five_runs_standalone_with_the_spec_fallbacks(tmp_path: P
     assert result.returncode == 0, result.stderr[-1500:]
     out_json = json.loads(result.stdout.strip().splitlines()[-1])
     assert out_json.pop("pyguibud") is False
-    shown = {
-        k: v[1:] if v in ("TProgressbar", "TEntry", "TCheckbutton") else v
-        for k, v in out_json.items()
-    }
-    assert shown == FALLBACKS
+    assert out_json == NATIVE
 
 
 @pytest.mark.gui
@@ -684,7 +682,7 @@ def test_codegen_of_all_five_runs_standalone_with_the_spec_fallbacks(tmp_path: P
     "backend", ["ttkbootstrap", "tkinter", pytest.param("pyside6", marks=pytest.mark.qt)]
 )
 def test_load_ui_never_reaches_a_tb_factory_on_any_backend(tmp_path: Path, backend: str) -> None:
-    """Spec §0 sequencing rule: no KeyError for tb: names before 17b, on every backend."""
+    """Spec §0 sequencing rule: no KeyError for tb: names, on every backend (and after 17b)."""
     if backend == "pyside6" and not HAS_PYSIDE6:
         pytest.skip("PySide6 is not installed")
     ui = tmp_path / "all5.ui"
@@ -718,7 +716,9 @@ def test_load_ui_never_reaches_a_tb_factory_on_any_backend(tmp_path: Path, backe
     names = {k: v.removeprefix("Q").replace("ProgressBar", "Progressbar").replace("LineEdit", "Entry")
              .replace("CheckBox", "Checkbutton").replace("TreeWidget", "Treeview")
              for k, v in out[str(ui)].items()}  # fmt: skip
-    assert names["m"] == "Progressbar" and names["g"] == "Checkbutton"
+    # Step 17b: ttkbootstrap builds the real widgets (a bad bootstyle is retried without it).
+    native = backend == "ttkbootstrap"
+    assert names["m"] == ("Meter" if native else "Progressbar") and names["g"] == "Checkbutton"
 
 
 # ------------------------------------------------------------------ the designer (UAT walk)
@@ -814,9 +814,9 @@ def test_designer_walk_with_the_five_tb_widgets(tmp_path: Path) -> None:
     assert result.returncode == 0, result.stderr[-2000:]
     out = json.loads(result.stdout.strip().splitlines()[-1])
     assert out["open"] and out["open_byte_identical"]
-    assert {"Progressbar", "Checkbutton", "Entry", "Treeview", "Label"} <= set(
+    assert {"Meter", "Floodgauge", "Checkbutton", "Entry", "Treeview", "Label"} <= set(
         out["canvas_classes"]
-    )
+    )  # Step 17b: the canvas builds the real tb: widgets
     for ok, message in out["refusals"]:
         assert not ok and message  # refused, with a reason in the status bar
     assert out["unchanged_after_refusals"]

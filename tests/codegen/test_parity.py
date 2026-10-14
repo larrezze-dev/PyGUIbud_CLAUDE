@@ -9,6 +9,7 @@ are compared too. Spec ``codegen.md`` 10 (``test_parity.py``) and 13 (parity dri
 
 from __future__ import annotations
 
+import gc
 import importlib.util
 import itertools
 import logging
@@ -240,7 +241,7 @@ def make_pair(
         pair.close()
 
 
-NAMES = ("hello", "rich", "includes", "images", "dialogs")
+NAMES = ("hello", "rich", "includes", "images", "dialogs", "tb_widgets")
 
 
 @pytest.mark.parametrize("name", NAMES)
@@ -586,6 +587,7 @@ def test_embed_rebuild_leaks_nothing(
 
     def state() -> tuple[Any, ...]:
         tk_root.update_idletasks()
+        gc.collect()  # a destroyed tb:Meter's images live in reference cycles until collected
         return (
             set(tk_root.winfo_children()),
             len(tk_root.tk.call("image", "names")),

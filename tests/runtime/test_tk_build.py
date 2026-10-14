@@ -170,7 +170,7 @@ RICH = """
       <widget class="Scale" id="scl"><event name="change" handler="on_change"/>
         <cell row="4" column="0"/></widget>
       <widget class="Progressbar" id="prg" bind="level"><cell row="4" column="1"/></widget>
-      <widget class="tb:Meter" id="mtr" fallback="Progressbar"><cell row="5" column="0"/></widget>
+      <widget class="zz:Gauge" id="mtr" fallback="Progressbar"><cell row="5" column="0"/></widget>
       <widget class="Text" id="txt" tb:bootstyle="info">
         <event name="change" handler="on_change"/><cell row="5" column="1"/></widget>
       <widget class="Listbox" id="lst"><event name="activate" handler="on_act"/>
@@ -249,7 +249,7 @@ def test_rich_document_builds_every_class(
     rich: tuple[LoadedUi, Recorder, str], tk_root: Any
 ) -> None:
     ui, handlers, messages = rich
-    for expected in ("darkly", "tb:Meter", "Ctrl+O", "'info'"):
+    for expected in ("darkly", "zz:Gauge", "Ctrl+O", "'info'"):
         assert expected in messages
     # The builder's own note, not R84's warning (both reach the same logger).
     for value, widget_id in (("not valid", "btn_bad"), ("nonsense", "btn_odd")):

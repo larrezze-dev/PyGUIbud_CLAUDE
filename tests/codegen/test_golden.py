@@ -26,7 +26,7 @@ from pyguibud.core.xml_io import read_ui
 from tests.codegen.conftest import DATA, normalise_version, split_support
 
 REGEN = os.environ.get("PYGUIBUD_REGEN_GOLDEN") == "1"
-MODULES = ("hello", "dialogs", "includes", "images", "rich")
+MODULES = ("hello", "dialogs", "includes", "images", "rich", "tb_widgets")
 POTS = ("hello", "dialogs", "includes", "rich")
 
 

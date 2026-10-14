@@ -381,12 +381,15 @@ def _shared(fallback: str, *names: str) -> tuple[PropertyDef, ...]:
 
 
 def _tb(name: str, display_name: str, fallback: str, **kw: Any) -> WidgetSpec:  # noqa: ANN401 - WidgetSpec fields
+    # ttkbootstrap only (D11): a string reference, so the core imports no backend (D3).
+    factory = "pyguibud.backends._tbwidgets:" + kw.pop("factory")
     return WidgetSpec(
         api_version=WIDGET_API_VERSION,
         name=f"tb:{name}",
         display_name=display_name,
         category=_TTKBOOTSTRAP,
         fallback=fallback,
+        factories={"ttkbootstrap": factory},
         **kw,
     )
 
@@ -396,6 +399,7 @@ _TB_WIDGETS: tuple[WidgetSpec, ...] = (
         "Meter",
         N_("Meter"),
         "Progressbar",
+        factory="meter",
         bind_types=_BIND_NUMBER,
         properties=(
             *_shared("Progressbar", "value", "maximum"),
@@ -420,6 +424,7 @@ _TB_WIDGETS: tuple[WidgetSpec, ...] = (
         "Floodgauge",
         N_("Flood gauge"),
         "Progressbar",
+        factory="floodgauge",
         bind_types=_BIND_NUMBER,
         properties=(
             *_shared("Progressbar", "value", "maximum", "mode", "orient", "length"),
@@ -438,18 +443,21 @@ _TB_WIDGETS: tuple[WidgetSpec, ...] = (
         "DateEntry",
         N_("Date entry"),
         "Entry",
+        factory="date_entry",
         bind_types=("string",),
         events=("change", "activate", *_FOCUS),
         properties=(
             *_shared("Entry", "width", "state"),
             # ASCII classes, not \d: a non-ASCII digit would pass here and fail at build time.
+            # Years 1900-9998: %y needs >= 1900 on Windows; the picker's month grid needs ±1 year.
             _prop(
                 "value",
                 "string",
                 N_("Date"),
-                pattern="[0-9]{4}-[0-9]{2}-[0-9]{2}",
+                pattern="(19[0-9]{2}|[2-8][0-9]{3}|9[0-8][0-9]{2}|99[0-8][0-9]|999[0-8])"
+                "-[0-9]{2}-[0-9]{2}",
                 max_length=10,
-                hint=N_("a date written as YYYY-MM-DD"),
+                hint=N_("a date written as YYYY-MM-DD, from 1900-01-01 to 9998-12-31"),
             ),
             _prop(
                 "date_format",
@@ -468,6 +476,7 @@ _TB_WIDGETS: tuple[WidgetSpec, ...] = (
         "Tableview",
         N_("Table view"),
         "Treeview",
+        factory="tableview",
         events=("select", "activate", *_FOCUS),
         properties=(
             *_shared("Treeview", "height", "selectmode"),
@@ -491,6 +500,7 @@ _TB_WIDGETS: tuple[WidgetSpec, ...] = (
         "ToggleButton",
         N_("Toggle button"),
         "Checkbutton",
+        factory="toggle_button",
         bind_types=("bool", "int"),
         events=("command", "change", *_FOCUS),
         properties=(
@@ -505,6 +515,6 @@ _TB_WIDGETS: tuple[WidgetSpec, ...] = (
 def tb_widgets() -> tuple[WidgetSpec, ...]:
     """The built-in ttkbootstrap extensions (entry point ``pyguibud.widgets:tb``).
 
-    Their factories arrive with the backends (Step 17b); until then they render as fallbacks.
+    Their factories are string references into ``pyguibud.backends._tbwidgets`` (ttkbootstrap).
     """
     return _TB_WIDGETS

@@ -5,6 +5,7 @@ from __future__ import annotations
 # --- support: identical in every generated module (pyguibud-uic format 1) ---
 import base64
 import contextlib
+import datetime  # noqa: F401 - DateEntry values
 import gettext
 import logging
 import os
@@ -168,6 +169,38 @@ def _call(fn: Callable[[], object], result: str | None = None) -> Callable[..., 
         return result
 
     return callback
+
+
+def _link(own: Any, bound: Any) -> None:  # noqa: ANN401 - Tk variables
+    """Keep a widget's own variable and the bound one equal; the bound value wins at first."""
+    busy = [False]
+
+    def copy(source: Any, target: Any) -> Callable[..., None]:  # noqa: ANN401 - Tk variables
+        def callback(*_args: object) -> None:
+            if not busy[0]:
+                busy[0] = True
+                try:
+                    target.set(source.get())
+                finally:
+                    busy[0] = False
+
+        return callback
+
+    own.set(bound.get())
+    bound.trace_add("write", copy(bound, own))
+    own.trace_add("write", copy(own, bound))
+
+
+def _headings(table: Any, text: str) -> None:  # noqa: ANN401 - a ttkbootstrap Tableview
+    """Set a Tableview's headings from a ';'-separated text, padded or truncated (logged)."""
+    columns = table.tablecolumns  # sorting restores these texts
+    headings = text.split(";")
+    if len(headings) != len(columns):
+        _logger.warning("%d column headings for %d columns: %r", len(headings), len(columns), text)
+    for column, heading in zip(
+        columns, (headings + [""] * len(columns))[: len(columns)], strict=True
+    ):
+        column.configure(text=heading)
 
 
 def _exists(widget: Any) -> bool:  # noqa: ANN401 - any Tk widget
@@ -632,6 +665,10 @@ class _Ui(_Scope):
                 target.configure(text=value, underline=underline)
             elif kind == "entry":
                 target.entryconfigure(extra, label=value, underline=underline)
+            elif kind == "option":
+                target.configure(**{extra: value})
+            elif kind == "headings":
+                _headings(target, value)
             else:
                 target.tab(extra, text=value, underline=underline)
 

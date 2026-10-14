@@ -7,13 +7,28 @@ literals. Toolkit-free and side-effect-free (ADR-007): nothing here imports ``tk
 
 from __future__ import annotations
 
+import datetime
+import logging
+from collections.abc import Mapping
+from dataclasses import dataclass, field
 from typing import Literal
 
 from pyguibud.core.model import NS_TB
 from pyguibud.core.validate import BOOTSTYLE_RE, MAX_TEXT_LENGTH
 from pyguibud.i18n import N_
 
-__all__ = ["Wiring", "clip_text", "event_wiring"]
+__all__ = [
+    "TB_EXT",
+    "TbExt",
+    "Wiring",
+    "clip_text",
+    "event_wiring",
+    "iso_date",
+    "split_headings",
+    "toggle_style",
+]
+
+_logger = logging.getLogger(__name__)
 
 _SELECT = {
     "Notebook": "<<NotebookTabChanged>>",
@@ -85,3 +100,79 @@ def clip_text(text: str, underline: int) -> tuple[str, int] | None:
         return None
     kept = MAX_TEXT_LENGTH - len(_ELLIPSIS)
     return text[:kept] + _ELLIPSIS, underline if underline < kept else -1
+
+
+# ---------------------------------------------------------------- ttkbootstrap extensions (tb:)
+@dataclass(frozen=True, slots=True)
+class TbExt:
+    """How a built-in ``tb:`` widget is made from ttkbootstrap (factories and codegen)."""
+
+    cls: str  # attribute of the ttkbootstrap module
+    options: Mapping[str, str]  # property -> constructor keyword; other properties are not passed
+    inner: str | None = None  # attribute holding the widget that behaves as the fallback
+    variable: str | None = None  # where the variable goes, see ``link``
+    #: ``option``: a constructor keyword; ``inner``: an option of the inner widget; ``link``: an
+    #: attribute holding the widget's own variable, kept in sync with the bound one.
+    link: Literal["option", "inner", "link"] = "option"
+    after: tuple[str, ...] = field(default=())  # properties configured on the inner widget
+
+
+def _same(*names: str) -> dict[str, str]:
+    return {name: name for name in names}
+
+
+TB_EXT: Mapping[str, TbExt] = {
+    "tb:Meter": TbExt(
+        "Meter",
+        {"value": "amount_used", "maximum": "amount_total"}
+        | _same("subtext", "meter_type", "meter_size", "meter_thickness", "amount_format")
+        | _same("show_text", "interactive"),
+        variable="amount_used_var",
+        link="link",
+    ),
+    "tb:Floodgauge": TbExt(
+        "Floodgauge",
+        _same("value", "maximum", "mode", "orient", "length", "mask"),
+        variable="variable",
+    ),
+    "tb:DateEntry": TbExt(
+        "DateEntry",
+        _same("width", "date_format", "first_weekday", "value"),
+        "entry",
+        "textvariable",
+        "inner",
+    ),
+    "tb:Tableview": TbExt(
+        "Tableview",
+        {"columns": "coldata"}
+        | _same("height", "paginated", "searchable", "yscrollbar", "autofit", "pagesize"),
+        "view",
+        after=("selectmode",),
+    ),
+    "tb:ToggleButton": TbExt("Checkbutton", {}, None, "variable"),
+}
+_COLOURS = ("primary", "secondary", "success", "info", "warning", "danger", "light", "dark")
+
+
+def toggle_style(bootstyle: str | None, shape: str) -> str:
+    """ToggleButton's bootstyle: ``"{colour}-{shape}-toggle"`` with the first colour token."""
+    tokens = (bootstyle or "").replace("-", " ").split()
+    colour = next((token for token in tokens if token in _COLOURS), None)
+    return f"{colour}-{shape}-toggle" if colour else f"{shape}-toggle"
+
+
+def iso_date(value: str) -> datetime.date | None:
+    """A ``YYYY-MM-DD`` value as a date; a calendar-invalid one is logged and gives None."""
+    try:
+        return datetime.date.fromisoformat(value)
+    except ValueError:
+        _logger.warning("The date %r is not a valid calendar date; it is ignored.", value)
+        return None
+
+
+def split_headings(text: str, count: int) -> list[str]:
+    """``count`` headings from a ``;``-separated text, padded or truncated (logged, D12)."""
+    headings = text.split(";")
+    if len(headings) != count:
+        _logger.warning("%d column headings for %d columns: %r", len(headings), count, text)
+    return (headings + [""] * count)[:count]

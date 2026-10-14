@@ -20,6 +20,10 @@ _OPTIONS = (
     *("selectmode", "values", "justify", "anchor", "takefocus"),
 )
 _ENTRY_OPTIONS = ("label", "underline", "accelerator", "state", "compound")
+#: The ttkbootstrap class of each tb: widget -> the core class it behaves as (portable view).
+_TB_OUTER = {"Meter": "Progressbar", "Floodgauge": "Progressbar", "DateEntry": "Entry"} | {
+    "Tableview": "Treeview"
+}
 
 
 def _text(value: Any) -> str:  # noqa: ANN401 - any Tcl value
@@ -56,12 +60,24 @@ def _menu(menu: Any) -> list[dict[str, Any]]:  # noqa: ANN401 - a tkinter.Menu
     return entries
 
 
+def _tb_outer(widget: Any) -> Any:  # noqa: ANN401 - Tk widgets
+    """The ttkbootstrap widget of a ``tb:`` widget (``ui.<id>`` holds its inner one), or None."""
+    for _level in range(3):  # the widget, a DateEntry's entry, a Tableview's view
+        if type(widget).__name__ in _TB_OUTER:
+            return widget
+        widget = getattr(widget, "master", None)
+    return None
+
+
 def _widget(widget: Any) -> dict[str, Any]:  # noqa: ANN401 - a Tk widget
     import tkinter
 
-    info: dict[str, Any] = {"class": widget.winfo_class(), "manager": widget.winfo_manager()}
+    outer = _tb_outer(widget)
+    info: dict[str, Any] = {"class": type(outer).__name__ if outer else widget.winfo_class()}
+    outer = outer or widget  # a tb: widget is placed by its outer widget
+    info["manager"] = outer.winfo_manager()
     if info["manager"] in {"grid", "pack"}:
-        placed = (widget.grid_info if info["manager"] == "grid" else widget.pack_info)()
+        placed = (outer.grid_info if info["manager"] == "grid" else outer.pack_info)()
         info["place"] = {k: _text(v) for k, v in sorted(placed.items()) if k != "in"}
     if isinstance(widget, tkinter.Menu):
         info["entries"] = _menu(widget)
@@ -320,10 +336,11 @@ def _status_top(widget: Any) -> Any:  # noqa: ANN401 - Tk widgets
 
 def _portable_widget(widget: Any, ids: dict[str, str], typed: dict[str, Any]) -> dict[str, Any]:  # noqa: ANN401
     scrolled = type(widget).__name__ == "ScrolledFrame"
-    outer = widget.container if scrolled else widget
+    outer = widget.container if scrolled else (_tb_outer(widget) or widget)
     tk_class = str(widget.winfo_class())
+    core = _TB_OUTER.get(type(widget).__name__) or _CORE.get(tk_class, tk_class)
     info: dict[str, Any] = {
-        "class": "ScrolledFrame" if scrolled else _CORE.get(tk_class, tk_class),
+        "class": "ScrolledFrame" if scrolled else core,
         "parent": _parent_id(outer, ids),
         "place": _placement(outer),
         "image": bool(_option(widget.cget, "image")),

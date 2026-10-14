@@ -43,8 +43,9 @@ SEQUENCES = (
     "<Button-5>",
     "<KeyPress>",
 )
-#: Instance bindings that only keep a widget's geometry right (never user behaviour).
-_GEOMETRY = frozenset({"<Configure>", "<Map>", "<Unmap>"})
+#: Instance bindings that only keep a widget's geometry or drawing right (never user behaviour):
+#: a Floodgauge redraws on <Configure> and <<ThemeChanged>> (QA-17b-02).
+_GEOMETRY = frozenset({"<Configure>", "<Map>", "<Unmap>", "<<ThemeChanged>>"})
 
 Handler = Callable[[Any], object]
 

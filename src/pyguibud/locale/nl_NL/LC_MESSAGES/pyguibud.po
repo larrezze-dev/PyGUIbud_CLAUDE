@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PyGUIbud 0.1.0\n"
 "Report-Msgid-Bugs-To: https://github.com/larrezze/PyGUIbud/issues\n"
-"POT-Creation-Date: 2026-10-14 16:58+0200\n"
+"POT-Creation-Date: 2026-10-14 21:53+0200\n"
 "PO-Revision-Date: 2026-10-05 17:46+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: nl_NL\n"
@@ -19,7 +19,7 @@ msgstr ""
 "Generated-By: Babel 2.18.0\n"
 
 #. Translators: a program shows both Tk (tkinter) and Qt windows.
-#: src/pyguibud/backends/_qt.py:64
+#: src/pyguibud/backends/_qt.py:73
 msgid ""
 "Tk and Qt windows in one process: only one toolkit's windows respond at a"
 " time."
@@ -27,44 +27,48 @@ msgstr ""
 
 #. Translators: an image file of the .ui could not be decoded by Qt; it is not
 #. shown.
-#: src/pyguibud/backends/_qt.py:66
+#: src/pyguibud/backends/_qt.py:75
 #, python-brace-format
 msgid "The image '{image}' cannot be displayed by Qt; it is left out."
 msgstr ""
 
 #. Translators: {name} is a colour name from a .ui file, such as SeaGreen3.
-#: src/pyguibud/backends/_qt.py:68
+#: src/pyguibud/backends/_qt.py:77
 #, python-brace-format
 msgid ""
 "The colour '{name}' of '{id}' is not known to Qt; the default colour is "
 "used."
 msgstr ""
 
-#: src/pyguibud/backends/_qt.py:69
+#: src/pyguibud/backends/_qt.py:78
 #, python-brace-format
 msgid "The minimum of '{id}' is greater than its maximum; Qt uses them swapped."
 msgstr ""
 
 #. Translators: padx and pady are .ui attribute names; keep them unchanged.
-#: src/pyguibud/backends/_qt.py:71
+#: src/pyguibud/backends/_qt.py:80
 #, python-brace-format
 msgid "The padding (padx, pady) of '{id}' is ignored by Qt."
 msgstr ""
 
-#: src/pyguibud/backends/_qt.py:72
+#: src/pyguibud/backends/_qt.py:81
 #, python-brace-format
 msgid "The label '{id}' has an image and a text; Qt shows the image only."
 msgstr ""
 
 #. Translators: a spin box is bound to a text variable whose value is not a
 #. number.
-#: src/pyguibud/backends/_qt.py:74
+#: src/pyguibud/backends/_qt.py:83
 #, python-brace-format
 msgid "The spin box '{id}' cannot show a value that is not a number."
 msgstr ""
 
+#: src/pyguibud/backends/_tbwidgets.py:83
+msgid "Select a date"
+msgstr "Selecteer een datum"
+
 #. Translators: a keyboard shortcut appears twice in one window.
-#: src/pyguibud/backends/_tk.py:55
+#: src/pyguibud/backends/_tk.py:59
 #, python-brace-format
 msgid "The shortcut '{shortcut}' of '{id}' is already used in this window."
 msgstr ""
@@ -72,7 +76,7 @@ msgstr ""
 #. Translators: a text (usually a translation) is too long to display; {length}
 #. and {limit} are
 #. numbers of characters.
-#: src/pyguibud/backends/_tk.py:59
+#: src/pyguibud/backends/_tk.py:63
 #, python-brace-format
 msgid ""
 "{count} ttkbootstrap style (tb:bootstyle) is ignored by the {toolkit} "
@@ -83,22 +87,39 @@ msgid_plural ""
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/pyguibud/backends/_tk.py:62
+#: src/pyguibud/backends/_tk.py:66
 #, python-brace-format
 msgid ""
 "The text of '{id}' has {length} characters; only the first {limit} are "
 "shown."
 msgstr ""
 
+#. Translators: a plugin's widget could not be created (runtime.plugin_failed).
+#: src/pyguibud/backends/_tk.py:69
+#, python-brace-format
+msgid ""
+"The widget class '{name}' failed to build; its fallback '{fallback}' is "
+"shown."
+msgstr ""
+"De widgetklasse '{name}' kon niet worden gemaakt; de terugvalklasse "
+"'{fallback}' wordt getoond."
+
+#. Translators: a widget does not accept the handler of an event
+#. (runtime.event_unsupported).
+#: src/pyguibud/backends/_tk.py:72
+#, python-brace-format
+msgid "The event '{event}' of '{id}' is not supported by '{name}'."
+msgstr "De gebeurtenis '{event}' van '{id}' wordt niet ondersteund door '{name}'."
+
 #. Translators: logged when a .ui uses an extension widget the runtime cannot
 #. render yet.
-#: src/pyguibud/backends/_tkmap.py:54
+#: src/pyguibud/backends/_tkmap.py:69
 #, python-brace-format
 msgid "The widget class '{name}' is shown as its fallback '{fallback}'."
 msgstr ""
 
 #. Translators: a ttkbootstrap style name from a .ui file was not applied.
-#: src/pyguibud/backends/_tkmap.py:56
+#: src/pyguibud/backends/_tkmap.py:71
 #, python-brace-format
 msgid "The bootstyle '{value}' of '{id}' is ignored."
 msgstr ""
@@ -1512,109 +1533,109 @@ msgstr ""
 msgid "use '{{}}' once, optionally as '{{:.2f}}' with 0 to 6 decimals"
 msgstr ""
 
-#: src/pyguibud/core/widgets.py:397
+#: src/pyguibud/core/widgets.py:400
 msgid "Meter"
 msgstr ""
 
-#: src/pyguibud/core/widgets.py:402
+#: src/pyguibud/core/widgets.py:406
 msgid "Subtext"
 msgstr ""
 
-#: src/pyguibud/core/widgets.py:403
+#: src/pyguibud/core/widgets.py:407
 msgid "Meter type"
 msgstr ""
 
-#: src/pyguibud/core/widgets.py:404
+#: src/pyguibud/core/widgets.py:408
 msgid "Meter size"
 msgstr ""
 
-#: src/pyguibud/core/widgets.py:405
+#: src/pyguibud/core/widgets.py:409
 msgid "Meter thickness"
 msgstr ""
 
-#: src/pyguibud/core/widgets.py:409
+#: src/pyguibud/core/widgets.py:413
 msgid "Amount format"
 msgstr ""
 
-#: src/pyguibud/core/widgets.py:415
+#: src/pyguibud/core/widgets.py:419
 msgid "Show text"
 msgstr ""
 
-#: src/pyguibud/core/widgets.py:416
+#: src/pyguibud/core/widgets.py:420
 msgid "Interactive"
 msgstr ""
 
-#: src/pyguibud/core/widgets.py:421
+#: src/pyguibud/core/widgets.py:425
 msgid "Flood gauge"
 msgstr ""
 
-#: src/pyguibud/core/widgets.py:430
+#: src/pyguibud/core/widgets.py:435
 msgid "Text mask"
 msgstr ""
 
-#: src/pyguibud/core/widgets.py:439
+#: src/pyguibud/core/widgets.py:444
 msgid "Date entry"
 msgstr ""
 
-#: src/pyguibud/core/widgets.py:449
+#: src/pyguibud/core/widgets.py:456
 msgid "Date"
 msgstr ""
 
-#: src/pyguibud/core/widgets.py:452
-msgid "a date written as YYYY-MM-DD"
-msgstr ""
+#: src/pyguibud/core/widgets.py:460
+msgid "a date written as YYYY-MM-DD, from 1900-01-01 to 9998-12-31"
+msgstr "een datum geschreven als JJJJ-MM-DD, van 1900-01-01 tot en met 9998-12-31"
 
-#: src/pyguibud/core/widgets.py:457
+#: src/pyguibud/core/widgets.py:465
 msgid "Date format"
 msgstr ""
 
 #. Translators: keep the %-codes exactly as written.
-#: src/pyguibud/core/widgets.py:462
+#: src/pyguibud/core/widgets.py:470
 #, python-format
 msgid "one each of day %d, month %m %b or %B, year %Y or %y; also %a %A %j %%"
 msgstr ""
 
-#: src/pyguibud/core/widgets.py:464
+#: src/pyguibud/core/widgets.py:472
 msgid "First day of the week"
 msgstr ""
 
-#: src/pyguibud/core/widgets.py:469
+#: src/pyguibud/core/widgets.py:477
 msgid "Table view"
 msgstr ""
 
-#: src/pyguibud/core/widgets.py:477
+#: src/pyguibud/core/widgets.py:486
 msgid "Column headings"
 msgstr ""
 
-#: src/pyguibud/core/widgets.py:481
+#: src/pyguibud/core/widgets.py:490
 msgid "up to 64 column headings separated by ';', each up to 64 characters"
 msgstr ""
 
-#: src/pyguibud/core/widgets.py:483
+#: src/pyguibud/core/widgets.py:492
 msgid "Paginated"
 msgstr ""
 
-#: src/pyguibud/core/widgets.py:484
+#: src/pyguibud/core/widgets.py:493
 msgid "Searchable"
 msgstr ""
 
-#: src/pyguibud/core/widgets.py:485
+#: src/pyguibud/core/widgets.py:494
 msgid "Vertical scrollbar"
 msgstr ""
 
-#: src/pyguibud/core/widgets.py:486
+#: src/pyguibud/core/widgets.py:495
 msgid "Fit columns"
 msgstr ""
 
-#: src/pyguibud/core/widgets.py:487
+#: src/pyguibud/core/widgets.py:496
 msgid "Page size"
 msgstr ""
 
-#: src/pyguibud/core/widgets.py:492
+#: src/pyguibud/core/widgets.py:501
 msgid "Toggle button"
 msgstr ""
 
-#: src/pyguibud/core/widgets.py:499
+#: src/pyguibud/core/widgets.py:509
 msgid "Shape"
 msgstr ""
 
@@ -4221,5 +4242,8 @@ msgstr[1] ""
 #~ msgstr ""
 
 #~ msgid "text with the codes %d %m %y %Y %b %B %a %A %j %U or %%"
+#~ msgstr ""
+
+#~ msgid "a date written as YYYY-MM-DD"
 #~ msgstr ""
 

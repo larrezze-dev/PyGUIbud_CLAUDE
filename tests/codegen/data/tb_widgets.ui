@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<pyguibud-ui schema_version="1.0" xmlns="urn:pyguibud:ui:1" xmlns:tb="urn:pyguibud:ext:ttkbootstrap:1">
+  <meta source_locale="en_GB" i18n_domain="tb_widgets"/>
+  <variables>
+    <var id="level" type="double" default="40"/>
+    <var id="count" type="int" default="3"/>
+    <var id="enabled" type="bool" default="true"/>
+    <var id="day" type="string" default="2026-10-14"/>
+  </variables>
+  <window id="main" kind="main">
+    <prop name="title" translatable="true">The five ttkbootstrap widgets</prop>
+    <layout type="grid" padding="4" gap="2">
+      <column index="1" weight="1"/>
+    </layout>
+    <widget class="tb:Meter" id="mtr" bind="level" fallback="Progressbar" tb:bootstyle="success">
+      <prop name="amount_format">{:.1f}%</prop>
+      <prop name="interactive">true</prop>
+      <prop name="meter_size">120</prop>
+      <prop name="meter_type">semi</prop>
+      <prop name="subtext" translatable="true" context="meter">Level</prop>
+      <cell row="0" column="0" rowspan="2"/>
+    </widget>
+    <widget class="tb:Floodgauge" id="flg" bind="count" fallback="Progressbar" tb:bootstyle="info">
+      <prop name="mask">{} items</prop>
+      <prop name="maximum">10</prop>
+      <prop name="text" translatable="true">Items</prop>
+      <cell row="0" column="1" sticky="w"/>
+    </widget>
+    <widget class="tb:DateEntry" id="ent_day" bind="day" fallback="Entry" tb:bootstyle="warning">
+      <prop name="date_format">%d/%m/%Y</prop>
+      <prop name="first_weekday">0</prop>
+      <prop name="width">12</prop>
+      <event name="change" handler="on_change"/>
+      <event name="focus_in" handler="on_focus"/>
+      <cell row="1" column="1" sticky="w"/>
+    </widget>
+    <widget class="tb:DateEntry" id="ent_fixed" fallback="Entry">
+      <prop name="state">readonly</prop>
+      <prop name="value">2024-02-29</prop>
+      <cell row="2" column="1" sticky="w"/>
+    </widget>
+    <widget class="tb:Tableview" id="tbl" fallback="Treeview" tb:bootstyle="primary">
+      <prop name="columns" translatable="true" comment="Headings separated by ';'.">Name;Colour;Amount</prop>
+      <prop name="height">4</prop>
+      <prop name="searchable">true</prop>
+      <prop name="selectmode">browse</prop>
+      <event name="select" handler="on_select"/>
+      <event name="activate" handler="on_act"/>
+      <cell row="3" column="0" columnspan="2" sticky="nsew"/>
+    </widget>
+    <widget class="tb:ToggleButton" id="tgl" bind="enabled" fallback="Checkbutton" tb:bootstyle="danger">
+      <prop name="shape">square</prop>
+      <prop name="text" translatable="true">_Enabled</prop>
+      <event name="command" handler="on_cmd"/>
+      <cell row="4" column="0"/>
+    </widget>
+    <widget class="tb:ToggleButton" id="tgl_plain" fallback="Checkbutton">
+      <prop name="state">disabled</prop>
+      <prop name="text">Plain</prop>
+      <event name="change" handler="on_change"/>
+      <cell row="4" column="1" sticky="w"/>
+    </widget>
+  </window>
+</pyguibud-ui>

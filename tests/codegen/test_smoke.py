@@ -16,8 +16,9 @@ from pyguibud.core.xml_io import read_ui
 from tests.codegen.conftest import EXAMPLES, GIF, P5, P6, generate, png, run_generated, write_ui
 
 ALLOWED_IMPORTS = {
-    *("__future__", "argparse", "base64", "collections.abc", "contextlib", "gettext"),
-    *("logging", "os", "re", "sys", "tkinter", "types", "typing", "warnings", "ttkbootstrap"),
+    *("__future__", "argparse", "base64", "collections.abc", "contextlib", "datetime"),
+    *("gettext", "logging", "os", "re", "sys", "tkinter", "types", "typing", "warnings"),
+    "ttkbootstrap",
 }
 
 

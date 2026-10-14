@@ -1,19 +1,19 @@
 # PyGUIbud scoreboard
 
-_Last updated: 2026-10-14 17:39:14 UTC+0200_
+_Last updated: 2026-10-14 23:36:00 UTC+0200_
 
 - **Steps done:** 18/23
 - **Current step:** 17 Widget plugin API + ttkbootstrap extensions (🔄)
-- **Tests:** 5004/5019 passed, 3 failing (pytest exited with code 1)
-- **Coverage:** 91.1 %
-- **Test detail:** 5019 collected, 3 failed, 0 errors, 12 skipped, 902.85 s
+- **Tests:** 5134/5146 passed (verified gate 2026-10-14, run by the orchestrator, not by the scorer: 5134 passed, 1 skipped, 11 xfailed in 711.63 s)
+- **Coverage:** not available
+- **Test detail:** 5146 collected, 0 failed, 0 errors, 12 skipped, 711.63 s
 
 ## Quality gates
 
 | Check | Result |
 | --- | --- |
-| Lint (ruff) | n/a (later step) |
-| Types (mypy) | n/a (later step) |
+| Lint (ruff) | passed: `ruff check .` all checks passed; `ruff format --check .` 325 files formatted |
+| Types (mypy) | no issues in 278 source files |
 | i18n coverage | n/a (later step) |
 
 ## Steps
@@ -46,8 +46,8 @@ _Last updated: 2026-10-14 17:39:14 UTC+0200_
 
 ## Recent commits
 
+- `dfee602 009`
 - `f5f5af9 008`
 - `2621983 007`
 - `ff016eb 006`
 - `0685c94 005`
-- `e172188 004`

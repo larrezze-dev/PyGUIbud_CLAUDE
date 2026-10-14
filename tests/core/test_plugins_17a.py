@@ -129,9 +129,13 @@ def test_tb_widgets_register_without_diagnostics() -> None:
     assert reg.diagnostics() == ()
     for spec in tb_widgets():
         registered = reg.require(spec.name)
-        assert registered.plugin is None and registered.factories == {}
-        resolved = reg.resolve(spec.name, "ttkbootstrap")
-        assert resolved.is_fallback and resolved.code == "registry.no_factory"
+        # Step 17b: one string reference, for ttkbootstrap only (D3, D11).
+        assert registered.plugin is None and set(registered.factories) == {"ttkbootstrap"}
+        assert str(registered.factories["ttkbootstrap"]).startswith("pyguibud.backends._tbwidgets:")
+        assert not reg.resolve(spec.name, "ttkbootstrap").is_fallback
+        for backend in ("tkinter", "pyside6"):
+            resolved = reg.resolve(spec.name, backend)
+            assert resolved.is_fallback and resolved.code == "registry.no_factory"
 
 
 def test_tb_widgets_obey_the_fallback_parity() -> None:

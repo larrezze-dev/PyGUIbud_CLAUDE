@@ -26,6 +26,7 @@ from pyguibud.backends._tkmap import (
     _VAR_OPTION,
     clip_text,
     event_wiring,
+    split_headings,
 )
 from pyguibud.backends.base import BuildPlan, Instance, TextSlot
 from pyguibud.core.keys import parse_chord, split_mnemonic, tk_key_sequences, tk_shortcut
@@ -39,9 +40,12 @@ from pyguibud.core.model import (
     PackPlacement,
     PagePlacement,
     Prop,
+    PropertyDef,
     Widget,
+    WidgetSpec,
     Window,
 )
+from pyguibud.core.registry import FactoryStage
 from pyguibud.core.validate import MAX_TEXT_LENGTH
 from pyguibud.i18n import N_, NP_
 
@@ -60,6 +64,30 @@ _M_IGNORED_STYLES = NP_(
     "{count} ttkbootstrap styles (tb:bootstyle) are ignored by the {toolkit} toolkit.",
 )
 _M_CLIPPED = N_("The text of '{id}' has {length} characters; only the first {limit} are shown.")
+# Translators: a plugin's widget could not be created (runtime.plugin_failed).
+_M_PLUGIN_FAILED = N_(
+    "The widget class '{name}' failed to build; its fallback '{fallback}' is shown."
+)
+# Translators: a widget does not accept the handler of an event (runtime.event_unsupported).
+_M_EVENT_UNSUPPORTED = N_("The event '{event}' of '{id}' is not supported by '{name}'.")
+
+
+def _raw(definition: PropertyDef, prop: Prop | None) -> str | None:
+    """A property's value as written (or its default); an image's resource id."""
+    if definition.type == "image":
+        return prop.ref if prop is not None else None
+    return definition.default if prop is None else prop.value
+
+
+def _sweep(parent: Tk, before: set[str], outer: Tk, inner: Tk = None) -> None:
+    """Destroy ``outer``, ``inner`` and each new child of ``parent`` (which may be destroyed)."""
+    alive = parent.winfo_exists()  # 0 for a destroyed widget; winfo_children() would raise
+    strays = [c for c in parent.winfo_children() if str(c) not in before] if alive else []
+    if f"{parent}.".startswith(str(inner).rstrip(".") + "."):  # never the parent or an ancestor
+        inner = None
+    for widget in (outer, inner, *strays):
+        with contextlib.suppress(Exception):  # not a widget, or already gone
+            widget.destroy()
 
 
 def _call(fn: Callable[[], object], result: str | None = None) -> Callable[..., str | None]:
@@ -80,6 +108,8 @@ class Embed:
     on_node: Callable[[object, Any, Any], None]  # (model node, outer widget, inner widget)
     on_title: Callable[[Window, str], None]  # the title slot's setter
     placeholder: Callable[[Include, Any], Any]  # an unexpanded include -> a widget in parent
+    #: (node, parent, reason) -> a card shown instead of a failed non-container plugin widget
+    failed: Callable[[Widget, Any, str], Any] | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -444,6 +474,11 @@ class TkSession:
         plan = self._plan
         resolved = plan.registry.resolve(node.class_name, self._backend, node.fallback)
         spec = resolved.spec
+        if spec.is_extension:
+            made = self._extension(inst, node, parent, spec)
+            if made is not None:
+                return made
+            spec = plan.registry.require(spec.fallback or "")  # exactly as registry.no_factory
         name = spec.name
         if resolved.is_fallback and node.class_name not in self._logged:
             self._logged.add(node.class_name)
@@ -454,33 +489,16 @@ class TkSession:
         defined = {definition.name for definition in spec.properties}
         for definition in spec.properties:
             prop = node.props.get(definition.name)
-            raw = definition.default if prop is None else prop.value
-            if definition.type == "image":
-                raw = prop.ref if prop is not None else None
+            raw = _raw(definition, prop)
             if (
                 raw is None
                 or definition.name in ("text", "state")
                 or (name, definition.name) == ("Radiobutton", "value")
             ):
                 continue
-            converters: dict[str, Callable[[str], object]] = {
-                "int": int,
-                "float": float,
-                "bool": lambda v: v == "true",
-                "image": lambda v: self._image(inst, v),
-            }
-            converted = converters.get(definition.type, str)(raw)
+            converted = self._convert(inst, definition.type, raw)
             options[_OPTION.get((name, definition.name), definition.name)] = converted
-        var: Any = None
-        known = self._owner(inst).vars
-        if node.bind and (self._embed is None or node.bind in known):
-            var = known[node.bind]
-        elif name in _TRACE_VAR and any(e.name == "change" for e in node.events):
-            kind = {"string": "StringVar", "bool": "BooleanVar", "double": "DoubleVar"}[
-                _TRACE_VAR[name]
-            ]
-            var = getattr(self._tk, kind)(master=self._root)
-            self._keep.append(var)
+        var = self._variable(inst, node, name)
         if var is not None and name in _VAR_OPTION:
             options[_VAR_OPTION[name]] = var
         if name == "Radiobutton":
@@ -513,14 +531,153 @@ class TkSession:
             self._embed.on_node(node, outer, widget)
         return outer
 
-    def _create(self, name: str, parent: Tk, options: dict[str, Any], node: Widget) -> Tk:
-        factory = self._classes[name]
+    def _convert(self, inst: Instance, kind: str, raw: str) -> object:
+        if kind == "image":
+            return self._image(inst, raw)
+        converters: dict[str, Callable[[str], object]] = {
+            "int": int,
+            "float": float,
+            "bool": lambda v: v == "true",
+        }
+        return converters.get(kind, str)(raw)
+
+    def _variable(self, inst: Instance, node: Widget, name: str) -> Tk:
+        """The bound variable, or a private one when ``change`` needs a trace (else None)."""
+        known = self._owner(inst).vars
+        if node.bind and (self._embed is None or node.bind in known):
+            return known[node.bind]
+        if name in _TRACE_VAR and any(e.name == "change" for e in node.events):
+            kind = {"string": "StringVar", "bool": "BooleanVar", "double": "DoubleVar"}[
+                _TRACE_VAR[name]
+            ]
+            var = getattr(self._tk, kind)(master=self._root)
+            self._keep.append(var)
+            return var
+        return None
+
+    def _style(self, node: Widget, name: str) -> str | None:
+        """The node's bootstyle if this backend applies it and it is usable (else logged)."""
         style = node.extra_attrs.get(_BOOTSTYLE) if self._bootstyle else None
         self._ignored += not self._bootstyle and _BOOTSTYLE in node.extra_attrs
-        if style is None:
-            return factory(parent, **options)
-        if name in _TK_BASED or len(style) > 64 or not _BOOTSTYLE_RE.fullmatch(style):
+        if style is not None and (
+            name in _TK_BASED or len(style) > 64 or not _BOOTSTYLE_RE.fullmatch(style)
+        ):
             self._plan.log(_M_BOOTSTYLE, value=style, id=node.id)
+            return None
+        return style
+
+    def _extension(self, inst: Instance, node: Widget, parent: Tk, spec: WidgetSpec) -> Tk:
+        """Build ``node`` with its plugin factory (spec plugins 4.2); None: use the fallback.
+
+        Any exception from the factory, the checks or the first text and state settings destroys
+        what the factory made, is reported to the registry and logged once per class.
+        """
+        registry, plan = self._plan.registry, self._plan
+        fallback = registry.require(spec.fallback or "")
+        factory = registry.load_factory(spec, self._backend)
+        if factory is None:  # the import failed (reported by the registry)
+            return self._failed(node, parent, fallback.name, "import", spec.container)
+        props: dict[str, Any] = {}
+        texts: dict[str, str] = {}  # the factory may consume ``props``
+        for definition in spec.properties:
+            prop = node.props.get(definition.name)
+            raw = _raw(definition, prop)
+            if raw is not None and definition.translatable and prop is not None:
+                raw = texts[definition.name] = plan.text(TextSlot(inst.doc.key, prop))
+            if raw is not None:
+                props[definition.name] = self._convert(inst, definition.type, raw)
+        var = self._variable(inst, node, fallback.name)
+        style = self._style(node, fallback.name)
+        before = {str(child) for child in parent.winfo_children()}
+        outer: Any = None
+        inner: Any = None
+        stage: FactoryStage = "create"
+        slots: list[_Slot] = []
+        try:
+            rejected = False
+            with warnings.catch_warnings(record=True) as caught:
+                warnings.simplefilter("always")
+                try:
+                    made = factory(parent, dict(props), var, style)
+                except (self._tk.TclError, TypeError, ValueError):
+                    if style is None:
+                        raise
+                    _sweep(parent, before, None)  # then again without the style, as _create
+                    made, rejected = factory(parent, dict(props), var, None), True
+            if style is not None and (rejected or caught):  # ttkbootstrap warns on bad tokens
+                plan.log(_M_BOOTSTYLE, value=style, id=node.id)
+            stage = "check"
+            outer, inner = made if isinstance(made, tuple) and len(made) == 2 else (made, made)
+            new = {str(child) for child in parent.winfo_children()} - before
+            misc = self._tk.Misc
+            if not (
+                isinstance(outer, misc)
+                and isinstance(inner, misc)
+                and outer.master is parent
+                and new == {str(outer)}
+                and (inner is outer or str(inner).startswith(f"{outer}."))
+            ):
+                raise TypeError(f"the factory of {spec.name} returned {made!r}")
+            if "state" in node.props and spec.property("state") is not None:
+                inner.configure(state=node.props["state"].value)
+            for definition in spec.properties:
+                prop = node.props.get(definition.name)
+                if not definition.translatable or prop is None:
+                    continue
+                mnemonic = definition.name == "text" and fallback.name in _MNEMONIC
+                setter = self._ext_setter(spec.name, definition.name, outer, inner, mnemonic)
+                setter(texts[definition.name], -1)  # inside the guard; retexted later
+                slots.append(_Slot(TextSlot(inst.doc.key, prop), setter, mnemonic, node.id))
+        except (Exception, SystemExit) as exc:  # isolation point (D7): fall back, never crash
+            registry.report_failure(spec.name, self._backend, stage, exc)  # before the sweep
+            _sweep(parent, before, outer, inner)
+            return self._failed(node, parent, fallback.name, repr(exc), spec.container)
+        self._slots += slots
+        self._events(node, fallback.name, inner, var)
+        inst.scope._attach(node.id, inner)
+        if spec.container:
+            self._container(inst, inner, node.layout, fallback.name, node.children)
+        if self._embed is not None:
+            self._embed.on_node(node, outer, inner)
+        return outer
+
+    @staticmethod
+    def _ext_setter(
+        class_name: str, prop: str, outer: Tk, inner: Tk, mnemonic: bool
+    ) -> Callable[[str, int], object]:
+        if prop == "text":
+            return TkSession._set_text(inner, mnemonic)
+        if (class_name, prop) == ("tb:Tableview", "columns"):
+
+            def headings(text: str, _underline: int) -> None:
+                columns = outer.tablecolumns  # sorting restores these texts
+                for column, heading in zip(
+                    columns, split_headings(text, len(columns)), strict=True
+                ):
+                    column.configure(text=heading)
+
+            return headings
+        return lambda t, _u: outer.configure(**{prop: t})
+
+    def _failed(
+        self, node: Widget, parent: Tk, fallback: str, reason: str, container: bool = False
+    ) -> Tk:
+        """Log a failed plugin widget once per class; the design canvas may show a card."""
+        key = "\0" + node.class_name
+        if key not in self._logged:
+            self._logged.add(key)
+            self._plan.log(_M_PLUGIN_FAILED, name=node.class_name, fallback=fallback)
+        embed = self._embed
+        if embed is None or embed.failed is None or container:
+            return None
+        card = embed.failed(node, parent, reason)
+        embed.on_node(node, card, card)
+        return card
+
+    def _create(self, name: str, parent: Tk, options: dict[str, Any], node: Widget) -> Tk:
+        factory = self._classes[name]
+        style = self._style(node, name)
+        if style is None:
             return factory(parent, **options)
         with warnings.catch_warnings(record=True) as caught:
             warnings.simplefilter("always")
@@ -540,7 +697,10 @@ class TkSession:
                 continue
             kind, details = event_wiring(name, event.name)
             if kind == "command":
-                widget.configure(command=_call(fn))
+                try:
+                    widget.configure(command=_call(fn))
+                except (Exception, SystemExit) as exc:  # a plugin widget without ``command``
+                    self._unsupported(node, event.name, exc)
             elif kind == "trace":
                 var.trace_add("write", _call(fn))
             elif kind == "modified":
@@ -554,6 +714,14 @@ class TkSession:
                 )
                 for sequence in sequences:
                     widget.bind(sequence, _call(fn, result), add="+")
+
+    def _unsupported(self, node: Widget, event: str, exc: BaseException) -> None:
+        """Log (once per class and event) and report an event a plugin widget refuses."""
+        key = f"{node.class_name}{event}"
+        if key not in self._logged:
+            self._logged.add(key)
+            self._plan.log(_M_EVENT_UNSUPPORTED, event=event, id=node.id, name=node.class_name)
+        self._plan.registry.report_failure(node.class_name, self._backend, "wire", exc)
 
     @staticmethod
     def _modified(widget: Tk, fn: Callable[[], object]) -> Callable[..., None]:

@@ -33,7 +33,14 @@ from pyguibud.backends._qtmap import (
     qt_text,
     scaled_range,
 )
-from pyguibud.backends._tk import _M_IGNORED_STYLES, _M_SHORTCUT, _Slot, apply_slots
+from pyguibud.backends._tk import (
+    _M_IGNORED_STYLES,
+    _M_PLUGIN_FAILED,
+    _M_SHORTCUT,
+    _raw,
+    _Slot,
+    apply_slots,
+)
 from pyguibud.backends._tkmap import _BOOTSTYLE, _M_FALLBACK
 from pyguibud.backends.base import BuildPlan, Instance, TextSlot
 from pyguibud.core.keys import format_chord, parse_chord
@@ -48,8 +55,10 @@ from pyguibud.core.model import (
     PagePlacement,
     Prop,
     Widget,
+    WidgetSpec,
     Window,
 )
+from pyguibud.core.registry import FactoryStage
 from pyguibud.i18n import N_
 
 __all__ = ["QtSession"]
@@ -86,6 +95,18 @@ _PARSE: dict[str, Callable[[str], object]] = {  # the defaults, as ``_tk._make_v
 #: Sessions not destroyed yet. Strong references: Python owns the parentless windows, so a
 #: dropped LoadedUi must not delete them (QA-16b-03); only the last live one quits (spec §14).
 _LIVE: set[QtSession] = set()
+#: The Qt class of each core class's inner widget: a plugin's ``inner`` must be one (D4).
+_QT_CLASS = {
+    **{"Frame": "QFrame", "LabelFrame": "QGroupBox", "Notebook": "QTabWidget"},
+    **{"PanedWindow": "QSplitter", "ScrolledFrame": "QWidget", "Label": "QLabel"},
+    **{"Button": "QPushButton", "Entry": "QLineEdit", "Text": "QPlainTextEdit"},
+    **{"Checkbutton": "QCheckBox", "Radiobutton": "QRadioButton", "Combobox": "QComboBox"},
+    **{"Spinbox": "QDoubleSpinBox", "Scale": "QSlider", "Progressbar": "QProgressBar"},
+    **{"Separator": "QFrame", "Listbox": "QListWidget", "Treeview": "QTreeWidget"},
+    **{"Scrollbar": "QScrollBar", "Canvas": "QGraphicsView"},
+}
+_AMP = frozenset({"Button", "Checkbutton", "Radiobutton", "LabelFrame"})  # & marks a mnemonic
+_CONVERT: dict[str, Callable[[str], object]] = {"int": int, "float": float, "bool": "true".__eq__}
 
 
 class _CloseWatch(QtCore.QObject):
@@ -454,6 +475,9 @@ class QtSession:
         plan = self._plan
         resolved = plan.registry.resolve(node.class_name, "pyside6", node.fallback)
         spec = resolved.spec
+        made = self._extension(inst, node, parent, spec) if spec.is_extension else None
+        if spec.is_extension:  # built by the factory or not, it behaves as its fallback
+            spec = plan.registry.require(spec.fallback or "")
         name = spec.name
         if resolved.is_fallback:
             self._once(_M_FALLBACK, node.class_name, name=node.class_name, fallback=name)
@@ -469,7 +493,7 @@ class QtSession:
             return definition.default if given is None else given.value
 
         make: Callable[[Instance, Widget, Q, Value], Made] = getattr(self, f"_make_{name.lower()}")
-        outer, inner = make(inst, node, parent, value)
+        outer, inner = made or make(inst, node, parent, value)
         state = value("state")
         if state == "disabled" and name == "Text":
             inner.setReadOnly(True)
@@ -486,6 +510,61 @@ class QtSession:
         if spec.container:
             self._container(inst, inner, node.layout, name, node.children)
         return outer
+
+    def _extension(self, inst: Instance, node: Widget, parent: Q, spec: WidgetSpec) -> Made | None:
+        """The plugin factory path (spec plugins 4.1-4.2); None: build the fallback instead."""
+        registry = self._plan.registry
+        fallback = registry.require(spec.fallback or "").name
+        factory = registry.load_factory(spec, "pyside6")
+        props: dict[str, Any] = {}
+        text: str | None = None
+        for definition in spec.properties:
+            prop = node.props.get(definition.name)
+            raw = _raw(definition, prop)
+            if raw is not None and definition.translatable and prop is not None:
+                raw = self._plan.text(TextSlot(inst.doc.key, prop))
+                text = raw if definition.name == "text" else text
+            if raw is not None and definition.type == "image":
+                props[definition.name] = self._pixmap(inst, raw)
+            elif raw is not None:
+                props[definition.name] = _CONVERT.get(definition.type, str)(raw)
+        before = [c for c in parent.children() if c.isWidgetType()]
+        outer: Q = None
+        stage: FactoryStage = "create"
+        try:
+            if factory is None:  # the import failed (reported by the registry)
+                raise LookupError(spec.name)  # never reported twice: report_failure dedupes
+            made = factory(parent, props)
+            stage = "check"
+            outer, inner = made if isinstance(made, tuple) and len(made) == 2 else (made, made)
+            new = [c for c in parent.children() if c.isWidgetType() and c not in before]
+            if not (
+                isinstance(outer, QtWidgets.QWidget)
+                and isinstance(inner, getattr(QtWidgets, _QT_CLASS[fallback]))
+                and outer.parent() == parent
+                and new == [outer]
+            ):
+                raise TypeError(f"the factory of {spec.name} returned {made!r}")
+            if text is not None:
+                method = inner.setTitle if fallback == "LabelFrame" else inner.setText
+                setter = self._amp(method) if fallback in _AMP else self._plain(inner)
+                setter(text, -1)  # inside the guard; the slot sets it again
+                self._slot(inst, node.id, node.props.get("text"), setter, fallback in _AMP)
+        except (Exception, SystemExit) as exc:  # isolation point (D7): fall back, never crash
+            if factory is not None:  # before the sweep, which may meet a deleted parent
+                registry.report_failure(spec.name, "pyside6", stage, exc)
+            kids = parent.children() if shiboken6.isValid(parent) else []
+            strays = [c for c in kids if c.isWidgetType() and c not in before]
+            for widget in {
+                id(w): w
+                for w in (outer, *strays)
+                if isinstance(w, QtCore.QObject) and shiboken6.isValid(w)
+            }.values():
+                widget.setParent(None)
+                widget.deleteLater()
+            self._once(_M_PLUGIN_FAILED, node.class_name, name=node.class_name, fallback=fallback)
+            return None
+        return outer, inner
 
     @staticmethod
     def _sizes(name: str, node: Widget, outer: Q, inner: Q, value: Value) -> None:

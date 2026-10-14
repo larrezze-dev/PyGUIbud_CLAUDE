@@ -181,7 +181,7 @@ All have `category = N_("ttkbootstrap")` and `api_version = 1`. Properties share
 |---|---|---|---|---|---|
 | `tb:Meter` | Progressbar | `value` float 0; `maximum` float 100; `subtext` string translatable; `meter_type` enum full\|semi; `meter_size` int 50..1000 = 200; `meter_thickness` int 1..100 = 10; `amount_format` string pattern `[^{}]*\{(:\.[0-6]f)?\}[^{}]*` ≤ 32 = `{}`; `show_text` bool true; `interactive` bool false | — | double, int | `Meter(amount_total, amount_used, …)`, bound variable as its amount-used variable |
 | `tb:Floodgauge` | Progressbar | `value`, `maximum`, `mode`, `orient`, `length` (as Progressbar); `text` translatable; `mask` string, same pattern as `amount_format`, ≤ 32 | — | double, int | `Floodgauge(...)` (Canvas-based); `variable` |
-| `tb:DateEntry` | Entry | `width`, `state` (as Entry); `value` string pattern `\d{4}-\d{2}-\d{2}` (calendar validity checked at build, logged); `date_format` string ≤ 32 = `%Y-%m-%d`: codes `%d %m %Y %y %b %B %a %A %j %%` only, exactly one day (`%d`), one month (`%m/%b/%B`) and one year (`%Y/%y`), no code repeated, no `{}` or control characters (`_DATE_FORMAT_RE`, QA-17a-01); `first_weekday` int 0..6 = 0 | change, activate, focus_in, focus_out | string | `DateEntry(...)`, `inner = .entry`, `textvariable` on the inner entry; popup title `_("Select a date")` |
+| `tb:DateEntry` | Entry | `width`, `state` (as Entry); `value` string pattern `YYYY-MM-DD`, years 1900–9998 only (QA-17b-01/03: Windows `%y` refuses years < 1900; the 2.2.3 picker grid overflows at 0001/9999; calendar validity checked at build, logged); `date_format` string ≤ 32 = `%Y-%m-%d`: codes `%d %m %Y %y %b %B %a %A %j %%` only, exactly one day (`%d`), one month (`%m/%b/%B`) and one year (`%Y/%y`), no code repeated, no `{}` or control characters (`_DATE_FORMAT_RE`, QA-17a-01); `first_weekday` int 0..6 = 0 | change, activate, focus_in, focus_out | string | `DateEntry(...)`, `inner = .entry`, `textvariable` on the inner entry; popup title `_("Select a date")` |
 | `tb:Tableview` | Treeview | `height`, `selectmode` (as Treeview); `columns` translatable, pattern `[^;]{1,64}(;[^;]{1,64}){0,63}`; `paginated`, `searchable`, `yscrollbar`, `autofit` bool; `pagesize` int 1..1000 = 10 | select, activate, focus_in, focus_out | — | `Tableview(coldata=headings, rowdata=[])`, `inner = .view` (rows come from handler code) |
 | `tb:ToggleButton` | Checkbutton | `text` translatable, `state` (as Checkbutton); `shape` enum round\|square = round | command, change, focus_in, focus_out | bool, int | `ttkbootstrap.Checkbutton(bootstyle=…)`: `"{colour}-{shape}-toggle"` when `tb:bootstyle` has a colour token (the first one), else `"{shape}-toggle"` |
 
@@ -343,6 +343,36 @@ All of these are pure, so they also run in the command guards. R89/R90 are skipp
   - QA-17a-03 (MINOR): a file may bind the `tb` prefix to another URI (`xmlns:tb="urn:evil"`) and then checks clean → Step 19 (strict xfail).
   - QA-17a-04 (MINOR): `Registry(disabled="name")` is now one name, not letters.
   - Budget after fixes: ≈ 660 net production lines vs cap 650. **User ruling (UAT 17a passed, 2026-10-14):** overshoot accepted.
+
+## 14b. 17b as built (2026-10-14)
+- **Budget:** 560 net production lines against cap 600 (546 before the QA fixes). Measured as added − deleted for `src/**/*.py` from `git diff --numstat HEAD -- src`, plus the line count of the untracked `_tbwidgets.py`. **No trims:** T1–T3 were not needed, so Tableview has a factory, the Qt factory path exists and codegen is native.
+- **Deviations from this spec:**
+  - `Embed.failed` lives in `_tk.py`, where `Embed` is defined, not in `base.py`. It defaults to `None`; the canvas card UI is 17c.
+  - **`ui.<id>` is the inner widget** (D4: "behaves as its fallback"). The outer widget is `ui.<id>.master` for DateEntry and `ui.<id>.master.master` for Tableview.
+  - **Meter** has no variable keyword in ttkbootstrap 2.2.3. The bound variable is linked both ways to `amount_used_var` (`_tbwidgets.link`, `_support._link`), and the bound value wins at first.
+  - **The factory path retries once without the bootstyle** on TclError, TypeError or ValueError, like the core `_create`. Runtime and export therefore agree for bootstyles ttkbootstrap rejects.
+  - **The generated DateEntry popup title is the en-GB literal "Select a date".** Generated modules have no `_()` (codegen §4.2), and the frameless popup never shows the title. This follows the documented untranslated en-GB deviation (codegen §3.6).
+  - **Two runtime messages are untranslated stdlib logging:** a calendar-invalid DateEntry value and a wrong Tableview heading count. At export, a calendar-invalid date is dropped without a Finding (→ Step 18 msgids / Step 19).
+  - **The Qt factory path slots only `text`** (on `inner`). Tk slots every translatable property; Tableview headings go through `TableColumn.configure`, so sorting keeps them.
+  - `runtime.event_unsupported` is logged once per (class, event) and is also reported to the registry with stage `wire`.
+  - **A factory that destroys its parent** records the `check` diagnostic first, then the build ends in `UiError runtime.build_failed`; a design build re-raises to the canvas error card. An `inner` outside `outer` is destroyed, unless it is the parent or one of its ancestors.
+- **Known limitation (to document for users):** rows that handler code adds with `ui.<id>.insert(...)` on the inner Treeview are shown but are not part of the Tableview's row model, so sort, search, paging and reset ignore them. Use the Tableview API (`insert_row(s)` + `load_table_data()`) on the outer widget instead.
+- **Deferred → Step 19:**
+  - the Qt check does not verify that `inner` lies inside `outer`;
+  - the bootstyle-retry sweep cannot remove an `inner` created outside `parent`;
+  - an existing widget elsewhere in the window that is returned as `inner` is destroyed;
+  - the "fallback is shown" warning is logged before a destroyed-parent abort;
+  - a DateEntry bound variable holds ISO text, not text in `date_format`;
+  - a handle to reach the outer Tableview.
+- **QA (2026-10-14): first REJECT (2 MAJOR), all fixed except QA-17b-05.**
+  - **QA-17b-01** (MAJOR): a pre-1900 DateEntry value with `%y` crashed the exported module on Windows. **QA-17b-03** (MINOR): the 2.2.3 picker failed at 9999-12-31, or at 0001-01-01 with first weekday 6. Both fixed by narrowing `value` to 1900–9998 (R89, with a new hint msgid). Picking a December 1899 day from the grid by hand is ttkbootstrap's problem.
+  - **QA-17b-02** (MAJOR): the Floodgauge was drawn at 1×1 on the design canvas. Fixed: `<<ThemeChanged>>` joins `_GEOMETRY` in `designer/canvas/design.py`. A test pins Meter and DateEntry inertness on the canvas.
+  - **QA-17b-04** (MINOR): each Tableview build leaked the `_trace_pagesize` Tcl command. Fixed in `_tbwidgets.tableview` by wrapping the instance `destroy()`.
+  - **QA-17b-05** (MINOR): `en_XA` pseudo-localises the whole heading string rather than each heading → Step 18 (strict xfail).
+- **Test-order notes (→ Step 19, test isolation):**
+  - Running `tests/runtime` before `tests/codegen` in one process raises 33 "single application root" errors. This predates 17b.
+  - Running `tests/runtime` before `tests/designer` in one process hangs `test_13a_gaps.py::test_no_listener_reenters_the_stack_in_any_designer_flow` in Tk's `update_idletasks`. Not bisected, and not checked against pre-17b code (user ruling 2026-10-14).
+  - Neither affects the default (alphabetical) order.
 
 ## 15. Affected documents (applied 2026-10-14)
 - ✔ FEATURES §3: the fallback column for DateEntry/Tableview = Entry/Treeview (D11); ToggleButton = a Checkbutton toggle bootstyle; tkinter and PySide6 show the core fallbacks.
