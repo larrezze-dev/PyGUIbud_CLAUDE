@@ -23,3 +23,7 @@ status bar,window element,status bar,barra de estado,barra de estado,barra de es
 menu editor,dialog,menu editor,editor de menú,editor de menu,editor de menu,Menü-Editor,editor di menu,menueditor,éditeur de menus
 insert,verb (UI action),insert,insertar,inserir,inserir,Einfügen,inserisci,invoegen,insérer
 title,window property (the text of its title bar),title,título,título,título,Titel,titolo,titel,titre
+plugin,separately installed widget package (entry point pyguibud.widgets),plugin,plugin,plugin,plugin,Plugin,plugin,plug-in,plugin
+bootstyle,ttkbootstrap style token (kept untranslated),bootstyle,bootstyle,bootstyle,bootstyle,Bootstyle,bootstyle,bootstyle,bootstyle
+safe mode,start without loading plugins,safe mode,modo seguro,modo seguro,modo seguro,abgesicherter Modus,modalità provvisoria,veilige modus,mode sans échec
+help,menu title,help,ayuda,ajuda,ajuda,Hilfe,aiuto,help,aide

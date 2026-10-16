@@ -17,6 +17,7 @@ from dataclasses import dataclass, field, replace
 from pathlib import Path
 
 from pyguibud.backends import BACKEND_NAME  # anything else falls back (spec backends B14)
+from pyguibud.core.model import canonical_distribution
 from pyguibud.designer.files import MAX_RECENT, RecentFiles, path_key, write_atomic
 from pyguibud.designer.theme import ROLES
 from pyguibud.i18n import LANGUAGES, N_, PSEUDO_LANGUAGE, detect_language, normalise_language
@@ -29,6 +30,7 @@ __all__ = [
     "config_dir",
     "load_settings",
     "merge_recent",
+    "parse_disabled_plugins",
     "parse_settings",
     "remember_export",
     "resolve_language",
@@ -47,18 +49,22 @@ _SASH_KEY = re.compile(r"[a-z][a-z0-9_]{0,31}")
 _CLI_THEMES = {"light": "light", "dark": "dark", "high-contrast": "high_contrast"}
 _KNOWN = frozenset(
     {"version", "language", "theme", "window", "sashes", "recent_files", "autosave_seconds"}
-    | {"preview_lang", "preview_backend", "exports"}
+    | {"preview_lang", "preview_backend", "exports", "disabled_plugins"}
 )
 _DEFAULT_AUTOSAVE = 60
 #: What the user chooses (menus, settings); the window layout is state, not a preference.
 _PREFERENCES = (
     "language", "theme", "autosave_seconds", "preview_lang", "preview_backend", "exports",
+    "disabled_plugins",
 )  # fmt: skip
 DEFAULT_BACKEND = "ttkbootstrap"
 MAX_EXPORTS = 50
 #: Longer remembered export keys or paths are dropped on load: no real path is this long, and
 #: a huge one froze the Export dialog's entry (QA-15b-03).
 MAX_EXPORT_PATH = 4096
+#: A PEP 508 distribution name (as R86); more disabled plugins than this are dropped on load.
+_DISTRIBUTION = re.compile(r"[A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9._-]{0,98}[A-Za-z0-9]")
+MAX_DISABLED_PLUGINS = 200
 
 
 def _platform() -> str:
@@ -113,6 +119,8 @@ class Settings:
     preview_backend: str = DEFAULT_BACKEND
     #: File > Export: the last output per ``.ui`` (``path_key`` -> path), oldest first, <= 50.
     exports: dict[str, str] = field(default_factory=dict)
+    #: Help > Plugins: PEP 503-normalised distributions not loaded at the next start (D7).
+    disabled_plugins: tuple[str, ...] = ()
     #: Unknown top-level keys, written back unchanged (forks).
     extra: dict[str, object] = field(default_factory=dict)
     #: Not stored: the file exists but could not be read at start-up (locked by another
@@ -179,9 +187,20 @@ def _from_mapping(data: Mapping[str, object]) -> Settings:
             and len(v) <= MAX_EXPORT_PATH
         ]
         result.exports = dict(valid[-MAX_EXPORTS:])
+    result.disabled_plugins = parse_disabled_plugins(data.get("disabled_plugins"))
     seconds = _whole(data.get("autosave_seconds"), 15, 3600)
     result.autosave_seconds = _DEFAULT_AUTOSAVE if seconds is None else seconds
     return result
+
+
+def parse_disabled_plugins(value: object) -> tuple[str, ...]:
+    """The normalised, de-duplicated names of a stored list; anything else (even ``"all"``,
+    which is never safe mode) is no list, and malformed entries are dropped."""
+    if not isinstance(value, list):
+        return ()
+    names = (canonical_distribution(v) for v in value if isinstance(v, str))
+    valid = [n for n in names if _DISTRIBUTION.fullmatch(n)]
+    return tuple(dict.fromkeys(valid))[-MAX_DISABLED_PLUGINS:]  # the newest win (appended)
 
 
 def parse_settings(data: bytes) -> Settings | None:
@@ -253,6 +272,8 @@ def _encode(settings: Settings, recent: tuple[str, ...]) -> bytes:
         data["preview_backend"] = settings.preview_backend
     if settings.exports:
         data["exports"] = dict(settings.exports)
+    if settings.disabled_plugins:
+        data["disabled_plugins"] = list(settings.disabled_plugins)
     return (json.dumps(data, ensure_ascii=False, indent=2, sort_keys=True) + "\n").encode()
 
 

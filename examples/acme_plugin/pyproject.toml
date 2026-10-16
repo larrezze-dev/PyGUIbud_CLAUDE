@@ -1,0 +1,17 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "acme-pyguibud"
+version = "0.1.0"
+description = "A sample PyGUIbud widget plugin: acme:ColourSwatch."
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = ["pyguibud"]
+
+[project.entry-points."pyguibud.widgets"]
+acme = "acme_pyguibud:widgets"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/acme_pyguibud"]

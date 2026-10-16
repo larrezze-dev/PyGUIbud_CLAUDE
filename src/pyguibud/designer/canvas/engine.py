@@ -33,6 +33,9 @@ _log = logging.getLogger(__name__)
 
 # Translators: drawn on the canvas in place of an included component; {component} is its id.
 _M_INCLUDED = N_("Included: {component}")
+# Translators: drawn on the canvas in place of a plugin widget whose factory failed; {name} is
+# its class name such as "acme:Gauge".
+_M_PLUGIN_FAILED = N_("{name} — the plugin failed")
 _PLACEHOLDER_SIZE = (120, 48)  # px at 96 dpi
 _REASON_WRAP = 240  # px at 96 dpi: the reason line of a placeholder
 
@@ -154,6 +157,7 @@ class CanvasEngine:
             on_node=lambda node, outer, inner: found.append((node, outer, inner)),
             on_title=lambda win, text: titles.__setitem__(id(win), text),
             placeholder=self._placeholder,
+            failed=self._failed_card,
         )
         plan = design_plan(document, window, self.registry, log=_log_note)
         self._reasons = self.includes.expand(plan.top, *self._source())
@@ -335,6 +339,12 @@ class CanvasEngine:
             label = ttk.Label(frame, text=reason, wraplength=self._scale(_REASON_WRAP))
             label.pack(padx=self._scale(4), pady=self._scale(4))
         return frame
+
+    def _failed_card(self, node: Widget, parent: Any, _reason: str) -> Any:  # noqa: ANN401
+        """D6: a failed non-container plugin widget; the reason is in Help > Plugins."""
+        width, height = (self._scale(px) for px in _PLACEHOLDER_SIZE)
+        text = _(_M_PLUGIN_FAILED).format(name=node.class_name)
+        return ttk.Labelframe(parent, text=text, width=width, height=height)
 
 
 def _log_note(msgid: str, **params: object) -> None:

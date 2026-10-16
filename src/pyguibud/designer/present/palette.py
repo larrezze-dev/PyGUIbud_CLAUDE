@@ -35,7 +35,7 @@ def palette_groups(registry: Registry) -> list[PaletteGroup]:
     for spec in registry.specs():
         category = spec.category_label() or _(_M_OTHER)
         grouped.setdefault(category, []).append(
-            PaletteItem(spec.name, spec.label(), spec.is_extension)
+            PaletteItem(spec.name, spec.label(), spec.plugin is not None)  # tb: is built in
         )
     return [
         PaletteGroup(

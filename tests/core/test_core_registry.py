@@ -141,9 +141,11 @@ def test_valid_plugin_spec_registered_with_distribution_as_plugin() -> None:
     assert not reg.is_container("Button")
 
 
-def test_explicit_plugin_name_kept() -> None:
+def test_explicit_plugin_name_replaced_by_the_distribution() -> None:
+    # QA-17c-01: the real distribution wins, so Help > Plugins groups and disables it.
     reg = Registry(entry_points=_source(_wep("box", _spec(plugin="custom"))))
-    assert reg.require("acme:Box").plugin == "custom"
+    assert reg.require("acme:Box").plugin == "acme"
+    assert "registry.plugin_name_mismatch" in [d.code for d in reg.diagnostics()]
 
 
 def test_unknown_distribution_gets_plugin_name_unknown() -> None:

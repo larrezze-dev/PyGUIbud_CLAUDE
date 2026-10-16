@@ -216,7 +216,7 @@ Abbreviation in the table: `focus` = `focus_in, focus_out`.
    - an unqualified name from a non-built-in entry point → `registry.reserved_name` (core names cannot be overridden);
    - a duplicate name → `registry.duplicate` (warning; the first one wins).
 
-   A non-built-in spec with `plugin=None` gets `dataclasses.replace(spec, plugin=<distribution>)`.
+   A non-built-in spec always gets `dataclasses.replace(spec, plugin=<distribution>)` (the entry point's real distribution name); a declared `plugin` that differs after PEP 503 normalisation also adds `registry.plugin_name_mismatch` (warning, one per spec; QA-17c-01).
 5. **After all loading, extension specs are checked again:**
    - `fallback` must be a registered core name → otherwise `registry.bad_fallback` (removed);
    - `container` must equal the fallback's → otherwise `registry.fallback_mismatch` (removed).

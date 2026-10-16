@@ -13,9 +13,10 @@ from dataclasses import dataclass, replace
 from typing import Any, Literal
 
 from pyguibud.core.colours import colour_problem
-from pyguibud.core.commands import Command, Macro, RemoveProp, SetField, SetProp
+from pyguibud.core.commands import Command, Macro, RemoveProp, SetExtraAttr, SetField, SetProp
 from pyguibud.core.diagnostics import Finding
 from pyguibud.core.model import (
+    NS_TB,
     Action,
     Document,
     GridCell,
@@ -56,7 +57,7 @@ __all__ = [
 
 EditorKind = Literal[
     "string", "int", "float", "bool", "enum", "colour", "image", "variable",
-    "id", "class", "handler", "shortcut", "sticky", "buttons",
+    "id", "class", "handler", "shortcut", "sticky", "buttons", "bootstyle",
 ]  # fmt: skip
 
 S_GENERAL = N_("General")
@@ -105,6 +106,13 @@ def _signature(f: Field) -> tuple[object, ...]:
 
 # ---------------------------------------------------------------- rows
 _SECTION = {"prop": S_PROPERTIES, "layout": S_LAYOUT, "place": S_PLACEMENT, "line": S_PLACEMENT}
+_SECTION["tb"] = S_PROPERTIES
+BOOTSTYLE_KEY = f"{{{NS_TB}}}bootstyle"
+_COLOURS = ("primary", "secondary", "success", "info", "warning", "danger", "light", "dark")
+_TYPES = ("", "outline", "link", "inverse", "striped", "round-toggle", "square-toggle")
+#: The Bootstyle row's suggestions (colour x type); any text is allowed, the guard judges it.
+BOOTSTYLE_CHOICES = tuple(f"{c}-{t}" if t else c for t in _TYPES for c in _COLOURS)
+_NO_BOOTSTYLE = frozenset({"Text", "Listbox", "Canvas"})  # plain Tk widgets (R84)
 _FIELD_SECTION = {"handler": S_ACTION, "shortcut": S_ACTION, "kind": S_WINDOW, "modal": S_WINDOW}
 _FIELD_SECTION |= {"min_width": S_WINDOW, "min_height": S_WINDOW, "buttons": S_WINDOW}
 _SINGLE = frozenset({"field:class", "field:id", "field:src", "field:component", "field:bind"})
@@ -249,6 +257,18 @@ def _fields(node: object, registry: Registry, document: Document) -> list[Field]
         name = node.class_name if isinstance(node, Widget) else type(node).__name__
         spec = registry.get(name)
         rows += _prop_fields(node.props, spec.properties if spec is not None else ())
+        core = (spec.fallback or spec.name) if spec is not None else getattr(node, "fallback", "")
+        if isinstance(node, Widget) and core not in _NO_BOOTSTYLE:  # T5: the designer is ttkbs
+            # Translators: "Bootstyle" is a ttkbootstrap term (the widget's colour and type).
+            rows.append(
+                _f(
+                    "tb:bootstyle",
+                    N_("Bootstyle"),
+                    "bootstyle",
+                    node.extra_attrs.get(BOOTSTYLE_KEY),
+                    choices=BOOTSTYLE_CHOICES,
+                )
+            )
     if isinstance(node, Window | Widget) and node.layout is not None:
         rows += _layout(node.layout)
     if isinstance(node, Widget | Include):
@@ -363,6 +383,8 @@ def _command(node: Any, field: Field, value: str | Prop | None) -> Command:  # n
             prop = Prop(name=rest, value=value, translatable=field.translatable)
         return SetProp(node, prop)
     text = value.value if isinstance(value, Prop) else value
+    if family == "tb":  # "" or a reset removes the attribute
+        return SetExtraAttr(node, BOOTSTYLE_KEY, text or None)
     if text is None:
         text = field.default
     typed = _typed(field, text)

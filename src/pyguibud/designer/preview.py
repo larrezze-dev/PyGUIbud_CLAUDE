@@ -12,7 +12,7 @@ import importlib.util
 import json
 import os
 import sys
-from collections.abc import Sequence
+from collections.abc import Collection, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal
@@ -242,9 +242,17 @@ def child_argv(
     lang: str | None,
     theme: str | None,
     backend: str = DEFAULT_BACKEND,
+    plugins: Collection[str] | Literal["all"] = (),
 ) -> list[str]:
-    """``python -m pyguibud.preview ...``; the file comes after ``--`` (a leading ``-`` is safe)."""
+    """``python -m pyguibud.preview ...``; the file comes after ``--`` (a leading ``-`` is safe).
+
+    ``plugins`` is the designer's disabled filter, so the child loads the same plugins (D7).
+    """
     argv = [sys.executable, "-m", "pyguibud.preview", "--ui-lang", ui_lang, "--backend", backend]
+    if plugins == "all":
+        argv.append("--no-plugins")
+    elif plugins:
+        argv += ["--disable-plugins", plugins if isinstance(plugins, str) else ",".join(plugins)]
     for flag, value in (
         ("--lang", lang),
         ("--theme", theme),

@@ -147,6 +147,10 @@ class _Text(Editor):
                                       to=10_000 if high is None else high,
                                       increment=1 if field.kind == "int" else 0.1,
                                       command=self._arrow)  # fmt: skip
+        elif field.kind == "bootstyle":  # an editable combobox: pick a suggestion or type
+            self.widget = ttk.Combobox(self.frame, textvariable=self.var, values=field.choices,
+                                       width=12)  # fmt: skip
+            self.widget.bind("<<ComboboxSelected>>", lambda _e: self._enter())
         else:
             self.style = STYLE_ENTRY
             self.widget = ttk.Entry(self.frame, textvariable=self.var, width=12, style=self.style)

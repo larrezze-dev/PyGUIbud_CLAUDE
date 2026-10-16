@@ -25,6 +25,7 @@ PLAN = ROOT / "DEVELOPMENT_PLAN.md"
 SCORER_DIR = ROOT / ".scorer"
 JUNIT = SCORER_DIR / "junit.xml"
 COVERAGE = SCORER_DIR / "coverage.json"
+GATE = SCORER_DIR / "gate.json"
 
 STATUS_ORDER = ("✅", "🧪", "🔄", "⏳")
 STATUS_LABEL = {"✅": "done", "🧪": "awaiting UAT", "🔄": "in progress", "⏳": "pending"}
@@ -184,6 +185,40 @@ def parse_junit(path: Path) -> TestResult:
     return TestResult(tests, passed, failed, errors, skipped, seconds)
 
 
+def load_gate() -> dict[str, object] | None:
+    """Read orchestrator-supplied gate figures from .scorer/gate.json, if present."""
+    if not GATE.is_file():
+        return None
+    try:
+        data = json.loads(GATE.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return None
+    return data if isinstance(data, dict) else None
+
+
+def gate_run(gate: dict[str, object], coverage: float | None) -> TestRun:
+    """Build the test outcome from gate figures; pytest is not executed by the scorer."""
+    block = gate.get("tests")
+    if not isinstance(block, dict):
+        return TestRun(None, coverage, "gate file has no tests block", ok=False)
+    passed = int(block.get("passed", 0))
+    failed = int(block.get("failed", 0))
+    skipped = int(block.get("skipped", 0))
+    xfailed = int(block.get("xfailed", 0))
+    total = passed + failed + skipped + xfailed
+    result = TestResult(total, passed, failed, 0, skipped + xfailed, 0.0)
+    note = f"gate figures {gate.get('date', 'undated')}, pytest not run by scorer"
+    return TestRun(result, coverage, note, ok=failed == 0)
+
+
+def gate_quality(gate: dict[str, object] | None) -> dict[str, str]:
+    """Quality-gate texts from the gate file, keyed like NA_ITEMS."""
+    raw = gate.get("quality") if gate is not None else None
+    if not isinstance(raw, dict):
+        return {}
+    return {str(key): str(value) for key, value in raw.items()}
+
+
 def recent_commits() -> list[str]:
     """Return the last few commits via read-only git; empty if git is unavailable."""
     try:
@@ -229,7 +264,13 @@ def fmt_cov(run: TestRun) -> str:
     return "not available" if run.coverage is None else f"{run.coverage:.1f} %"
 
 
-def build_markdown(steps: list[Step], run: TestRun, commits: list[str], stamp: str) -> str:
+def build_markdown(
+    steps: list[Step],
+    run: TestRun,
+    commits: list[str],
+    stamp: str,
+    quality: dict[str, str] | None = None,
+) -> str:
     """Render SCOREBOARD.md."""
     done = sum(1 for s in steps if s.status == "✅")
     cur = current_step(steps)
@@ -251,7 +292,8 @@ def build_markdown(steps: list[Step], run: TestRun, commits: list[str], stamp: s
             f"{r.skipped} skipped, {r.seconds:.2f} s"
         )
     lines += ["", "## Quality gates", "", "| Check | Result |", "| --- | --- |"]
-    lines += [f"| {label} | {NA_TEXT} |" for label, _ in NA_ITEMS]
+    quality = quality or {}
+    lines += [f"| {label} | {quality.get(key, NA_TEXT)} |" for label, key in NA_ITEMS]
     lines += ["", "## Steps", "", "| # | Step | Lead | Status |", "| --- | --- | --- | --- |"]
     for s in steps:
         name = s.name.replace("|", "\\|")
@@ -339,7 +381,13 @@ def _favicon() -> str:
     return f'\n<link rel="icon" type="image/png" href="data:image/png;base64,{data}">'
 
 
-def build_html(steps: list[Step], run: TestRun, commits: list[str], stamp: str) -> str:
+def build_html(
+    steps: list[Step],
+    run: TestRun,
+    commits: list[str],
+    stamp: str,
+    quality: dict[str, str] | None = None,
+) -> str:
     """Render the self-contained scoreboard.html."""
     total = len(steps)
     done = sum(1 for s in steps if s.status == "✅")
@@ -355,7 +403,13 @@ def build_html(steps: list[Step], run: TestRun, commits: list[str], stamp: str) 
             f"{cur.status} {STATUS_LABEL[cur.status]}" if cur else "",
         ),
     ]
-    tiles += [tile(label, NA_TEXT, "", "na") for label, _ in NA_ITEMS]
+    quality = quality or {}
+    tiles += [
+        tile(label, quality[key], "", "good")
+        if key in quality
+        else tile(label, NA_TEXT, "", "na")
+        for label, key in NA_ITEMS
+    ]
     rows = []
     for s in steps:
         is_cur = cur is not None and s.number == cur.number
@@ -429,15 +483,21 @@ def main() -> int:
     args = parser.parse_args()
 
     steps = parse_plan(PLAN)
-    run = load_artefacts() if args.no_tests else run_tests()
+    gate = load_gate()
+    if gate is not None:
+        # Gate figures supplied by the orchestrator take precedence; pytest is never run here.
+        run = gate_run(gate, load_artefacts().coverage)
+    else:
+        run = load_artefacts() if args.no_tests else run_tests()
+    quality = gate_quality(gate)
     commits = recent_commits()
     stamp = datetime.now().astimezone().strftime("%Y-%m-%d %H:%M:%S UTC%z")
 
     (ROOT / "SCOREBOARD.md").write_text(
-        build_markdown(steps, run, commits, stamp), encoding="utf-8", newline="\n"
+        build_markdown(steps, run, commits, stamp, quality), encoding="utf-8", newline="\n"
     )
     (ROOT / "scoreboard.html").write_text(
-        build_html(steps, run, commits, stamp), encoding="utf-8", newline="\n"
+        build_html(steps, run, commits, stamp, quality), encoding="utf-8", newline="\n"
     )
 
     done = sum(1 for s in steps if s.status == "✅")

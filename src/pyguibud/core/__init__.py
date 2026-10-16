@@ -63,6 +63,7 @@ from pyguibud.core.registry import (
     EntryPointSource,
     Registry,
     Resolved,
+    configure_default_registry,
     default_registry,
     reset_default_registry,
 )
@@ -139,6 +140,7 @@ __all__ = [
     "Window",
     "XmlIoError",
     "XmlWarning",
+    "configure_default_registry",
     "default_registry",
     "dump_ui",
     "format_message",

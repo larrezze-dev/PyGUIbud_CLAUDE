@@ -95,11 +95,11 @@ def _print_languages() -> None:
 THEME_CHOICES = ("light", "dark", "high-contrast")
 
 
-def _default_launch(lang: str | None, theme: str | None, *, path: Path | None = None) -> int:
+def _default_launch(lang: str | None, theme: str | None, **keywords: Any) -> int:  # noqa: ANN401
     """Open the designer; Tk is imported only here, so --version and --help never load it."""
     from pyguibud.designer import launch
 
-    return launch(lang, theme, path=path)
+    return launch(lang, theme, **keywords)
 
 
 def main(argv: list[str] | None = None, *, launch: Callable[..., int] | None = None) -> int:
@@ -109,7 +109,8 @@ def main(argv: list[str] | None = None, *, launch: Callable[..., int] | None = N
         argv: Command-line arguments; defaults to sys.argv[1:].
         launch: Opens the designer as ``launch(language, theme)`` (plus ``path=`` when a FILE
             is given) and returns the exit code; ``language`` and ``theme`` are None when not
-            given, so the designer's settings decide. Tests inject a fake. Defaults to
+            given, so the designer's settings decide; ``no_plugins=True`` only with
+            ``--no-plugins``. Tests inject a fake. Defaults to
             :func:`pyguibud.designer.launch`.
 
     Returns:
@@ -147,6 +148,12 @@ def main(argv: list[str] | None = None, *, launch: Callable[..., int] | None = N
         help=_("designer colour theme (default: the last one used, else light)"),
     )
     parser.add_argument(
+        "--no-plugins",
+        action="store_true",
+        # Translators: the safe-mode option; plugins are widget packages installed separately.
+        help=_("start without loading any plugin (safe mode)"),
+    )
+    parser.add_argument(
         "file",
         nargs="?",
         metavar="FILE",
@@ -163,7 +170,7 @@ def main(argv: list[str] | None = None, *, launch: Callable[..., int] | None = N
         _print_languages()
         return 0
 
-    keywords: dict[str, Any] = {}
+    keywords: dict[str, Any] = {"no_plugins": True} if args.no_plugins else {}
     if args.file is not None:
         from .core.files import is_network_or_device_path
 

@@ -79,8 +79,20 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument("--backend", metavar="NAME", default="ttkbootstrap")  # see host_for
     parser.add_argument("--describe", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--portable", action="store_true", help=argparse.SUPPRESS)
+    parser.add_argument("--no-plugins", action="store_true", help=argparse.SUPPRESS)
+    parser.add_argument("--disable-plugins", metavar="NAME,...", help=argparse.SUPPRESS)
     parser.add_argument("file", metavar="FILE")
     return parser
+
+
+def _configure_plugins(args: argparse.Namespace) -> None:
+    """Apply the designer's plugin filter before anything builds the default registry."""
+    from pyguibud.core import configure_default_registry
+
+    if args.no_plugins:
+        configure_default_registry("all")
+    elif names := tuple(n.strip() for n in (args.disable_plugins or "").split(",") if n.strip()):
+        configure_default_registry(names)
 
 
 def _write(path: Path, data: dict[str, Any]) -> None:
@@ -221,6 +233,7 @@ def run(argv: list[str] | None = None) -> int:
     from pyguibud_runtime import UiError
 
     args = _parser().parse_args(argv)
+    _configure_plugins(args)
     if args.ui_lang:
         try:
             set_language(args.ui_lang)

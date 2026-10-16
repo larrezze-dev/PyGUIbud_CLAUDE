@@ -100,6 +100,7 @@ _M_CLOSE = N_("_Close")
 _M_EXPORT = N_("_Export Python code…")
 _M_HELP = N_("_Help")
 _M_SHORTCUTS = N_("_Keyboard shortcuts…")
+_M_PLUGINS = N_("_Plugins…")
 _M_NEXT_PANEL = N_("Next _panel")
 _M_PREVIOUS_PANEL = N_("Previous pa_nel")
 _M_PSEUDO = N_("Pseudo-locale (layout test)")
@@ -151,6 +152,7 @@ class ShellCallbacks:
     windows: WindowActions | None = None  # the Document menu is registered only when given
     files: FileCallbacks | None = None  # Open, Open recent, Save, Close, Recover
     preview: PreviewCallbacks | None = None  # the Preview menu (Step 15a)
+    show_plugins: Callable[[], None] | None = None  # Help > Plugins (Step 17c)
 
 
 @dataclass(frozen=True, slots=True)
@@ -233,6 +235,8 @@ def register_standard_actions(registry: ActionRegistry, callbacks: ShellCallback
     registry.add(
         ActionDef("help.shortcuts", "help", _M_SHORTCUTS, callbacks.show_shortcuts, shortcut="F1")
     )
+    if callbacks.show_plugins is not None:
+        registry.add(ActionDef("help.plugins", "help", _M_PLUGINS, callbacks.show_plugins))
 
 
 def _register_files(registry: ActionRegistry, files: FileCallbacks) -> None:

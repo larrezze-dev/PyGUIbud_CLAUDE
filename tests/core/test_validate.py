@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import sys
 import time
+from collections.abc import Iterable
 from pathlib import Path
 
 import pytest
@@ -42,6 +43,7 @@ from pyguibud.core import (
     validate,
     validate_read,
 )
+from pyguibud.core import registry as registry_module
 from pyguibud.core.files import DiskFiles
 from pyguibud.core.validate import (
     BIND_TYPES,
@@ -139,10 +141,21 @@ def _without_acme(report: ValidationReport) -> ValidationReport:
     return ValidationReport(tuple(f for f in report.findings if f not in acme))
 
 
+def _builtin_only() -> Registry:
+    """PyGUIbud's own entry points only: an installed acme never changes the findings."""
+    real = registry_module._metadata_entry_points
+
+    def ours(group: str) -> Iterable[registry_module.EntryPointLike]:
+        return [ep for ep in real(group) if ep.dist is not None and ep.dist.name == "pyguibud"]
+
+    return Registry(ours)
+
+
 def test_clean_documents_have_no_findings() -> None:
+    registry = _builtin_only()
     for path in (HELLO, *sorted(EXAMPLES.glob("*.ui"))):
-        report = validate_read(read_ui(path), default_registry())
-        if path.name == "acme_demo.ui":  # Step 17 UAT: the acme plugin is not installed in tests
+        report = validate_read(read_ui(path), registry)
+        if path.name == "acme_demo.ui":  # Step 17 UAT: acme is absent from this registry
             report = _without_acme(report)
         assert report.findings == () and report.ok and not report.truncated, path.name
     assert (CASES / "clean_menus_statusbar.findings.txt").read_text("utf-8") == ""

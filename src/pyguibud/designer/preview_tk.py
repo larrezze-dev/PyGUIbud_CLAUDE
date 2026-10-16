@@ -15,9 +15,9 @@ import subprocess
 import sys
 import tempfile
 import time
-from collections.abc import Callable
+from collections.abc import Callable, Collection
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 from pyguibud.core.commands import SetField
 from pyguibud.core.model import Window
@@ -199,8 +199,10 @@ class PreviewController:
         save_settings: Callable[[], None],
         current_window: Callable[[], object | None],
         toolkits: Callable[[], tuple[str, ...]],
+        plugins: Collection[str] | Literal["all"] = (),
     ) -> None:
         self.root, self.session, self.settings = root, session, settings
+        self.plugins = plugins  # the designer's start-up filter, not the edited settings
         self.toolkits = toolkits  # the listed backend names (Preview > Toolkit)
         self.post, self.tell, self.save_settings = post, tell, save_settings
         self.current_window = current_window
@@ -274,7 +276,8 @@ class PreviewController:
         (prepared, folder), self._next = self._next, None
         lang = self.settings.preview_lang
         argv = pv.child_argv(prepared, folder, ui_lang=get_language(), lang=lang,
-                             theme=self._theme_override(), backend=self.toolkit())  # fmt: skip
+                             theme=self._theme_override(), backend=self.toolkit(),
+                             plugins=self.plugins)  # fmt: skip
         try:
             self.runner.start(argv, folder)
         except OSError as exc:

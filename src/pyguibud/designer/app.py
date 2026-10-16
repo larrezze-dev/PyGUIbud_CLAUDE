@@ -11,12 +11,13 @@ import re
 import signal
 import sys
 import tkinter
-from collections.abc import Callable
+from collections.abc import Callable, Collection
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 from pyguibud.core import PyGUIbudError, ReadResult, XmlIoError, default_registry, write_ui
 from pyguibud.core.keys import split_mnemonic
+from pyguibud.core.registry import configure_default_registry
 from pyguibud.designer.actions import ActionRegistry
 from pyguibud.designer.clipboard_actions import ClipboardActions
 from pyguibud.designer.dialogs import files as file_dialogs
@@ -25,6 +26,7 @@ from pyguibud.designer.dialogs.confirm import ConfirmDialog
 from pyguibud.designer.dialogs.export import ExportController
 from pyguibud.designer.dialogs.message import Answer, ChoiceDialog, message_dialog
 from pyguibud.designer.dialogs.new_file import NewFileDialog
+from pyguibud.designer.dialogs.plugins import PluginsDialog
 from pyguibud.designer.dialogs.recovery import RecoveryDialog
 from pyguibud.designer.dialogs.rename import RenameDialog
 from pyguibud.designer.dialogs.save_changes import save_changes_dialog
@@ -39,6 +41,7 @@ from pyguibud.designer.files import (
     open_document,
     save_plan,
 )
+from pyguibud.designer.present.plugins import plugin_note
 from pyguibud.designer.preview_tk import PreviewController, sweep_stale
 from pyguibud.designer.recovery import RecoveryEntry, RecoverySession
 from pyguibud.designer.screen import desktop_bounds
@@ -121,9 +124,11 @@ class DesignerApp:
         specs: tuple[ThemeSpec, ...] | None = None,
         settings: Settings | None = None,
         recovery: RecoverySession | None = None,
+        plugins: Collection[str] | Literal["all"] = (),
     ) -> None:
         """``settings`` given: they are written back (``run`` passes them; tests may). Without
-        ``recovery`` there is no autosave timer."""
+        ``recovery`` there is no autosave timer. ``plugins`` is the disabled filter this run
+        started with (``"all"``: safe mode); the preview child gets the same one."""
         from pyguibud.designer import theme_tk
 
         self.root = root
@@ -143,6 +148,8 @@ class DesignerApp:
         self.session.recovery = recovery
         self._autosave_id: str | None = None
         self._notice: str | None = None  # a start-up message, posted after the first selection
+        self.plugins = plugins
+        self._plugins_due = False  # the plugin note is posted once, with the start-up notice
         self._settings_warned = False  # "settings not saved" is said once per run
         self._sashes_done = False
         #: How the window ends after Quit (tests replace it: the shared root must stay).
@@ -158,7 +165,7 @@ class DesignerApp:
         self.preview = PreviewController(
             root, self.session, self.settings, post=self.message.emit,
             tell=lambda text: self._tell(lambda: text), save_settings=self._save_settings,
-            current_window=self._canvas_window, toolkits=self._toolkit_names,
+            current_window=self._canvas_window, toolkits=self._toolkit_names, plugins=plugins,
         )  # fmt: skip
         preview = self.preview
         self.exporter = ExportController(
@@ -173,6 +180,7 @@ class DesignerApp:
             ShellCallbacks(
                 new_document=self.open_new_file,
                 show_shortcuts=self.open_shortcuts,
+                show_plugins=self.open_plugins,
                 next_panel=lambda: self.shell.cycle_focus(1),
                 previous_panel=lambda: self.shell.cycle_focus(-1),
                 quit=self.quit,
@@ -405,6 +413,19 @@ class DesignerApp:
         """Help > Keyboard shortcuts...: the cheat-sheet generated from the registry (F1)."""
         self._open_dialog(lambda: ShortcutsDialog(self.root, self.registry))
 
+    def open_plugins(self) -> None:
+        """Help > Plugins...: the registry's distributions, their status and problems."""
+        self._open_dialog(
+            lambda: PluginsDialog(
+                self.root,
+                self.session.registry,
+                self.settings,
+                copy=self._clipboard_put,
+                save=self._save_settings,
+                safe_mode=self.plugins == "all",
+            )
+        )
+
     def new_from_template(self, template_id: str) -> bool:
         """Replace the open document with a fresh one made from a template (no guard here: the
         wizard opens only after it).
@@ -613,7 +634,7 @@ class DesignerApp:
 
         ``notice`` (a msgid, e.g. reset settings) is shown once after the first selection.
         """
-        self._notice = notice
+        self._notice, self._plugins_due = notice, True
         orphans = self.recovery.scan_orphans() if self.recovery is not None else []
         if orphans:
             self.open_recovery(orphans, later=lambda: self._open_start(path))
@@ -637,8 +658,13 @@ class DesignerApp:
 
     def _post_notice(self) -> None:
         notice, self._notice = self._notice, None
-        if notice:
-            self.message.emit(_(notice))
+        due, self._plugins_due = self._plugins_due, False
+        # One status line: a settings reset outranks the plugin note (Help > Plugins keeps it).
+        text = _(notice) if notice else None
+        if text is None and due:
+            text = plugin_note(self.session.registry, safe_mode=self.plugins == "all")
+        if text:
+            self.message.emit(text)
 
     def recover(self) -> None:
         """File > Recover...: the recovery list, or a message when there is nothing to recover."""
@@ -873,16 +899,22 @@ def apply_app_icon(root: tkinter.Tk) -> tkinter.PhotoImage | None:
     return image
 
 
-def run(lang: str | None, theme: str | None, *, path: Path | None = None) -> int:
+def run(
+    lang: str | None, theme: str | None, *, path: Path | None = None, no_plugins: bool = False
+) -> int:
     """Create the root, show the designer and run its main loop (see ``designer.launch``).
 
     ``lang`` and ``theme`` are None when not given on the command line: the settings decide.
+    ``no_plugins`` is safe mode; otherwise ``Settings.disabled_plugins`` are not loaded.
     """
     from ttkbootstrap import App
 
     from pyguibud.designer import report_cannot_open
 
     settings, problem = load_settings()
+    # Before anything reads the registry: a disabled plugin is never imported (D7).
+    plugins: Collection[str] | Literal["all"] = "all" if no_plugins else settings.disabled_plugins
+    configure_default_registry(plugins)
     code = resolve_language(lang, settings)
     if code != get_language():
         with contextlib.suppress(ValueError):
@@ -906,7 +938,7 @@ def run(lang: str | None, theme: str | None, *, path: Path | None = None) -> int
     sweep_stale()  # preview folders a crashed designer left behind (spec preview-export 4.3)
     try:
         role = resolve_theme(theme, settings)
-        app = DesignerApp(root, role=role, settings=settings, recovery=recovery)
+        app = DesignerApp(root, role=role, settings=settings, recovery=recovery, plugins=plugins)
         root.protocol("WM_DELETE_WINDOW", app.quit)
         app.restore_window()
         _heartbeat(root)

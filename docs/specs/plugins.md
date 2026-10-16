@@ -374,6 +374,30 @@ All of these are pure, so they also run in the command guards. R89/R90 are skipp
   - Running `tests/runtime` before `tests/designer` in one process hangs `test_13a_gaps.py::test_no_listener_reenters_the_stack_in_any_designer_flow` in Tk's `update_idletasks`. Not bisected, and not checked against pre-17b code (user ruling 2026-10-14).
   - Neither affects the default (alphabetical) order.
 
+## 14c. 17c as built (2026-10-15)
+- **Budget:** 549 net production lines against cap 600: 465 in `src/**/*.py` (155 net in tracked files from `git diff --numstat HEAD`, plus 310 in the new `designer/dialogs/plugins.py` and `designer/present/plugins.py`), plus the 84-line acme module. **No trims:** T5–T7 were not needed, so the Bootstyle row, the Disable toggle and the canvas card all shipped.
+- **Deviations from this spec:**
+  - `core.registry.configure_default_registry(disabled)` (new) replaces the process-wide default registry. The designer calls it in `run()` straight after `load_settings()`; the preview child calls it from `--no-plugins` / `--disable-plugins a,b` (hidden flags).
+  - **A non-built-in spec's `plugin` is always its entry point's real distribution** (QA-17c-01). A self-declared name that differs after PEP 503 normalisation gives one warning per spec, `registry.plugin_name_mismatch`, and loading continues. `docs/specs/core-model.md` is updated.
+  - The dialog has no "first message" column: the details box shows every message. Rows are one per distribution, the built-in first; status order is Disabled > Failed > Incompatible > Loaded, and Built-in for `pyguibud`.
+  - In safe mode, rows read plain "Disabled" (no "on next start" suffix); the toggle still edits `disabled_plugins`.
+  - `Settings.disabled_plugins` is PEP 503-normalised, de-duplicated and capped at the **newest** 200 entries. A stored `"all"` or a non-list reads as `()`, never as safe mode. A name the parser would drop cannot be toggled.
+  - The preview child gets the filter the designer **started** with, not the setting as edited since.
+  - The failure card shows "{name} — the plugin failed" without the reason (`_tk.py` passes the raw stage text).
+  - The Bootstyle row shows for every widget whose class takes a bootstyle, whatever Preview toolkit is selected, and also on plugin widgets whose fallback takes one (e.g. acme's swatch, where the value is accepted and ignored).
+  - acme keeps its Qt factory: 17b's Qt factory path calls plugin `pyside6` factories (`tests/qt/test_acme_qt.py`).
+- **Testing:** 17c-BUG-1 (`child_argv` split a bare string into letters) and 17c-BUG-2 (a test read the machine's language) were fixed.
+- **QA (2026-10-15): REJECT (1 MAJOR), all fixed except QA-17c-04.**
+  - **QA-17c-01** (MAJOR): rows, Disable and `new_node` used the plugin's self-declared name. Fixed in the registry (above).
+  - **QA-17c-02** (MINOR): a name the settings parser drops could be toggled. **QA-17c-03** (MINOR): the cap kept the oldest entries. **QA-17c-05** (MINOR): pt_PT/pt_BR Copy and Close both used Alt+C ("_Fechar"). **QA-17c-07** (MINOR): the status column clipped after a toggle (now sized to every possible status text, `stretch=False`). **QA-17c-08** (MINOR): the details box had no scrollbar. **QA-17c-09** (MINOR): two tests depended on acme being absent.
+  - **QA-17c-04** (MINOR) → Step 19 (strict xfail): with two designers open, the last one to save its settings overwrites the other's `disabled_plugins`.
+- **Deferred → Step 19:**
+  - a non-built-in entry point whose real distribution is named `pyguibud` lands under the Built-in row;
+  - `.ui` files saved before the QA-17c-01 fix may carry a misdeclared `plugin=`, so R87/R88 miss and R28 hints the wrong pip name;
+  - the "cannot be drawn" card shows raw Tcl text when a factory destroys its parent (17b risk);
+  - the Bootstyle value on a plugin widget that ignores it gives no R84.
+- **→ Step 18:** `en_XA` and catalogue gaps noted by QA (older CLI help strings and "_Keyboard shortcuts…" untranslated); one translator comment missing on the start-up plural.
+
 ## 15. Affected documents (applied 2026-10-14)
 - ✔ FEATURES §3: the fallback column for DateEntry/Tableview = Entry/Treeview (D11); ToggleButton = a Checkbutton toggle bootstyle; tkinter and PySide6 show the core fallbacks.
 - ✔ validate-commands §5 + §5.1: R83–R90 rows as built (17a), R91 marked dropped (T4), `bind_types`.

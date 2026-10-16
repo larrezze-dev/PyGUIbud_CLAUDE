@@ -25,7 +25,9 @@ def report_cannot_open(reason: object, *, tk_missing: bool) -> int:
     return 1
 
 
-def launch(lang: str | None, theme: str | None, *, path: Path | None = None) -> int:
+def launch(
+    lang: str | None, theme: str | None, *, path: Path | None = None, no_plugins: bool = False
+) -> int:
     """Open the designer window and run it until it is closed.
 
     Args:
@@ -33,6 +35,7 @@ def launch(lang: str | None, theme: str | None, *, path: Path | None = None) -> 
         theme: ``"light"``, ``"dark"`` or ``"high-contrast"``, or None (the settings decide).
         path: A ``.ui`` file to open after the window appears (keyword-only, so the
             two-argument fakes of the tests keep working).
+        no_plugins: Safe mode (``--no-plugins``): no plugin distribution is loaded.
 
     Returns:
         The process exit code: 0 after a normal close, 1 when no window can be opened,
@@ -42,4 +45,4 @@ def launch(lang: str | None, theme: str | None, *, path: Path | None = None) -> 
         from pyguibud.designer.app import run
     except ImportError as exc:  # tkinter or ttkbootstrap is not installed
         return report_cannot_open(exc, tk_missing=True)
-    return run(lang, theme, path=path)
+    return run(lang, theme, path=path, no_plugins=no_plugins)

@@ -41,6 +41,7 @@ __all__ = [
     "FactoryStage",
     "Registry",
     "Resolved",
+    "configure_default_registry",
     "default_registry",
     "reset_default_registry",
 ]
@@ -444,8 +445,27 @@ class Registry:
                 first=self._origin_name(spec.name),
             )
             return
-        if not builtin and spec.plugin is None:
-            spec = dataclasses.replace(spec, plugin=_distribution(ep))
+        # The real distribution, never the self-declared name: Help > Plugins groups and disables
+        # by it, and a third party must not pose as another plugin or as PyGUIbud (QA-17c-01).
+        real = _distribution(ep)
+        if not builtin and spec.plugin != real:
+            if isinstance(spec.plugin, str) and (  # a plugin may put anything here
+                canonical_distribution(spec.plugin) != canonical_distribution(real)
+            ):
+                self._diagnose(
+                    ep,
+                    "registry.plugin_name_mismatch",
+                    # Translators: {declared} is the plugin name a widget claims; {distribution}
+                    # is the package it really comes from, which PyGUIbud uses instead.
+                    N_(
+                        "The widget '{name}' from '{distribution}' declares the plugin "
+                        "'{declared}'; '{distribution}' is used instead."
+                    ),
+                    severity="warning",
+                    name=spec.name,
+                    declared=spec.plugin,
+                )
+            spec = dataclasses.replace(spec, plugin=real)
         self._specs[spec.name] = spec
         self._origins[spec.name] = ep
 
@@ -745,6 +765,12 @@ def default_registry() -> Registry:
     if _default is None:
         _default = Registry()
     return _default
+
+
+def configure_default_registry(disabled: Collection[str] | Literal["all"] = ()) -> None:
+    """Replace the default registry with one that skips ``disabled`` plugins (still lazy)."""
+    global _default
+    _default = Registry(disabled=disabled)
 
 
 def reset_default_registry() -> None:

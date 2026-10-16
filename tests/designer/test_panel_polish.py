@@ -166,7 +166,8 @@ def test_the_combobox_keeps_its_readonly_state_and_gets_no_text_style(
 ) -> None:
     _open(app, designer_root, "lbl_username")
     editors = app.shell.inspector._editors.values()
-    combos = [e for e in editors if isinstance(e.widget, ttk.Combobox)]
+    # The choice editors; the Bootstyle row (17c) is an editable combobox, a text editor.
+    combos = [e for e in editors if isinstance(e.widget, ttk.Combobox) and not e.text_input]
     assert combos
     for editor in combos:
         assert "readonly" in editor.widget.state()
