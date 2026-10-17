@@ -179,6 +179,7 @@ def test_differences_from_the_exported_module(tmp_path: Path, private: Path) -> 
     assert isinstance(component, PreparedPreview) and component.host_id == "preview_host"
 
 
+@pytest.mark.budget
 def test_prepare_is_fast_for_2000_widgets(tmp_path: Path, private: Path) -> None:
     labels = "".join(
         f'<widget class="Label" id="l{i}"><prop name="text">L{i}</prop><pack/></widget>'

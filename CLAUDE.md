@@ -1,5 +1,6 @@
 # Golden rules
 - El proyecto se tiene que desarrollar paso a paso, con un plan definido. Cada paso ejecutado tiene que ser testeado por el usuario.
+- Todas las referencias al autor (interfaz, documentos, archivos .md y cualquier otra referencia a/los autores en cualquier archivo), en su idioma la tradución de "Creado por Luciano Arrezze y programado con el soporte de Claude Code"
 
 # Proyecto PyGUIbud
 Crear una aplicación para generar GUI's para Python en TTKBootstrap y si posible PYSide drag-and-drop, concepto similar a PyQt pero generando archivos .ui que solo dependan de tkinter y/o ttkboostrapt/pyside

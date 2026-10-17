@@ -9,8 +9,8 @@ import pytest
 
 from pyguibud.designer.app import DesignerApp
 from pyguibud.designer.preview import read_warnings, warning_note
+from tests.designer.fakes import FakeProcess
 from tests.designer.test_preview_gui import (  # noqa: F401 - fixtures
-    FakeProcess,
     _poll,
     app,
     children,

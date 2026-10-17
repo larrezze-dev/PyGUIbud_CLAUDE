@@ -191,6 +191,7 @@ def test_handles_only_for_grid_children_and_visible_in_every_theme(
     assert tk_errors == []
 
 
+@pytest.mark.budget
 def test_a_move_drag_over_a_grid_shows_its_cell_lines_within_budget(
     app: DesignerApp,  # noqa: F811
     designer_root: Any,

@@ -35,6 +35,7 @@ from pyguibud.designer.settings import (
     settings_path,
     state_dir,
 )
+from tests.conftest import reset_geometry
 
 HELLO = Path(__file__).resolve().parents[2] / "examples" / "hello.ui"
 
@@ -418,7 +419,7 @@ def shown(designer_root: Any) -> Iterator[Any]:
     designer_root.deiconify()
     designer_root.update()
     yield designer_root
-    designer_root.withdraw()
+    reset_geometry(designer_root)
 
 
 def _focus(root: Any, widget: Any) -> None:

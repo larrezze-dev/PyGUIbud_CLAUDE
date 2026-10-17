@@ -462,7 +462,7 @@ def test_qa16c_03_editing_a_long_bound_entry_keeps_the_variable_text(
 # ------------------------------------------------------------------ handler exceptions (D15)
 @pytest.mark.qt
 def test_a_raising_key_handler_keeps_the_loop_and_the_other_filters(
-    tmp_path: Path, loaded: list[LoadedUi], qapp: Any, capfd: pytest.CaptureFixture[str]
+    tmp_path: Path, loaded: list[LoadedUi], qapp: Any, capsys: pytest.CaptureFixture[str]
 ) -> None:
     from PySide6 import QtCore, QtGui, QtWidgets
     from PySide6.QtCore import Qt
@@ -506,4 +506,4 @@ def test_a_raising_key_handler_keeps_the_loop_and_the_other_filters(
     ui.run()
     assert seen.count("kraise") == 2 and seen.count("kok") == 1  # every key event still filtered
     assert "fout" in seen and seen.count("click") == 1
-    assert capfd.readouterr().err.count("boom") >= 2
+    assert capsys.readouterr().err.count("boom") >= 2  # not capfd: H07

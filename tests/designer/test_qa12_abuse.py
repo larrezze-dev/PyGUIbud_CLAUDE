@@ -29,6 +29,7 @@ from pyguibud.designer.theme import (
     tag_colours,
 )
 from pyguibud.designer.themes import NEUTRAL_SPECS
+from tests.conftest import reset_geometry
 
 ALL_SPECS = (*load_theme_specs(), *NEUTRAL_SPECS)
 
@@ -114,7 +115,7 @@ def test_sashes_dragged_to_the_edges_keep_every_heading_visible(shell: DesignerA
             assert panel.frame.winfo_width() >= panel.heading.winfo_reqwidth(), panel.name
             assert panel.frame.winfo_height() >= panel.heading.winfo_reqheight(), panel.name
     finally:
-        root.withdraw()
+        reset_geometry(root)
 
 
 # ---------------------------------------------------------------- QA-12-05: corrupt sape.json

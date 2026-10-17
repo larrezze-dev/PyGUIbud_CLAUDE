@@ -373,6 +373,7 @@ def test_an_empty_container_is_outlined_until_it_gets_a_child_or_is_selected(
     assert tk_errors == []
 
 
+@pytest.mark.budget
 def test_the_empty_outlines_stay_within_the_overlay_budget(
     app: DesignerApp,  # noqa: F811
     designer_root: Any,

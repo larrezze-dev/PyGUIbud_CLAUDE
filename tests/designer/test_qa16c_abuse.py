@@ -13,7 +13,8 @@ from typing import Any
 import pytest
 
 from pyguibud.designer.app import DesignerApp
-from tests.designer.test_preview_gui import FakeProcess, _poll, app, children  # noqa: F401
+from tests.designer.fakes import FakeProcess
+from tests.designer.test_preview_gui import _poll, app, children  # noqa: F401
 
 HAS_PYSIDE6 = importlib.util.find_spec("PySide6") is not None
 

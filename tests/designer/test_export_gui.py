@@ -17,7 +17,7 @@ from pyguibud.designer.app import DesignerApp
 from pyguibud.designer.dialogs.export import ExportDialog
 from pyguibud.designer.dialogs.message import ChoiceDialog
 from pyguibud.designer.files import open_document, path_key
-from tests.designer.test_preview_gui import FakeProcess
+from tests.designer.fakes import FakeProcess
 
 pytestmark = pytest.mark.gui
 

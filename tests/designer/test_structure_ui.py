@@ -21,6 +21,7 @@ from pyguibud.core.model import (
 )
 from pyguibud.designer.app import DesignerApp
 from pyguibud.designer.editing import M_EXTERNAL_INCLUDES, new_node
+from tests.conftest import reset_geometry
 
 pytestmark = pytest.mark.gui
 # The tests assert a state, undo, and assert the opposite: mypy would call that unreachable.
@@ -34,8 +35,7 @@ def shown(designer_root: Any) -> Iterator[Any]:
     designer_root.update()
     designer_root.focus_force()
     yield designer_root
-    designer_root.withdraw()
-    designer_root.geometry("")
+    reset_geometry(designer_root)
 
 
 def _document(app: DesignerApp) -> Any:

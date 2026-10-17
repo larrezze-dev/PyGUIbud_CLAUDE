@@ -17,6 +17,7 @@ from pyguibud.designer.app import DesignerApp
 from pyguibud.designer.edit import EditActions, count_descendants
 from pyguibud.designer.editing import new_node
 from pyguibud.designer.session import DesignerSession
+from tests.conftest import reset_geometry
 
 from .test_drag import _drag
 
@@ -199,8 +200,7 @@ def shown(designer_root: Any) -> Iterator[Any]:
     designer_root.update()
     designer_root.focus_force()
     yield designer_root
-    designer_root.withdraw()
-    designer_root.geometry("")
+    reset_geometry(designer_root)
 
 
 def _entry_of(app: DesignerApp, action_id: str) -> tuple[Any, int]:

@@ -23,6 +23,7 @@ from pyguibud.designer.canvas.engine import widget_rect
 from pyguibud.designer.edit import EditActions
 from pyguibud.designer.render_plan import IncludeResolver, design_plan
 from pyguibud.designer.targets import Target
+from tests.conftest import reset_geometry
 from tests.designer.test_include_render import (
     EXAMPLE,
     HEAD,
@@ -418,8 +419,7 @@ def test_qa_14b2_03_esc_mid_drag_of_a_multi_selection_cancels_it(
         tree.event_generate("<ButtonRelease-1>", x=x, y=y, state=0x100, time=next(_CLOCK))
         _settle(designer_root)
     finally:
-        designer_root.withdraw()
-        designer_root.geometry("")
+        reset_geometry(designer_root)
     assert stack.index == index and first.parent is not frame
     assert tk_errors == []
 

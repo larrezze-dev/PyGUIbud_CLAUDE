@@ -1,19 +1,17 @@
-"""Shared fixtures of the runtime tests: i18n reset, display gate, one session-wide Tk root."""
+"""Shared fixtures of the runtime tests: i18n reset, display gate, the shared Tk root is ``tk_root``
+in ``tests/conftest.py``."""
 
 from __future__ import annotations
 
-import functools
 import gettext
-import subprocess
-import sys
 from collections.abc import Iterator
 from pathlib import Path
-from typing import Any
 
 import pytest
 
 from pyguibud import i18n
 from pyguibud.core import reset_default_registry
+from tests.conftest import display_problem
 
 EXAMPLES = Path(__file__).resolve().parents[2] / "examples"
 HEADER = (
@@ -39,20 +37,7 @@ def write_ui(path: Path, windows: str, **parts: str) -> Path:
     return path
 
 
-@functools.cache
-def _display() -> str | None:
-    """None when Tk can open a window, else the reason (probed once, in a subprocess)."""
-    try:
-        result = subprocess.run(
-            [sys.executable, "-c", "import tkinter; tkinter.Tk().destroy()"],
-            capture_output=True,
-            text=True,
-            timeout=10,
-            check=False,
-        )
-    except subprocess.TimeoutExpired:
-        return "the Tk probe timed out"
-    return None if result.returncode == 0 else result.stderr.strip()[-200:] or "no display"
+_display = display_problem
 
 
 def pytest_runtest_setup(item: pytest.Item) -> None:
@@ -74,16 +59,3 @@ def clean_i18n(monkeypatch: pytest.MonkeyPatch) -> Iterator[None]:
     reset_default_registry()
     yield
     reset_default_registry()
-
-
-@pytest.fixture(scope="session")
-def tk_root() -> Iterator[Any]:
-    """The one ttkbootstrap root of the test process (ttkbootstrap allows a single root)."""
-    if _display() is not None:
-        pytest.skip("needs a Tk display")
-    import ttkbootstrap
-
-    root = ttkbootstrap.App(title="tests")
-    root.withdraw()
-    yield root
-    root.destroy()

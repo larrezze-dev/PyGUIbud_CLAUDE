@@ -142,6 +142,7 @@ def test_a_listener_path_never_reenters_the_stack(shell: DesignerApp, designer_r
     designer_root.update()
 
 
+@pytest.mark.budget
 def test_snapshot_and_hit_test_budgets(shell: DesignerApp, designer_root: Any) -> None:
     session = shell.session
     session.new_from_template("main_window")

@@ -18,7 +18,8 @@ from pyguibud.designer.session import DesignerSession
 from pyguibud.designer.settings import Settings, parse_settings, save_settings
 from pyguibud.designer.standard_actions import PreviewCallbacks, register_standard_actions
 from pyguibud.designer.standard_actions import ShellCallbacks as _Shell
-from tests.designer.test_preview_gui import FakeProcess, _poll, app, children  # noqa: F401
+from tests.designer.fakes import FakeProcess
+from tests.designer.test_preview_gui import _poll, app, children  # noqa: F401
 
 HELLO = Path(__file__).resolve().parents[2] / "examples" / "hello.ui"
 

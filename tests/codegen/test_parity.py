@@ -42,17 +42,6 @@ HANDLERS = ("on_cmd", "on_focus", "on_key", "on_change", "on_act", "on_select")
 _counter = itertools.count()
 
 
-@pytest.fixture(scope="module")
-def tk_root() -> Iterator[Any]:
-    """The one ttkbootstrap root of this module (ttkbootstrap allows a single root)."""
-    import ttkbootstrap
-
-    root = ttkbootstrap.App(title="parity")
-    root.withdraw()
-    yield root
-    root.destroy()
-
-
 class Recorder(dict[str, Callable[[], None]]):
     """A handlers mapping that records the calls of each name."""
 

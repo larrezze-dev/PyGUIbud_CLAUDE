@@ -209,11 +209,19 @@ def _rest(root: Any) -> None:
         root.after(5)
 
 
-def _holder(focus: Any) -> Any:
-    """The focused widget; skip when the desktop took the keyboard focus away mid-test."""
-    if focus is None:
-        pytest.skip("the desktop took the keyboard focus away mid-test")
-    return focus
+def _holder(root: Any) -> Any:
+    """The focused widget; skip when the desktop took the keyboard focus away mid-test.
+
+    Windows activates a new or re-mapped window asynchronously, so ``focus_get()`` can be None
+    for a few event rounds (the intermittent skip of H08): wait up to ~1 s before giving up.
+    """
+    for _ in range(50):
+        focus = root.focus_get()
+        if focus is not None:
+            return focus
+        root.update()
+        root.after(20)
+    pytest.skip("the desktop took the keyboard focus away mid-test")
 
 
 @contextlib.contextmanager
@@ -792,7 +800,7 @@ def test_keyboard_only_palette_insert_tree_delete_and_undo(
         for _ in range(8):  # F6 cycles the four panels; walk to the object tree
             if focus is tree:
                 break
-            _holder(focus).event_generate("<F6>")
+            _holder(designer_root).event_generate("<F6>")
             _settle(designer_root)
             focus = designer_root.focus_get()
         assert focus is tree, f"F6 never reached the object tree (focus: {focus})"
@@ -801,7 +809,7 @@ def test_keyboard_only_palette_insert_tree_delete_and_undo(
         tree.event_generate("<Delete>")
         _settle(designer_root, 6)
         (dialog,) = app._live_dialogs()
-        _holder(designer_root.focus_get()).event_generate("<Return>")  # default button: Delete
+        _holder(designer_root).event_generate("<Return>")  # default button: Delete
         _settle(designer_root, 6)
         assert frame.parent is None and dialog.closed
         tree.focus_force()

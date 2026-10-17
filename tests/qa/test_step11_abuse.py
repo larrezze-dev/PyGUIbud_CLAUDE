@@ -415,6 +415,8 @@ def test_network_and_device_paths_are_errors_and_never_opened(
     source = _ui(tmp_path / "form.ui", body=body, resources=f'<image id="pic" src="{src}"/>')
     result = read_ui(str(source))
     files = DiskFiles(str(source), result)
+    registry = default_registry()
+    registry.get("Label")  # loaded first (it is lazy): the entry points are files too
 
     def touched(*args: object, **kwargs: object) -> None:
         raise AssertionError(f"file access: {args!r}")
@@ -423,7 +425,7 @@ def test_network_and_device_paths_are_errors_and_never_opened(
         monkeypatch.setattr(os, name, touched)
     monkeypatch.setattr(os.path, "realpath", touched)
     monkeypatch.setattr("builtins.open", touched)
-    report = validate_read(result, default_registry(), files=files)
+    report = validate_read(result, registry, files=files)
     codes = [f.code for f in report.errors]
     assert codes.count("validate.network_path") == 2, report.findings
     assert set(codes) == {"validate.network_path"}, codes  # no missing/invalid on top

@@ -1,6 +1,6 @@
 # Spec — Step 19: QA hardening ("idiot-proof")
 
-- **Status:** Proposed (architect, 2026-10-17). The user rules on D1–D14 (§4) before part 19a starts. · **ADR:** none needed. Nothing here changes the `.ui` schema, the public API or the import boundary. If D9 (a) is chosen, ADR-002 gets an addendum about the writer's `tb` prefix.
+- **Status:** Accepted (user, 2026-10-17: "accept all defaults" — D1–D14 all at the recommended default). Budget baseline: HEAD `67125cc` (Step 18 committed). · **ADR:** none needed. Nothing here changes the `.ui` schema, the public API or the import boundary. If D9 (a) is chosen, ADR-002 gets an addendum about the writer's `tb` prefix.
 - **Owner:** QA (opus) + DEBUGGER (opus), with TESTING, BACKEND, FRONTEND and TRANSLATOR per part (§3) · **Reviewer:** SOFTWARE-ARCHITECT
 - **Budget:** ≈ 2,280 net production lines over seven parts. The caps total 2,920 (§3).
 - **Plan row 19:** an abuse suite covering corrupt files, absurd values, cyclic parents, quitting with unsaved changes, read-only paths and huge files. UAT: "Try to break it yourself using the provided checklist; every bad action is blocked gracefully."

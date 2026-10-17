@@ -22,6 +22,7 @@ from pyguibud.designer.app import DesignerApp
 from pyguibud.designer.canvas.overlay import SELECTION_CAP
 from pyguibud.designer.editing import new_node, new_variable
 from pyguibud.designer.shell import _flush_first, unique_mnemonics
+from tests.conftest import reset_geometry
 from tests.designer.test_structure_ui import (
     _dialog,
     _document,
@@ -45,8 +46,7 @@ def shown(designer_root: Any) -> Iterator[Any]:
     designer_root.update()
     designer_root.focus_force()
     yield designer_root
-    designer_root.withdraw()
-    designer_root.geometry("")
+    reset_geometry(designer_root)
 
 
 def _stack(app: DesignerApp) -> Any:

@@ -14,6 +14,8 @@ tag; :data:`DESIGN_TAG` binds no geometry event, so those events reach it and no
 
 from __future__ import annotations
 
+import contextlib
+import re
 import tkinter
 from collections.abc import Callable, Iterator
 from typing import Any
@@ -25,6 +27,7 @@ __all__ = [
     "apply_design_mode",
     "descendants",
     "install",
+    "unbind_tag",
     "uninstall",
 ]
 
@@ -81,7 +84,18 @@ def install(root: Any, handlers: dict[str, Handler]) -> None:  # noqa: ANN401 - 
 def uninstall(root: Any) -> None:  # noqa: ANN401 - a Tk root
     """Remove every design binding (the panel is disposed)."""
     for sequence in SEQUENCES:
-        root.unbind_class(DESIGN_TAG, sequence)
+        unbind_tag(root, DESIGN_TAG, sequence)
+
+
+def unbind_tag(widget: Any, tag: str, sequence: str) -> None:  # noqa: ANN401 - a Tk widget
+    """``unbind_class`` that also deletes the Tcl commands of the binding: tkinter keeps those of
+    ``bind_class``/``bind_all`` on the root until it is destroyed, so every dispose leaked them
+    (H11)."""
+    script, root = widget.bind_class(tag, sequence), widget.nametowidget(".")
+    widget.unbind_class(tag, sequence)
+    for name in re.findall(r"\[(\S+) ", script):
+        with contextlib.suppress(tkinter.TclError):
+            root.deletecommand(name)  # also drops it from the root's cleanup list
 
 
 def _breaking(handler: Handler | None) -> Callable[[Any], str]:

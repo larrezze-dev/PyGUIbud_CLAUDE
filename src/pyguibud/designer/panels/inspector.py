@@ -23,6 +23,7 @@ from pyguibud.core.commands import Macro, Outcome, SetField, SetResource
 from pyguibud.core.diagnostics import Finding
 from pyguibud.core.model import ImageResource, Prop, Widget, Window
 from pyguibud.core.validate import BIND_TYPES
+from pyguibud.designer.canvas.design import unbind_tag
 from pyguibud.designer.dialogs import files
 from pyguibud.designer.dialogs.base import ModalDialog
 from pyguibud.designer.dialogs.text import TextDialog
@@ -496,7 +497,7 @@ class InspectorPanel(PanelBase):
         self._pending_ids.clear()
         for sequence in ("<MouseWheel>", "<Button-4>", "<Button-5>"):
             try:
-                self.frame.unbind_class(self._wheel_tag, sequence)
+                unbind_tag(self.frame, self._wheel_tag, sequence)
             except tkinter.TclError:  # the root is already gone: nothing is bound any more
                 break
         super().dispose()

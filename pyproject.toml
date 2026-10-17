@@ -153,6 +153,7 @@ markers = [
     "gui: needs a Tk display",
     "qt: needs PySide6 (run offscreen)",
     "slow: slow tests (clean virtual environments)",
+    "budget: a timing budget (skipped under coverage tracing)",
 ]
 
 [tool.coverage.run]

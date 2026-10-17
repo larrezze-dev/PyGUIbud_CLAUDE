@@ -111,6 +111,7 @@ def test_tree_rows_flag_findings_without_using_ids_as_keys() -> None:
     assert len({row.key for row in rows}) == len(rows)  # duplicate ids: keys stay unique
 
 
+@pytest.mark.budget
 def test_tree_rows_large_document_is_fast_and_iterative() -> None:
     document = Document()
     window = Window(id="main")

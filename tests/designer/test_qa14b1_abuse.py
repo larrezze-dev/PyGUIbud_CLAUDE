@@ -20,6 +20,7 @@ from pyguibud.core.xml_io import read_ui, write_ui
 from pyguibud.designer import sizing
 from pyguibud.designer.app import DesignerApp
 from pyguibud.designer.properties import field_rows
+from tests.conftest import reset_geometry
 from tests.designer.test_qa13a_abuse import (  # noqa: F401 - fixtures and helpers
     _settle,
     app,
@@ -35,8 +36,7 @@ DATA = Path(__file__).parent / "data" / "qa14b1_sizes.ui"
 def _withdraw_after(designer_root: Any) -> Iterator[None]:
     """``_open`` maps the shared root (an unmapped canvas tab is 1 x 1 px); withdraw it after."""
     yield
-    designer_root.withdraw()
-    designer_root.geometry("")
+    reset_geometry(designer_root)
 
 
 def _open(app: DesignerApp, root: Any) -> None:  # noqa: F811

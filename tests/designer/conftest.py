@@ -1,17 +1,13 @@
 """Fixtures of the designer tests: i18n reset, display gate, ONE package-wide Tk root.
 
-ttkbootstrap allows a single live root per process, so no test creates ``Tk()`` itself. The root
-is shared by the whole package and reuses an already live root (for example the runtime tests'
-session root) instead of creating a second one.
+ttkbootstrap allows a single live root per process, so no test creates ``Tk()`` itself: the
+designer uses the suite's session root (``tests/conftest.py``), reset on entry and exit.
 """
 
 from __future__ import annotations
 
-import functools
 import gc
 import gettext
-import subprocess
-import sys
 import time
 from collections.abc import Callable, Iterator
 from typing import Any
@@ -20,6 +16,7 @@ import pytest
 
 from pyguibud import i18n
 from pyguibud.core import reset_default_registry
+from tests.conftest import display_problem, reset_root
 
 
 def best_of(call: Callable[[], object], repeat: int = 7) -> float:
@@ -42,20 +39,7 @@ def best_of(call: Callable[[], object], repeat: int = 7) -> float:
     return min(timings)
 
 
-@functools.cache
-def _display() -> str | None:
-    """None when Tk can open a window, else the reason (probed once, in a subprocess)."""
-    try:
-        result = subprocess.run(
-            [sys.executable, "-c", "import tkinter; tkinter.Tk().destroy()"],
-            capture_output=True,
-            text=True,
-            timeout=10,
-            check=False,
-        )
-    except subprocess.TimeoutExpired:
-        return "the Tk probe timed out"
-    return None if result.returncode == 0 else result.stderr.strip()[-200:] or "no display"
+_display = display_problem
 
 
 def pytest_runtest_setup(item: pytest.Item) -> None:
@@ -80,22 +64,11 @@ def clean_i18n(monkeypatch: pytest.MonkeyPatch) -> Iterator[None]:
 
 
 @pytest.fixture(scope="package")
-def designer_root() -> Iterator[Any]:
-    """The one withdrawn ttkbootstrap root of the designer tests (D13)."""
-    if _display() is not None:
-        pytest.skip("needs a Tk display")
-    from ttkbootstrap import App, Style
-
-    style_cls: Any = Style  # ttkbootstrap ships no annotations for get_instance
-    existing = style_cls.get_instance()
-    master = getattr(existing, "master", None)
-    if master is not None and master.winfo_exists():
-        yield master  # not ours: never destroy it
-        return
-    root = App(title="designer-tests")
-    root.withdraw()
-    yield root
-    root.destroy()
+def designer_root(tk_root: Any) -> Iterator[Any]:
+    """The suite's one withdrawn root (``tests/conftest.py``), reset on entering and leaving."""
+    reset_root(tk_root)
+    yield tk_root
+    reset_root(tk_root)
 
 
 @pytest.fixture

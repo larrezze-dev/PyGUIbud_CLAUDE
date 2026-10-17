@@ -418,22 +418,33 @@ def _pending_scripts(root: Any) -> list[str]:
 
 @pytest.mark.gui
 def test_disposing_right_after_a_palette_render_raises_nothing(
-    designer_root: Any, monkeypatch: pytest.MonkeyPatch, capfd: pytest.CaptureFixture[str]
+    designer_root: Any, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     """Regression: the palette's end-of-render job outlived the panel (bgerror at exit).
 
     A render now ends with a queued marker event: it must arrive harmlessly after dispose().
+    Tcl background errors are caught with ``interp bgerror``, not ``capfd``: fd-level capture
+    closes the handles Tcl wrapped as stdout/stderr (QA-10-13, H07).
     """
     caught: list[BaseException] = []
     monkeypatch.setattr(
         designer_root, "report_callback_exception", lambda _k, value, _tb: caught.append(value)
     )
-    app = DesignerApp(designer_root)
-    app.shell.palette._render()  # a re-render, as retranslate() does, then close at once
-    app.dispose()
-    designer_root.update()  # delivers the queued marker (and anything else left behind)
+    tcl = designer_root.tk
+    background: list[str] = []
+    handler = designer_root.register(lambda message, *_options: background.append(message))
+    previous = tcl.call("interp", "bgerror", "")
+    tcl.call("interp", "bgerror", "", handler)
+    try:
+        app = DesignerApp(designer_root)
+        app.shell.palette._render()  # a re-render, as retranslate() does, then close at once
+        app.dispose()
+        designer_root.update()  # delivers the queued marker (and anything else left behind)
+    finally:
+        tcl.call("interp", "bgerror", "", previous)
+        designer_root.deletecommand(handler)
     assert caught == []
-    assert "invalid command name" not in capfd.readouterr().err
+    assert background == []
 
 
 @pytest.mark.gui

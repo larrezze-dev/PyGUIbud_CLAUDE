@@ -24,6 +24,7 @@ import pytest
 
 import pyguibud_runtime._texts as runtime_texts
 from pyguibud import i18n
+from tests.conftest import reset_geometry
 
 pytestmark = pytest.mark.gui
 
@@ -53,10 +54,6 @@ def _designer(root: Any, path: Path, registry: Any = None) -> Iterator[Any]:
     designer = DesignerApp(root, session, settings=Settings())
     assert designer.open_path(path)
     root.update_idletasks()
-    # The size the next tests get back: a withdrawn root keeps the size it has (Windows), or
-    # this is its first layout. Never re-read it later: a moved sash makes the root request
-    # its current size, the minimum.
-    size = f"{root.winfo_width()}x{root.winfo_height()}"
     root.deiconify()
     width, height = root.minsize()
     root.geometry(f"{width}x{height}+0+0")
@@ -67,17 +64,10 @@ def _designer(root: Any, path: Path, registry: Any = None) -> Iterator[Any]:
     finally:
         for dialog in designer._live_dialogs():
             dialog.close()
-        # Back to the size it had, while still mapped: a withdrawn Tk window on Windows keeps the
-        # size it had when withdrawn and ignores geometry changes, so the minimum would stick
-        # and the next tests' canvas would be ~114 px wide. Then drop the fixed size, for the
-        # platforms where a withdrawn root follows its request.
-        root.geometry(size)
-        root.update_idletasks()
-        root.withdraw()
-        root.geometry("")
         designer.set_theme("light")
         designer.flush_theme()
         designer.dispose()
+        reset_geometry(root)  # resized while mapped: a withdrawn root may ignore it (H01)
 
 
 @pytest.fixture
@@ -172,6 +162,7 @@ def test_the_designer_helper_gives_the_shared_root_back_its_size(designer_root: 
             designer.flush_theme()
             designer.dispose()
 
+    reset_geometry(designer_root)  # a known start, whatever the previous test left
     before = size_of_a_plain_designer()
     with _designer(designer_root, HELLO) as app:
         _switch(app, "fr_FR", "en_GB")  # the wider palette moves a sash at the minimum size

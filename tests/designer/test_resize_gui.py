@@ -289,6 +289,7 @@ def test_resize_cycles_leak_nothing(
     assert tk_errors == []
 
 
+@pytest.mark.budget
 def test_size_motion_stays_within_the_overlay_budget(
     app: DesignerApp,  # noqa: F811
     designer_root: Any,

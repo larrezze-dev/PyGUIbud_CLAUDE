@@ -27,6 +27,7 @@ from pyguibud.designer.actions import (
     action_hint,
     label_of,
 )
+from pyguibud.designer.canvas.design import unbind_tag
 from pyguibud.designer.canvas.drag import DragController
 from pyguibud.designer.icons_tk import icons
 from pyguibud.designer.panels.base import PanelBase
@@ -790,8 +791,8 @@ class Shell:
             panel.dispose()
         try:
             for sequence in (*self._bound, "<FocusIn>", "<KeyRelease>"):
-                self.root.unbind_all(sequence)
-            self.root.unbind_class(_NO_CLICK_FOCUS, "<ButtonPress-1>")
+                unbind_tag(self.root, "all", sequence)
+            unbind_tag(self.root, _NO_CLICK_FOCUS, "<ButtonPress-1>")
             self.root.configure(menu="")
             for widget in (self.menubar, self.tree_menu, self.toolbar, self.body, self.statusbar):
                 widget.destroy()

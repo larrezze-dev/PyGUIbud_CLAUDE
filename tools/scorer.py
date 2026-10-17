@@ -92,12 +92,15 @@ def split_row(line: str) -> list[str]:
 def find_status(cell: str) -> str | None:
     """Return the status emoji contained in a cell, tolerating U+FE0F.
 
-    A cell with several emojis (e.g. "🔄 14a.1 ✅ · 14a.2 ⏳") takes the leading one.
+    A cell with several emojis (e.g. "🔄 14a.1 ✅ · 14a.2 ⏳") takes the leading one. A partial
+    status ("🔶 ... ✅ ...") is in progress: only a leading ✅ counts as done (H06).
     """
+    if cell.lstrip().startswith("🔶"):
+        return "🔄"
     for emoji in STATUS_ORDER:
         if cell.lstrip().startswith(emoji):
             return emoji
-    for emoji in STATUS_ORDER:
+    for emoji in reversed(STATUS_ORDER):  # the least finished one wins: ✅ only on its own
         if emoji in cell:
             return emoji
     return None

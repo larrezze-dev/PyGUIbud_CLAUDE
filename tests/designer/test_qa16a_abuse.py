@@ -16,7 +16,8 @@ from pyguibud import i18n
 from pyguibud.core.keys import split_mnemonic
 from pyguibud.designer import preview as pv
 from pyguibud.designer.actions import ActionDef, MenuDef, label_of
-from tests.designer.test_preview_gui import FakeProcess, _poll, app, children  # noqa: F401
+from tests.designer.fakes import FakeProcess
+from tests.designer.test_preview_gui import _poll, app, children  # noqa: F401
 
 pytestmark = pytest.mark.gui
 

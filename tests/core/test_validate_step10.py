@@ -873,6 +873,7 @@ def test_r53_exactly_the_maximum_number_of_files_is_fine(tmp_path: Path) -> None
     assert codes(project(tmp_path, files)) == []
 
 
+@pytest.mark.budget
 def test_r53_fan_out_bomb_is_cheap_and_reported(tmp_path: Path) -> None:
     body = window("main", "main", include("inc", "#", "l0"))
     for level in range(5):

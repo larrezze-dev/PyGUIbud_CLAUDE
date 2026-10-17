@@ -290,6 +290,7 @@ def test_core_boundary_still_holds() -> None:
     assert subprocess.run([sys.executable, "-c", code], capture_output=True).returncode == 0
 
 
+@pytest.mark.budget
 def test_session_open_is_fast_enough() -> None:
     registry = default_registry()
     sessions = iter([DesignerSession(registry) for _ in range(3)])  # each open is a first one
