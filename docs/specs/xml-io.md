@@ -288,13 +288,13 @@ All msgids are wrapped in `N_()` at the raise site. `{element}` is the local nam
 ## 10. Atomic save (`write_ui`)
 1. `data = dump_ui(document)`. Every `XmlIoError` is raised here, before the file system is touched.
 2. `target = Path(path)`. If `target.is_dir()` → `xml.write_failed`.
-3. Create the temporary file with `core.atomic.create_temporary(target.parent or ".", prefix=f".{target.name}.", suffix=".tmp")` (mode 0600, `O_EXCL`, at most 100 names; a `PermissionError` is raised at once). Not `tempfile.mkstemp`: on Windows it retries a refused folder up to `TMP_MAX` times because `os.access` ignores ACLs (QA-15b-01, Step 15b). Write the bytes, `flush`, `os.fsync`, close.
+3. Create the temporary file with `core.atomic.create_temporary(target.parent or ".")` (name `~pgb<8 hex>.tmp`, never longer with the target, Step 19b H23; mode 0600, `O_EXCL`, at most 100 names; a `PermissionError` is raised at once). Not `tempfile.mkstemp`: on Windows it retries a refused folder up to `TMP_MAX` times because `os.access` ignores ACLs (QA-15b-01, Step 15b). Write the bytes, `flush`, `os.fsync`, close.
 4. **POSIX:** `shutil.copymode(target, tmp)` if the target exists, else `os.chmod(tmp, 0o644)`. This undoes the 0600 of step 3.
-5. If `backup` and the target exists: `shutil.copy2(target, target.with_name(target.name + ".bak"))`. Copy, never rename, so the target exists until step 6; an existing `.bak` is overwritten. Example: `hello.ui` → `hello.ui.bak`.
+5. If `backup` and the target exists: create a second temporary file as in step 3, close it, `shutil.copy2(target, tmp_bak)`, then `os.replace(tmp_bak, core.atomic.backup_path(target))` (retried as in step 6). Copy, never rename, so the target exists until step 6; a failed copy (a full disk) leaves the earlier `.bak` whole (QA-19b-02). `backup_path` is `<name>.bak` (`hello.ui` → `hello.ui.bak`); when that would exceed 255 UTF-16 units (Windows) or bytes (POSIX), the name before `.bak` is shortened until it fits, and the saved file keeps its full name (QA-19b-01).
 6. `os.replace(tmp, target)`. On `PermissionError`, retry up to 5 times, 50 ms apart (Windows antivirus or indexer locks).
 7. Best effort: `os.fsync` of the directory, POSIX only.
 8. **Any `OSError` in steps 2–7:**
-   - remove the temporary file (`contextlib.suppress(OSError)`);
+   - remove the temporary files (`contextlib.suppress(OSError)`);
    - raise `XmlIoError("xml.write_failed", …, source=str(path), reason=exc.strerror or str(exc)) from exc`.
    - The original file and any existing `.bak` from an earlier save stay intact. If the failure happens after step 5, the new `.bak` equals the original.
 - Symlinks are replaced, not followed (documented).

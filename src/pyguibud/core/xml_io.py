@@ -22,10 +22,11 @@ from types import MappingProxyType
 from typing import Final, Literal, cast
 
 from pyguibud.core import migrations, xmltree
-from pyguibud.core.atomic import create_temporary
+from pyguibud.core.atomic import backup_path, create_temporary
 from pyguibud.core.diagnostics import EMPTY_SOURCE_MAP, Finding, SourceMap
 from pyguibud.core.errors import ModelError, XmlIoError
 from pyguibud.core.model import (
+    KNOWN_NAMESPACES,
     NS_UI,
     Action,
     ContainerExtras,
@@ -330,6 +331,21 @@ def _read(data: bytes, *, source: str, check_declared_encoding: bool) -> ReadRes
             )
         )
 
+    for prefix, uri in (*tree.namespaces.items(), *tree.rebound.items()):
+        if KNOWN_NAMESPACES.get(prefix, uri) != uri:  # xmlns:tb="urn:evil" (ADR-002 Addendum B)
+            warnings.append(
+                XmlWarning(
+                    code="xml.foreign_prefix",
+                    # Translators: {prefix} is an XML namespace prefix such as tb; {uri} is the
+                    # namespace it is bound to in the file. Keep both unchanged.
+                    msgid=N_(
+                        "The prefix '{prefix}' is bound to the foreign namespace '{uri}'; this "
+                        "content is not for ttkbootstrap and is saved under another prefix."
+                    ),
+                    params={"prefix": prefix, "uri": uri},
+                    source=source,
+                )
+            )
     namespaces = {"": NS_UI, **tree.namespaces}
     reader = _Reader(source, tree.positions, namespaces, newer_minor=read_only)
     document = reader.document(root, document_version)
@@ -1017,12 +1033,11 @@ def write_ui(document: Document, path: str | os.PathLike[str], *, backup: bool =
     data = _dump(document, source)
     target = Path(path)
     temporary: str | None = None
+    copying: str | None = None
     try:
         if target.is_dir():
             raise IsADirectoryError(errno.EISDIR, os.strerror(errno.EISDIR), source)
-        handle, temporary = create_temporary(
-            target.parent, prefix=f".{target.name}.", suffix=".tmp"
-        )
+        handle, temporary = create_temporary(target.parent)
         with os.fdopen(handle, "wb") as stream:
             stream.write(data)
             stream.flush()
@@ -1034,16 +1049,22 @@ def write_ui(document: Document, path: str | os.PathLike[str], *, backup: bool =
             else:
                 os.chmod(temporary, 0o644)
         if backup and target.exists():
-            # Copy, never rename: the target must exist until the final replace.
-            shutil.copy2(target, target.with_name(target.name + ".bak"))
+            # Copy, never rename: the target must exist until the final replace. The copy is
+            # made beside it first, so a failed copy (a full disk) keeps the earlier .bak whole.
+            handle, copying = create_temporary(target.parent)
+            os.close(handle)
+            shutil.copy2(target, copying)
+            _replace(copying, backup_path(target))
+            copying = None
         _replace(temporary, target)
         temporary = None
         if os.name == "posix":  # pragma: no cover - exercised on POSIX CI only
             _fsync_directory(target.parent)
     except OSError as exc:
-        if temporary is not None:
-            with contextlib.suppress(OSError):
-                os.remove(temporary)
+        for leftover in (temporary, copying):
+            if leftover is not None:
+                with contextlib.suppress(OSError):
+                    os.remove(leftover)
         raise XmlIoError(
             "xml.write_failed",
             # Translators: {reason} is an error description from the operating system.

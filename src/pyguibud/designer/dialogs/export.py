@@ -8,7 +8,6 @@ from __future__ import annotations
 
 import shutil
 import subprocess
-import tempfile
 import tkinter
 from collections.abc import Callable
 from pathlib import Path
@@ -22,7 +21,7 @@ from pyguibud.designer.dialogs import files as file_dialogs
 from pyguibud.designer.dialogs.base import ModalDialog
 from pyguibud.designer.dialogs.message import Answer
 from pyguibud.designer.files import path_key
-from pyguibud.designer.preview_tk import PreviewRunner
+from pyguibud.designer.preview_tk import PreviewRunner, private_folder
 from pyguibud.designer.session import DesignerSession
 from pyguibud.designer.settings import Settings, remember_export
 from pyguibud.designer.theme_tk import INVALID_PREFIX
@@ -262,7 +261,7 @@ class ExportController:
         lang = self.settings.preview_lang
         self.runner.dispose()  # one run at a time: the previous one ends (<= 1 s)
         try:
-            folder = Path(tempfile.mkdtemp(prefix="pyguibud-preview-run-"))
+            folder = private_folder("run-")
         except OSError as exc:
             return exc.strerror or str(exc)
         try:

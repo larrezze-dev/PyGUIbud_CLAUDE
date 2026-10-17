@@ -47,6 +47,7 @@ def _extract_keys() -> set[MsgKey]:
         "_": None,
         "N_": None,
         "NP_": (1, 2),
+        "NC_": ((1, "c"), 2),
         "gettext": None,
         "ngettext": (1, 2),
         "pgettext": ((1, "c"), 2),

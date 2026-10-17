@@ -199,6 +199,9 @@ class ParsedTree:
     positions: Mapping[ET.Element, tuple[int, int]]
     namespaces: Mapping[str, str]
     discarded: int
+    #: A bound prefix declared again for another namespace (the first per prefix): the first
+    #: declaration still wins; these are only reported (QA-19b-06).
+    rebound: Mapping[str, str]
 
 
 class _TreeBuilder:
@@ -218,6 +221,7 @@ class _TreeBuilder:
         self.root: ET.Element | None = None
         self.positions: dict[ET.Element, tuple[int, int]] = {}
         self.namespaces: dict[str, str] = {}
+        self.rebound: dict[str, str] = {}
         self.discarded = 0
 
         parser = self.parser
@@ -303,6 +307,8 @@ class _TreeBuilder:
         prefix = prefix or ""
         if not prefix or not uri or uri in (NS_UI, NS_XML):
             return
+        if self.namespaces.get(prefix, uri) != uri:
+            self.rebound.setdefault(prefix, uri)
         if prefix in self.namespaces or uri in self.namespaces.values():
             return  # first declaration wins
         self.namespaces[prefix] = uri
@@ -349,7 +355,9 @@ class _TreeBuilder:
                 source=self.source,
                 detail="no element found",
             )
-        return ParsedTree(self.root, self.positions, dict(self.namespaces), self.discarded)
+        return ParsedTree(
+            self.root, self.positions, dict(self.namespaces), self.discarded, dict(self.rebound)
+        )
 
 
 def parse(
@@ -416,11 +424,15 @@ def effective_namespaces(namespaces: Mapping[str, str]) -> dict[str, str]:
     The default entry and prefixes bound to ``NS_UI`` are dropped (the reader skips them), and
     each URI keeps only its smallest prefix in code-point order (the reader keeps one per URI).
     Prefix choices therefore never depend on entries that a re-read would lose, which keeps a
-    second save byte-identical. Entries are returned sorted by prefix.
+    second save byte-identical. Entries are returned sorted by prefix. A known prefix bound to
+    another URI (``xmlns:tb="urn:evil"``) is dropped, so that URI gets a generated prefix and
+    ``tb`` always means ttkbootstrap (ADR-002 Addendum B).
     """
     winners: dict[str, str] = {}
     for prefix in sorted(namespaces):
         uri = namespaces[prefix]
+        if KNOWN_NAMESPACES.get(prefix, uri) != uri:
+            continue
         if prefix and uri != NS_UI and uri not in winners:
             winners[uri] = prefix
     return {prefix: uri for uri, prefix in sorted(winners.items(), key=lambda item: item[1])}

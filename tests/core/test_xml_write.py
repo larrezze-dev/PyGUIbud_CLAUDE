@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+import re
 import stat
 import sys
 from collections.abc import Callable
@@ -305,9 +306,9 @@ def test_root_attribute_order_and_extras() -> None:
 # Namespaces and preserved content
 # --------------------------------------------------------------------------------------
 def test_namespaces_declared_on_root_used_or_not_sorted_by_prefix() -> None:
-    document = Document(namespaces={"": "ignored", "zz": "urn:z", "aa": "urn:a", "tb": "urn:tb"})
+    document = Document(namespaces={"": "ignored", "zz": "urn:z", "aa": "urn:a", "mm": "urn:m"})
     root = dump_ui(document).split(b"\n")[1].decode()
-    assert root.index('xmlns:aa="urn:a"') < root.index("xmlns:tb=") < root.index("xmlns:zz=")
+    assert root.index('xmlns:aa="urn:a"') < root.index("xmlns:mm=") < root.index("xmlns:zz=")
     assert 'xmlns="urn:pyguibud:ui:1"' in root and "ignored" not in root
 
 
@@ -916,8 +917,11 @@ def test_failure_at_replace_leaves_original_intact_and_no_temp_file(
     target = tmp_path / "hello.ui"
     target.write_bytes(b"precious")
     seen: list[str] = []
+    real_replace = os.replace
 
     def fail(src: Any, dst: Any) -> None:
+        if Path(dst).name == "hello.ui.bak":  # the backup's own replace (QA-19b-02) succeeds
+            return real_replace(src, dst)
         seen.append(os.fspath(src))
         assert os.path.exists(src), "the temporary file must exist before the replace"
         raise OSError(errno_value, "disk on fire")
@@ -934,7 +938,7 @@ def test_failure_at_replace_leaves_original_intact_and_no_temp_file(
     assert listing(tmp_path) == ["hello.ui", "hello.ui.bak"]  # no *.tmp left behind
     assert (tmp_path / "hello.ui.bak").read_bytes() == b"precious"
     name = Path(seen[0]).name
-    assert name.startswith(".hello.ui.") and name.endswith(".tmp")
+    assert re.fullmatch(r"~pgb[0-9a-f]{8}\.tmp", name)  # H23: never grows with the target
     assert Path(seen[0]).parent == tmp_path
 
 
@@ -1087,3 +1091,21 @@ def test_write_failed_message_is_translated_but_code_is_not(
         assert info.value.message != english and info.value.code == "xml.write_failed"
     finally:
         i18n.set_language("en_GB")
+
+
+def test_a_foreign_tb_prefix_is_renamed_and_tb_means_ttkbootstrap() -> None:
+    """H30 (QA-17a-03, ADR-002 Addendum B): reader warning, writer renames, stable re-save."""
+    text = (
+        '<?xml version="1.0" encoding="UTF-8"?>\n<pyguibud-ui schema_version="1.0" '
+        'xmlns="urn:pyguibud:ui:1" xmlns:tb="urn:evil"><window id="main" kind="main">'
+        '<layout type="pack"/><tb:x/></window></pyguibud-ui>'
+    )
+    result = read_ui_bytes(text.encode())
+    warned = [w for w in result.warnings if w.code == "xml.foreign_prefix"]
+    assert len(warned) == 1 and "urn:evil" in warned[0].message
+    first = dump_ui(result.document)
+    assert b'xmlns:ns1="urn:evil"' in first and b"<ns1:x/>" in first
+    assert b'xmlns:tb="urn:evil"' not in first
+    again = read_ui_bytes(first)
+    assert not [w for w in again.warnings if w.code == "xml.foreign_prefix"]
+    assert dump_ui(again.document) == first

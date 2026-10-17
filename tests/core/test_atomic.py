@@ -7,12 +7,18 @@ import os
 import secrets
 import stat
 import sys
+import tempfile
 from pathlib import Path
 from typing import Any
 
 import pytest
 
-from pyguibud.core.atomic import MAX_TEMPORARY_ATTEMPTS, create_temporary
+from pyguibud.core.atomic import (
+    MAX_TEMPORARY_ATTEMPTS,
+    backup_path,
+    create_temporary,
+    make_temp_dir,
+)
 
 
 def test_creates_a_private_new_file_with_the_given_name_shape(tmp_path: Path) -> None:
@@ -118,3 +124,75 @@ def test_a_real_folder_denying_new_files_fails_at_once(tmp_path: Path) -> None:
             timeout=30,
         )
     assert list(folder.iterdir()) == []
+
+
+def test_the_default_name_does_not_grow_with_the_target(tmp_path: Path) -> None:
+    """H23 (QA-15b-12): ``~pgb<8 hex>.tmp`` whatever the target is called."""
+    descriptor, path = create_temporary(tmp_path)
+    os.close(descriptor)
+    assert Path(path).parent == tmp_path
+    name = Path(path).name
+    assert name.startswith("~pgb") and name.endswith(".tmp") and len(name) == 16
+    int(name[4:12], 16)
+
+
+def test_make_temp_dir_creates_a_private_folder_in_the_temporary_folder(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(tempfile, "tempdir", str(tmp_path))
+    names = iter(["a" * 8, "b" * 8, "c" * 8])
+    monkeypatch.setattr(secrets, "token_hex", lambda _n: next(names))
+    (tmp_path / f"run-{'a' * 8}").write_bytes(b"taken")
+    (tmp_path / f"run-{'b' * 8}").mkdir()
+    folder = make_temp_dir("run-")
+    assert folder == tmp_path / f"run-{'c' * 8}" and folder.is_dir()
+    assert list(folder.iterdir()) == []
+
+
+def test_make_temp_dir_fails_at_once_when_the_temporary_folder_is_denied(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """H24 (QA-15b-13): ``tempfile.mkdtemp`` retried a denied %TEMP% up to 2**31 times."""
+    calls: list[str] = []
+
+    def refuse(path: Any, *_args: Any, **_kwargs: Any) -> None:
+        calls.append(os.fspath(path))
+        raise PermissionError(errno.EACCES, "Permission denied", path)
+
+    monkeypatch.setattr(tempfile, "tempdir", str(tmp_path))
+    monkeypatch.setattr(os, "mkdir", refuse)
+    with pytest.raises(PermissionError):
+        make_temp_dir("run-")
+    assert len(calls) == 1
+
+
+def test_make_temp_dir_running_out_of_names_is_bounded(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    calls: list[str] = []
+
+    def taken(path: Any, *_args: Any, **_kwargs: Any) -> None:
+        calls.append(os.fspath(path))
+        raise FileExistsError(errno.EEXIST, "File exists", path)
+
+    monkeypatch.setattr(tempfile, "tempdir", str(tmp_path))
+    monkeypatch.setattr(os, "mkdir", taken)
+    with pytest.raises(FileExistsError):
+        make_temp_dir("run-")
+    assert len(calls) == MAX_TEMPORARY_ATTEMPTS
+
+
+@pytest.mark.parametrize("letter", ["a", "\U0001f600"], ids=["ascii", "emoji"])
+def test_backup_path_shortens_only_a_name_too_long_for_its_bak(tmp_path: Path, letter: str) -> None:
+    # QA-19b-01: the longest valid name (255 UTF-16 units on Windows, 255 bytes on POSIX).
+    assert backup_path(tmp_path / "hello.ui") == tmp_path / "hello.ui.bak"
+    unit = len(letter.encode("utf-16-le")) // 2 if os.name == "nt" else len(letter.encode())
+    name = letter * ((255 - 3) // unit) + ".ui"
+    (tmp_path / name).write_bytes(b"ui")  # the file system takes the name
+    bak = backup_path(tmp_path / name)
+    assert bak.parent == tmp_path and bak.name.endswith(".bak") and bak.name != name + ".bak"
+    assert name.startswith(bak.name.removesuffix(".bak"))
+    bak.write_bytes(b"bak")  # ... and the backup's name too
+    assert sorted(p.name for p in tmp_path.iterdir()) == sorted([name, bak.name])
+    long_bak = tmp_path / ("b" * 251 + ".BAK")  # shortening must never give the file itself
+    assert backup_path(long_bak).name == "b" * 250 + ".bak"

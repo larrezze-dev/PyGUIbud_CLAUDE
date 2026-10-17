@@ -49,6 +49,7 @@ from pyguibud.designer.session import DesignerSession, TemplateError
 from pyguibud.designer.settings import (
     BACKEND_NAME,
     DEFAULT_BACKEND,
+    LAST_SAVE_ERROR,
     Settings,
     load_settings,
     resolve_language,
@@ -68,6 +69,7 @@ from pyguibud.designer.windows import WindowActions
 from pyguibud.i18n import (
     LANGUAGES,
     N_,
+    NC_,
     _,
     add_language_listener,
     catalogue_problem,
@@ -98,6 +100,14 @@ _M_SAVE = N_("_Save")
 _M_MISSING = N_("The file '{path}' does not exist.")
 _M_CLEAR = N_("_Clear list")
 _M_SETTINGS_NOT_SAVED = N_("Your settings could not be saved.")
+# Translators: {reason} is an error description from the operating system; shown when quitting.
+_M_SETTINGS_NOT_SAVED_AT_QUIT = N_(
+    "Your settings could not be saved: {reason} Quit anyway? Your work is not affected."
+)
+# Translators: the {reason} above when the operating system gave none.
+_M_SETTINGS_FILE_FAILED = N_("The settings file cannot be read or written.")
+# Translators: the button of "Quit anyway?"; its access key must differ from "_Cancel".
+_M_QUIT = NC_("dialog", "_Quit")
 _M_NOTHING_TO_RECOVER = N_("There is no unsaved work to recover.")
 _M_DISCARD = N_("_Discard")
 # Tk writes a position left of or above the primary monitor as "+-1500"; a bare "-N" is kept as
@@ -745,13 +755,20 @@ class DesignerApp:
 
     # ------------------------------------------------------------ settings
     def _save_settings(self) -> None:
-        if self._persist:
-            self.settings.recent_files = self.recent.entries
-            if not save_settings(self.settings, removed=self.recent.removed) and (
-                not self._settings_warned
-            ):
-                self._settings_warned = True
-                self.message.emit(_(_M_SETTINGS_NOT_SAVED))
+        self._store_settings()
+
+    def _store_settings(self, *, quitting: bool = False) -> bool:
+        """Store the settings; False on failure (the status bar says so once, QA-15b-15)."""
+        if not self._persist:
+            return True
+        self.settings.recent_files = self.recent.entries
+        LAST_SAVE_ERROR.clear()
+        if save_settings(self.settings, removed=self.recent.removed):
+            return True
+        if not self._settings_warned and not quitting:
+            self._settings_warned = True
+            self.message.emit(_(_M_SETTINGS_NOT_SAVED))
+        return False
 
     def restore_window(self) -> None:
         """Apply the stored geometry, clamped to the desktop (before the window is shown)."""
@@ -807,10 +824,29 @@ class DesignerApp:
 
         def leave() -> None:
             self._remember_window()
-            self._save_settings()
-            self.on_exit()
+            if self._store_settings(quitting=True):
+                self.on_exit()
+                return
+            # The status bar closes with the window: say why in a dialog, with the OS reason.
+            reason = LAST_SAVE_ERROR[0].strip() if LAST_SAVE_ERROR else ""
+            if reason and not reason.endswith((".", "!", "?", "…", "。")):
+                reason += "."  # a sentence before "Quit anyway?" (POSIX reasons have no stop)
+            self._ask(
+                lambda: _(_M_SETTINGS_NOT_SAVED_AT_QUIT).format(
+                    reason=reason or _(_M_SETTINGS_FILE_FAILED)
+                ),
+                [(_M_QUIT, self.on_exit), (_M_CANCEL, None)],
+            )
 
         self.guard(leave)
+
+    def bind_close(self) -> None:
+        """The window's X and Alt+F4 (``WM_DELETE_WINDOW``) take the same path as File > Quit.
+
+        An OS logout is not routed: Tk delivers ``WM_SAVE_YOURSELF`` on X11 only, never on
+        Windows, so a logout relies on the autosave snapshot, which the next start offers.
+        """
+        self.root.protocol("WM_DELETE_WINDOW", self.quit)
 
     def _destroy(self) -> None:
         self.dispose()
@@ -947,7 +983,7 @@ def run(
     try:
         role = resolve_theme(theme, settings)
         app = DesignerApp(root, role=role, settings=settings, recovery=recovery, plugins=plugins)
-        root.protocol("WM_DELETE_WINDOW", app.quit)
+        app.bind_close()
         app.restore_window()
         _heartbeat(root)
         if not interrupted:  # Ctrl+C during start-up: Tk would forget that quit request

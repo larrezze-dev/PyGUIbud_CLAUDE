@@ -279,11 +279,6 @@ def test_qa17c_03_the_newest_disabled_plugin_survives_the_cap(tmp_path: Path) ->
     assert "old-0" not in loaded  # the oldest is the one cut
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="QA-17c-04: a second designer that started earlier writes its stale (empty) "
-    "disabled_plugins on save and silently re-enables the plugin the first one disabled.",
-)
 def test_qa17c_04_a_second_instance_keeps_the_disabled_plugin(tmp_path: Path) -> None:
     path = tmp_path / "settings.json"
     assert save_settings(Settings(), path=path)

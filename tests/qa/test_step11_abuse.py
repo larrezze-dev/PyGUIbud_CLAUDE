@@ -220,7 +220,7 @@ def test_a_locked_output_fails_cleanly_without_a_temporary_file(tmp_path: Path) 
     output = tmp_path / "form_ui.py"
     with output.open("rb"):  # no FILE_SHARE_DELETE: os.replace must fail
         assert main([str(source)]) == 1
-    assert not [p for p in tmp_path.iterdir() if p.name.startswith(".pyguibud-")]
+    assert not [p for p in tmp_path.iterdir() if p.name.startswith("~pgb")]
 
 
 @pytest.mark.parametrize(

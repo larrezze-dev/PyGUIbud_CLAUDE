@@ -8,7 +8,12 @@ from pathlib import Path
 import pytest
 
 from pyguibud.codegen import GENERATED_MARKER
-from pyguibud.codegen._errors import M_ALREADY_WRITTEN, M_NOT_REGULAR, M_SAME_FILE
+from pyguibud.codegen._errors import (
+    M_ALREADY_WRITTEN,
+    M_NOT_REGULAR,
+    M_SAME_FILE,
+    M_STREAM_NAME,
+)
 from pyguibud.codegen.output import (
     check_output,
     holds_translations,
@@ -67,7 +72,7 @@ def test_write_atomic_writes_lf_utf8(tmp_path: Path) -> None:
     target = tmp_path / "o.py"
     write_atomic(str(target), "a\nbé\n")
     assert target.read_bytes() == "a\nbé\n".encode()
-    assert not list(tmp_path.glob(".pyguibud-*.tmp"))
+    assert not list(tmp_path.glob("~pgb*.tmp"))
 
 
 def test_write_atomic_leaves_no_temporary_on_failure(tmp_path: Path) -> None:
@@ -75,5 +80,15 @@ def test_write_atomic_leaves_no_temporary_on_failure(tmp_path: Path) -> None:
     target.mkdir()  # os.replace onto a folder fails
     with pytest.raises(OSError):
         write_atomic(str(target), "x")
-    assert not list(tmp_path.glob(".pyguibud-*.tmp"))
+    assert not list(tmp_path.glob("~pgb*.tmp"))
     assert os.path.isdir(target)
+
+
+@pytest.mark.skipif(os.name != "nt", reason="NTFS alternate data streams")
+@pytest.mark.parametrize("name", ["a.py:evil", "a.py::$DATA", "new.py:s"])
+def test_an_ntfs_stream_name_is_refused(tmp_path: Path, name: str) -> None:
+    """H20 (QA-15b-08): ``a.py:evil`` would write a hidden stream of ``a.py``."""
+    (tmp_path / "a.py").write_text("keep", encoding="utf-8")
+    assert check_output(str(tmp_path / name), [], []) == M_STREAM_NAME
+    assert check_output("\\\\?\\" + str(tmp_path / name), [], []) == M_STREAM_NAME
+    assert check_output(str(tmp_path / "a.py"), [], []) is None  # the drive colon is fine

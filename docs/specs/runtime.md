@@ -556,3 +556,11 @@ class Session(Protocol):
 | U4 | Pin `ttkbootstrap>=2.2,<3` (the code targets the 2.x API), and keep `hello.ui`'s `theme="flatly"` working through the legacy themes (no golden change)? | **Yes / yes** |
 | U5 | Should the same-file include spelling be `src="#"`? | **Yes** |
 | U6 | Limit images to Tk-native PNG, GIF, PPM and PGM (no Pillow) for every backend and for codegen? | **Yes** |
+
+## 16. Known limitations
+Platform limits that cannot be fixed cheaply (hardening spec, decision D3). They are copied into the user documentation in Step 21.
+
+| Id | Limitation | Why it stays | What to do |
+|---|---|---|---|
+| H28 | A symbolic link or junction to a network share **is followed**. R82 (`validate.network_path`) checks only the `src` text (`\\host\share`, `//host/share`, device paths); a local-looking `icons/x.png` or `form.ui` that is itself a link to a share is opened, so the share is contacted (and may stall or ask for credentials). | Refusing it would mean resolving every path with `realpath` before every open (designer, `load_ui`, `pyguibud-uic`), with a race between the check and the open, and junctions and mount points differ per OS. | Keep `.ui` projects, their images and their includes on local disks; do not link them to network shares. |
+| QA-19b-08 | `load_ui(r"\\host\share\form.ui")` opens a top-level `.ui` on a network share: the share is contacted, and an unreachable host stalls the call (about 40 s on Windows) before it fails. The designer and `pyguibud-uic` refuse network and device paths at once ("Network and device paths cannot be opened."). Images and includes inside the file are still R82 errors. | `load_ui` is a library API: an application may load its forms from a share on purpose, and only the application knows whether the share is reachable. | Load forms from a local folder, or check the share yourself before calling `load_ui`. |

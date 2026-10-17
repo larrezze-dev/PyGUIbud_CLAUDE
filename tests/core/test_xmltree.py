@@ -330,8 +330,13 @@ def test_assign_prefixes_rules() -> None:
     }
 
 
-def test_assign_prefixes_known_prefix_taken_falls_back_to_generated() -> None:
-    assert xmltree.assign_prefixes({"tb": "urn:other"}, [NS_TB]) == {NS_TB: "ns1"}
+def test_assign_prefixes_a_known_prefix_bound_elsewhere_is_reclaimed() -> None:
+    """H30 (QA-17a-03, ADR-002 Addendum B): tb always means ttkbootstrap on write."""
+    assert xmltree.assign_prefixes({"tb": "urn:other"}, [NS_TB, "urn:other"]) == {
+        NS_TB: "tb",
+        "urn:other": "ns1",
+    }
+    assert xmltree.effective_namespaces({"tb": "urn:other", "a": "urn:a"}) == {"a": "urn:a"}
 
 
 def test_assign_prefixes_ui_attribute_namespace_needs_a_prefix() -> None:

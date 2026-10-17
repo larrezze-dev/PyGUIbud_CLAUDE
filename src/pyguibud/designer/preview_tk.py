@@ -10,6 +10,7 @@ from __future__ import annotations
 import contextlib
 import logging
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -19,6 +20,7 @@ from collections.abc import Callable, Collection
 from pathlib import Path
 from typing import Any, Literal
 
+from pyguibud.core.atomic import make_temp_dir
 from pyguibud.core.commands import SetField
 from pyguibud.core.model import Window
 from pyguibud.designer import preview as pv
@@ -27,13 +29,15 @@ from pyguibud.designer.settings import DEFAULT_BACKEND, Settings
 from pyguibud.i18n import PSEUDO_LANGUAGE, _, get_language
 from pyguibud.preview import READY, RESULT, STDERR
 
-__all__ = ["PreviewController", "PreviewRunner"]
+__all__ = ["PreviewController", "PreviewRunner", "private_folder", "sweep_stale"]
 
 _log = logging.getLogger(__name__)
 POLL_MS = 200
 _TIMEOUT_POLLS = 20_000 // POLL_MS  # "did not start within 20 seconds"
 _PREFIX = "pyguibud-preview-"
 _STALE_SECONDS = 24 * 3600
+#: ``pyguibud-preview-[run-]<pid>-<8 hex>``: the designer that made the folder (QA-15a-06).
+_OWNED = re.compile(r"(?:run-)?([0-9]{1,10})-[0-9a-f]{8}")
 _NO_WINDOW = getattr(subprocess, "CREATE_NO_WINDOW", 0)
 #: Designer Quit waits at most 1 s in all: ``_QUIT_SECONDS`` for the child to quit by itself,
 #: then ``_END_SECONDS`` for a terminated child to end and release its open files.
@@ -47,13 +51,61 @@ def _remove(folder: Path | None) -> None:
         shutil.rmtree(folder, ignore_errors=True)  # a live child's open files keep it (Windows)
 
 
+def private_folder(kind: str = "") -> Path:
+    """A new private folder ``pyguibud-preview-<kind><pid>-<8 hex>`` in the temporary folder.
+
+    Raises:
+        OSError: it cannot be created (a denied temporary folder fails at once, QA-15b-13).
+    """
+    return make_temp_dir(f"{_PREFIX}{kind}{os.getpid()}-")
+
+
+def _alive(pid: int) -> bool:
+    """False only when no process ``pid`` runs; a reused pid merely keeps a folder longer."""
+    if not 0 < pid < 2**31 or pid == os.getpid():
+        return True  # ours, or no pid a designer wrote (a forged name): keep the folder
+    if sys.platform == "win32":
+        import ctypes  # Windows only
+        from ctypes import wintypes
+
+        kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+        kernel32.OpenProcess.restype = wintypes.HANDLE
+        kernel32.OpenProcess.argtypes = (wintypes.DWORD, wintypes.BOOL, wintypes.DWORD)
+        kernel32.GetExitCodeProcess.argtypes = (wintypes.HANDLE, ctypes.POINTER(wintypes.DWORD))
+        kernel32.CloseHandle.argtypes = (wintypes.HANDLE,)
+        handle = kernel32.OpenProcess(0x1000, False, pid)  # PROCESS_QUERY_LIMITED_INFORMATION
+        if not handle:
+            return ctypes.get_last_error() != 87  # ERROR_INVALID_PARAMETER: no such process
+        try:
+            code = wintypes.DWORD()
+            if not kernel32.GetExitCodeProcess(handle, ctypes.byref(code)):
+                return True
+            return code.value == 259  # STILL_ACTIVE
+        finally:
+            kernel32.CloseHandle(handle)
+    else:
+        try:
+            os.kill(pid, 0)  # POSIX only: on Windows this would terminate the process
+        except ProcessLookupError:
+            return False
+        except OSError:  # PermissionError: it runs as another user
+            return True
+        return True
+
+
 def sweep_stale(base: Path | None = None) -> None:
-    """Remove private folders left by a crashed designer more than 24 hours ago (P3)."""
+    """Remove private folders left by a crashed designer more than 24 hours ago (P3).
+
+    A folder whose name carries the pid of a designer that still runs is kept, however old.
+    """
     limit = time.time() - _STALE_SECONDS
     with contextlib.suppress(OSError):
         for folder in Path(base or tempfile.gettempdir()).glob(_PREFIX + "*"):
-            with contextlib.suppress(OSError):
-                if folder.is_dir() and folder.stat().st_mtime < limit:
+            with contextlib.suppress(OSError, ValueError):
+                if not folder.is_dir() or folder.stat().st_mtime >= limit:
+                    continue
+                owner = _OWNED.fullmatch(folder.name[len(_PREFIX) :])
+                if owner is None or not _alive(int(owner.group(1))):
                     _remove(folder)
 
 
@@ -239,7 +291,7 @@ class PreviewController:
         window = self.current_window()
         window_id = window.id if isinstance(window, Window) else document.children[0].id
         try:
-            folder = Path(tempfile.mkdtemp(prefix=_PREFIX))
+            folder = private_folder()
         except OSError as exc:
             self.post(_(pv.M_TEMP).format(reason=exc.strerror or exc))
             return

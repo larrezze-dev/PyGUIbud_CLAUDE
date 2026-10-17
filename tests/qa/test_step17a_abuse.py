@@ -392,7 +392,6 @@ def test_qa17a_02_cli_output_does_not_echo_control_characters(tmp_path: Path, at
         assert "no errors found" not in line or line.startswith(str(path)), line
 
 
-@pytest.mark.xfail(strict=True, reason="QA-17a-03: the tb prefix can be bound to a foreign URI")
 def test_qa17a_03_tb_prefix_bound_to_a_foreign_namespace(tmp_path: Path) -> None:
     """MINOR. xmlns:tb="urn:evil" makes tb:bootstyle="primary;x" look like an invalid
     bootstyle that checks clean; after a real bootstyle is added the file reads

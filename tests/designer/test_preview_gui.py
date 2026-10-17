@@ -230,6 +230,48 @@ def test_stale_private_folders_are_swept(tmp_path: Path) -> None:
     assert not old.exists() and new.exists()
 
 
+def test_an_old_folder_of_a_running_designer_is_kept(tmp_path: Path) -> None:
+    """H27 (QA-15a-06): the pid in the name is checked, not only the age."""
+    import os
+    import subprocess
+    import sys
+    import time
+
+    ended = subprocess.run([sys.executable, "-c", "import os; print(os.getpid())"],
+                           capture_output=True, text=True, check=True)  # fmt: skip
+    mine = tmp_path / f"pyguibud-preview-{os.getpid()}-0123abcd"
+    gone = tmp_path / f"pyguibud-preview-run-{int(ended.stdout)}-0123abcd"
+    for folder in (mine, gone):
+        folder.mkdir()
+        os.utime(folder, (time.time() - 25 * 3600,) * 2)
+    sweep_stale(tmp_path)
+    assert mine.exists() and not gone.exists()
+
+
+def test_a_forged_huge_pid_neither_crashes_nor_removes(tmp_path: Path) -> None:
+    import os
+    import time
+
+    forged = tmp_path / "pyguibud-preview-9999999999-0123abcd"
+    forged.mkdir()
+    os.utime(forged, (time.time() - 25 * 3600,) * 2)
+    sweep_stale(tmp_path)  # no OverflowError / ctypes.ArgumentError at start-up
+    assert forged.exists()
+
+
+def test_private_folders_carry_the_pid(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    import os
+    import tempfile
+
+    from pyguibud.designer.preview_tk import private_folder
+
+    monkeypatch.setattr(tempfile, "tempdir", str(tmp_path))
+    folder = private_folder("run-")
+    assert folder.parent == tmp_path and folder.name.startswith(
+        f"pyguibud-preview-run-{os.getpid()}-"
+    )
+
+
 def _pump(root: Any, done: Any, seconds: float = 30.0) -> None:
     import time
 
@@ -284,22 +326,22 @@ def test_a_document_without_windows_is_refused(
 def test_qa15a_02_an_unknown_window_is_refused_and_leaves_no_folder(
     app: DesignerApp, children: list[FakeProcess], monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    import tempfile
-
+    from pyguibud.core import atomic
     from pyguibud.core.model import Window
+    from pyguibud.designer import preview_tk
 
-    made: list[str] = []
-    real = tempfile.mkdtemp
+    made: list[Path] = []
+    real = atomic.make_temp_dir
 
-    def mkdtemp(**options: Any) -> str:
-        made.append(real(**options))
+    def make_temp_dir(prefix: str) -> Path:
+        made.append(real(prefix))
         return made[-1]
 
-    monkeypatch.setattr(tempfile, "mkdtemp", mkdtemp)
+    monkeypatch.setattr(preview_tk, "make_temp_dir", make_temp_dir)
     app.preview.current_window = lambda: Window(id="gone", kind="dialog")
     app.preview.run()
     assert children == [] and app.shell._message == "The document has no window to preview."
-    assert made and not any(Path(folder).exists() for folder in made)
+    assert made and not any(folder.exists() for folder in made)
 
 
 def test_qa15a_03_closing_a_hung_child_says_closed(

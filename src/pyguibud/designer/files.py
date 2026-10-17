@@ -7,10 +7,12 @@ confirmations); everything decided here is testable headless.
 
 from __future__ import annotations
 
+import codecs
 import contextlib
 import dataclasses
 import hashlib
 import os
+import re
 import stat
 import time
 from collections.abc import Iterable
@@ -66,6 +68,11 @@ SAVE_AS_REASONS = (M_WRITE_PROTECTED, M_GONE)
 # Translators: {reason} is a short reason such as "the file is write-protected".
 M_READ_ONLY = N_("This document is read-only: {reason}")
 _M_INCLUDED = N_("A document cannot be saved onto a file that it includes.")
+# Translators: {name} is a file name such as "notes.txt".
+_M_NOT_UI = N_("'{name}' is not a PyGUIbud file, so it is not replaced. Choose another name.")
+#: What may come before the root element: the XML declaration and comments (start, end).
+_PROLOGUE = ((b"<?", b"?>"), (b"<!--", b"-->"))
+_UI_ROOT = re.compile(rb"<pyguibud-ui[ \t\r\n/>]")
 _CHUNK = 1 << 20
 _REPLACE_RETRIES = 5
 _REPLACE_DELAY = 0.05
@@ -89,7 +96,7 @@ def write_atomic(path: Path, data: bytes) -> None:
     Raises:
         OSError: nothing was replaced (the temporary file is removed).
     """
-    handle, temporary = create_temporary(path.parent, prefix=f".{path.name}.", suffix=".tmp")
+    handle, temporary = create_temporary(path.parent)
     try:
         with os.fdopen(handle, "wb") as stream:
             stream.write(data)
@@ -246,13 +253,14 @@ class SavePlan:
     conflict: bool = False
     rebase: Command | None = None
     reason: str | None = None  # msgid filling ``{reason}`` of ``refusal``
+    name: str = ""  # the file name filling ``{name}`` of ``refusal``
 
     def refusal_text(self) -> str | None:
         """The refusal in the current language, or None."""
         if self.refusal is None:
             return None
         reason = _(self.reason) if self.reason is not None else ""
-        return format_message(self.refusal, {"reason": reason})
+        return format_message(self.refusal, {"reason": reason, "name": self.name})
 
 
 def save_plan(
@@ -281,6 +289,8 @@ def save_plan(
         target = Path(os.path.abspath(target))
         if _includes(document, path, target):
             return SavePlan(None, refusal=_M_INCLUDED)
+        if _foreign(target):
+            return SavePlan(None, refusal=_M_NOT_UI, name=target.name)
     same = path is not None and _same_file(path, target)
     conflict = same and stamp is not None and stamp.changed(target)
     old_base = path.parent if path is not None else None
@@ -293,6 +303,36 @@ def _same_file(first: Path, second: Path) -> bool:
         return os.path.samefile(first, second)
     except OSError:
         return path_key(first) == path_key(second)
+
+
+def _foreign(target: Path) -> bool:
+    """True when ``target`` is an existing non-empty file that is not ours, whatever its suffix
+    (H14, QA-19b-03: a Qt Designer ``.ui`` form, a README quoting our root element).
+
+    The picker already asked "replace?", but a typo onto ``notes.txt`` must not destroy it.
+    """
+    try:
+        if not stat.S_ISREG(target.stat().st_mode):
+            return False
+        with target.open("rb") as stream:
+            head = stream.read(4096)
+    except OSError:
+        return False  # absent (or unreadable: the write reports the reason)
+    return bool(head) and not _ours(head)
+
+
+def _ours(head: bytes) -> bool:
+    """True when the root element in ``head`` is ``<pyguibud-ui>``, after an optional BOM, the
+    XML declaration, comments and white space. A bounded scan: nothing is parsed or run."""
+    text = head.removeprefix(codecs.BOM_UTF8)
+    while True:
+        text = text.lstrip(b" \t\r\n")
+        mark = next(((start, end) for start, end in _PROLOGUE if text.startswith(start)), None)
+        if mark is None:
+            return _UI_ROOT.match(text) is not None
+        _, found, text = text[len(mark[0]) :].partition(mark[1])
+        if not found:
+            return False
 
 
 def _includes(document: Document, path: Path | None, target: Path) -> bool:

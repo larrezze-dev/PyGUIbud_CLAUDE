@@ -8,11 +8,14 @@ are committed on purpose so the wheel ships them). The template is `src/pyguibud
 ## Workflow (run from the repository root)
 
 ```bash
-# 1. Extract source strings (`_`, `N_`, `NP_`, `ngettext`, `pgettext`, `npgettext`) into the
-#    template. `NP_(singular, plural)` marks a deferred plural, translated on read with ngettext
-#    and chosen by the `{count}` placeholder.
+# 1. Extract source strings (`_`, `N_`, `NP_`, `NC_`, `ngettext`, `pgettext`, `npgettext`) into
+#    the template. `NP_(singular, plural)` marks a deferred plural, translated on read with
+#    ngettext and chosen by the `{count}` placeholder. `NC_(context, text)` marks a deferred
+#    text with a context (msgctxt), translated on read with pgettext (a dialog button that must
+#    not share the menu's translation).
 uv run pybabel extract -F babel.cfg -o src/pyguibud/locale/pyguibud.pot \
-  -k _ -k N_ -k "NP_:1,2" -k "ngettext:1,2" -k "pgettext:1c,2" -k "npgettext:1c,2,3" \
+  -k _ -k N_ -k "NP_:1,2" -k "NC_:1c,2" -k "ngettext:1,2" -k "pgettext:1c,2" \
+  -k "npgettext:1c,2,3" \
   --add-comments=Translators: \
   --project=PyGUIbud --version=0.1.0 --copyright-holder="Luciano Arrezze" \
   --msgid-bugs-address=https://github.com/larrezze/PyGUIbud/issues --sort-by-file src

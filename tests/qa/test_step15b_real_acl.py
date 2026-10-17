@@ -137,12 +137,6 @@ def test_uic_reports_a_real_denied_folder(
         assert list(denied.iterdir()) == []
 
 
-@pytest.mark.xfail(
-    raises=XmlIoError,
-    strict=True,
-    reason="QA-15b-12 (deferred): the temporary name adds 14 characters, so a .ui whose name "
-    "has 242-255 characters cannot be saved ('Invalid argument')",
-)
 def test_qa15b_12_a_long_but_valid_file_name_can_be_saved(tmp_path: Path) -> None:
     target = tmp_path / ("a" * 247 + ".ui")  # 250 characters: valid on NTFS
     shutil.copy(EXAMPLES / "hello.ui", target)

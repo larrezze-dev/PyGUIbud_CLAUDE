@@ -43,3 +43,9 @@ The format must be human-readable, diff-friendly, validatable, translatable, for
 - **Save:** temp file in the same folder, then fsync, a copy to `<name>.bak`, and `os.replace` (retried on Windows locks).
 - **Model additions (Step 07 model):** `extra_children` on the leaf value objects, and `Document.resources_extra`/`variables_extra` (`ContainerExtras`).
 - **Spec:** `docs/specs/xml-io.md`.
+
+## Addendum B — the `tb` prefix always means ttkbootstrap (Step 19b, hardening D9 (a), accepted by the user 2026-10-17)
+- **Problem (QA-17a-03):** `xmlns:tb="urn:evil"` made `tb:bootstyle="primary;x"` look like an invalid ttkbootstrap attribute although it belongs to a foreign namespace; it checked clean, and after a real bootstyle was added the file read `tb:bootstyle="primary;x" ns1:bootstyle="info"`. No data was lost; only the text misled.
+- **Writer:** a known prefix (`KNOWN_NAMESPACES`, today only `tb`) bound in `Document.namespaces` to another URI is ignored (`xmltree.effective_namespaces`). That URI gets a generated prefix (`ns1`, …) and `tb` is bound to `urn:pyguibud:ext:ttkbootstrap:1`. A second save is byte-identical.
+- **Reader:** a file binding a known prefix to another URI loads, with one warning per prefix: `xml.foreign_prefix` ("The prefix '{prefix}' is bound to the foreign namespace '{uri}'; …"). Only the first binding of a prefix is examined (the reader keeps one binding per prefix).
+- **No schema change:** namespace prefixes are not part of the format; the data is identical, only the prefix in the text changes.

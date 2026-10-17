@@ -12,7 +12,8 @@ import gettext
 import os
 import subprocess
 import sys
-from collections.abc import Iterator
+from collections.abc import Generator, Iterator
+from pathlib import Path
 from typing import Any
 
 import pytest
@@ -36,6 +37,27 @@ def pytest_runtest_protocol(item: pytest.Item) -> Iterator[None]:
         yield
     finally:
         faulthandler.cancel_dump_traceback_later()
+
+
+# pytest 9.1 binds a conftest's fixtures to the FIRST Directory node of its folder. A file
+# argument in ``tests/`` re-collects the ``tests`` package and builds a second ``tests/qa`` node,
+# so ``pytest tests/qa/a.py tests/b.py tests/qa/c.py`` silently ran c.py without the qa conftest's
+# autouse fixtures (a leaked pseudo-locale, Step 19b). Reuse the first node of each folder.
+_DIRECTORIES = pytest.StashKey[dict[tuple[int, Path], pytest.Directory]]()
+
+
+@pytest.hookimpl(wrapper=True)
+def pytest_collect_directory(
+    path: Path, parent: pytest.Collector
+) -> Generator[None, pytest.Directory | None, pytest.Directory | None]:
+    node = yield
+    seen = parent.session.stash.setdefault(_DIRECTORIES, {})
+    first = seen.get((id(parent), path))
+    if first is not None and first.parent is parent and type(first) is type(node):
+        return first
+    if node is not None:
+        seen[(id(parent), path)] = node
+    return node
 
 
 # Timing budgets that run near their limit on a loaded machine get this much slack (H10).

@@ -61,6 +61,14 @@ M_SHADOWS = N_(
 # Translators: {name} is a file name such as "my-form.py"; "import" is Python's keyword.
 M_NOT_IMPORTABLE = N_("'{name}' cannot be imported with import; it can still be run.")
 M_FOLDER = N_("The folder '{folder}' cannot be written to.")
+M_NO_FOLDER = N_("The folder '{folder}' does not exist.")
+# Translators: {name} is what the user typed; the characters are the ones Windows forbids.
+M_BAD_CHARS = N_(
+    "'{name}' contains a character that file names cannot have, such as < > : \" | ? * or a "
+    "control character. Choose another name."
+)
+# Translators: {name} is a file name; .pot is the extension of translation templates.
+M_POT_SUFFIX = N_("The template '{name}' does not end in .pot, so translation tools may skip it.")
 # Translators: the quoted text is the label of the check box in the Export dialog.
 M_OUTSIDE = N_(
     "The path '{src}' used by '{path}' is absolute or outside the folder of its .ui file. Tick "
@@ -179,6 +187,13 @@ def outside_paths(findings: Iterable[Finding]) -> tuple[str, ...]:
     return tuple(str(f.params.get("path", "")) for f in findings if f.code in _OUTSIDE_CODES)
 
 
+def _bad_characters(text: str) -> bool:
+    """True when ``text`` has a control character or (Windows) one that names cannot hold (H19)."""
+    forbidden = '<>:"|?*' if os.name == "nt" else ""
+    rest = os.path.splitdrive(text)[1]  # "C:" and "\\server\share" are not name characters
+    return any(ord(c) < 32 or c in forbidden for c in rest)
+
+
 def _resolve(text: str, folder: Path, suffix: str, *, strict: bool) -> str | Refusal:
     """The absolute file for ``text``; only string tests run before the disk is touched (R82)."""
     text = text.strip()
@@ -186,6 +201,8 @@ def _resolve(text: str, folder: Path, suffix: str, *, strict: bool) -> str | Ref
         return Refusal(M_NO_NAME)
     if is_network_or_device_path(text):
         return Refusal(M_NETWORK)
+    if _bad_characters(text):
+        return Refusal(M_BAD_CHARS, {"name": text})
     path = os.path.abspath(os.path.join(folder, text))  # an absolute text wins
     if text.endswith(("/", os.sep)) or os.path.isdir(path):
         return Refusal(M_IS_FOLDER, {"output": text})
@@ -205,6 +222,26 @@ def _codegen_refusal(exc: CodegenError) -> Refusal:
 
 def _writable(folder: str) -> bool:
     return os.path.isdir(folder) and os.access(folder, os.W_OK)  # a hint: the write decides
+
+
+def _unwritable(output: str) -> Refusal | None:
+    """Why an existing ``output`` cannot be replaced: another program holds it (QA-15b-04).
+
+    The marker check in ``replaceable`` cannot tell "locked" from "not ours", so the real reason
+    is looked up first.
+    """
+    try:
+        with open(output, "rb"):
+            return None
+    except (FileNotFoundError, NotADirectoryError):
+        return None
+    except OSError as exc:
+        return Refusal(M_WRITE_FAILED, {"output": output, "reason": exc.strerror or str(exc)})
+
+
+def _folder_refusal(folder: str) -> Refusal:
+    """ "Does not exist" or "cannot be written to" for the nearest folder that matters."""
+    return Refusal(M_FOLDER if os.path.isdir(folder) else M_NO_FOLDER, {"folder": folder})
 
 
 def export_plan(source: ExportSource, req: ExportRequest) -> ExportPlan | Refusal:
@@ -239,10 +276,12 @@ def export_plan(source: ExportSource, req: ExportRequest) -> ExportPlan | Refusa
         return _codegen_refusal(exc)
     if any(same_file(output, s) for s in module.sources):
         return Refusal(M_SAME_FILE, {"output": output})
+    if (locked := _unwritable(output)) is not None:
+        return locked
     if not replaceable(output, extracting=False):  # D12: no override in the designer
         return Refusal(M_NOT_GENERATED, {"output": output})
     if not _writable(os.path.dirname(output)):
-        return Refusal(M_FOLDER, {"folder": os.path.dirname(output)})
+        return _folder_refusal(os.path.dirname(output))
     if req.pot is None:
         return ExportPlan(output, module.text, None, None, req.run_after, notes)
     pot = _resolve(req.pot, path.parent, ".pot", strict=False)
@@ -252,12 +291,16 @@ def export_plan(source: ExportSource, req: ExportRequest) -> ExportPlan | Refusa
         return Refusal(_GUI_WORDING.get(refused, refused), {"output": pot})
     if holds_translations(pot):  # first: the more precise reason (both refuse, D12)
         return Refusal(M_TRANSLATIONS, {"output": pot})
+    if (locked := _unwritable(pot)) is not None:
+        return locked
     if not replaceable(pot, extracting=True):
         return Refusal(M_NOT_GENERATED, {"output": pot})
     folder = os.path.dirname(pot)  # created at write time, one level only (locale/)
     creatable = not os.path.exists(folder) and _writable(os.path.dirname(folder))
     if not (_writable(folder) or creatable):
-        return Refusal(M_FOLDER, {"folder": folder})
+        return _folder_refusal(folder if os.path.isdir(folder) else os.path.dirname(folder))
+    if not pot.lower().endswith(".pot"):  # T3: a warning, not a rule
+        notes = (*notes, Refusal(M_POT_SUFFIX, {"name": os.path.basename(pot)}))
     text = extract_pot([(result, ui)], base_dir=folder)
     return ExportPlan(output, module.text, pot, text, req.run_after, notes)
 

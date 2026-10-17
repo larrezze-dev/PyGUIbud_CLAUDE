@@ -311,7 +311,7 @@ QA checks against this behaviour where it differs from 6.2/6.3:
 - `.pot` == `--extract -o` bytes;
 - regeneration replaces silently;
 - E3 leaves the file untouched (mtime + bytes);
-- a write failure leaves no `.pyguibud-*.tmp`.
+- a write failure leaves no `~pgb*.tmp` (Step 19b H23).
 
 **Boundary:** importing `pyguibud.preview` loads none of the forbidden modules (ADR-013).
 

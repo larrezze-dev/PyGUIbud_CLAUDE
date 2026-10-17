@@ -32,6 +32,7 @@ __all__ = [
     "LANGUAGE_CODE_RE",
     "LOCALE_DIR",
     "M_CATALOGUE",
+    "NC_",
     "NP_",
     "N_",
     "PSEUDO_LANGUAGE",
@@ -300,7 +301,11 @@ def language_listener(callback: Callable[[str], None]) -> Iterator[None]:
 
 
 def gettext(message: str) -> str:
-    """Translate ``message`` with the current language."""
+    """Translate ``message`` with the current language; a key made by :func:`NC_` is
+    translated in its context."""
+    context, separator, text = message.partition(_CONTEXT_SEPARATOR)
+    if separator:
+        return _translation.pgettext(context, text)
     return _translation.gettext(message)
 
 
@@ -324,6 +329,18 @@ def N_(message: str) -> str:  # noqa: N802 - conventional gettext marker name
     translated only when read so that a runtime language switch takes effect.
     """
     return message
+
+
+#: gettext's separator between a context and its msgid in a catalogue key.
+_CONTEXT_SEPARATOR = "\x04"
+
+
+def NC_(context: str, message: str) -> str:  # noqa: N802 - conventional gettext marker name
+    """Mark ``message`` with ``context`` for extraction (keyword ``NC_:1c,2``) and return the
+    deferred key ``context + "\\x04" + message``, which :func:`gettext` translates with
+    :func:`pgettext` when it is read (a dialog button that must not share the menu's
+    translation, QA-19b-07)."""
+    return f"{context}{_CONTEXT_SEPARATOR}{message}"
 
 
 # Singular msgid -> plural msgid, filled by ``NP_`` at import time of the defining module.

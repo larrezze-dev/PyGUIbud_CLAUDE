@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PyGUIbud 0.1.0\n"
 "Report-Msgid-Bugs-To: https://github.com/larrezze/PyGUIbud/issues\n"
-"POT-Creation-Date: 2026-10-17 15:15+0200\n"
+"POT-Creation-Date: 2026-10-17 21:43+0200\n"
 "PO-Revision-Date: 2026-10-05 17:46+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: nl_NL\n"
@@ -257,11 +257,11 @@ msgstr ""
 msgid "PyGUIbud: drag-and-drop GUI builder for Python."
 msgstr "PyGUIbud: GUI-builder voor Python met slepen en neerzetten."
 
-#: src/pyguibud/cli.py:169 src/pyguibud/uic.py:70
+#: src/pyguibud/cli.py:169 src/pyguibud/uic.py:71
 msgid "show the version number and exit"
 msgstr "het versienummer tonen en afsluiten"
 
-#: src/pyguibud/cli.py:176 src/pyguibud/uic.py:77
+#: src/pyguibud/cli.py:176 src/pyguibud/uic.py:78
 msgid "interface language code, for example de_DE or en_XA"
 msgstr "taalcode van de interface, bijvoorbeeld de_DE of en_XA"
 
@@ -290,13 +290,14 @@ msgstr "starten zonder plug-ins te laden (veilige modus)"
 msgid "a .ui file to open"
 msgstr "een te openen .ui-bestand"
 
-#: src/pyguibud/cli.py:223 src/pyguibud/designer/files.py:59
+#: src/pyguibud/cli.py:223 src/pyguibud/designer/files.py:61
+#: src/pyguibud/uic.py:51
 msgid "Network and device paths cannot be opened."
 msgstr "Netwerk- en apparaatpaden kunnen niet worden geopend."
 
 #. Translators: {path} is the file named on the command line.
 #. Translators: {path} is the full path of a file.
-#: src/pyguibud/cli.py:226 src/pyguibud/designer/app.py:98
+#: src/pyguibud/cli.py:226 src/pyguibud/designer/app.py:100
 #, python-brace-format
 msgid "The file '{path}' does not exist."
 msgstr "Het bestand '{path}' bestaat niet."
@@ -420,10 +421,23 @@ msgstr ""
 "'{output}' is een map, een apparaat of een gereserveerde apparaatnaam; "
 "kies een ander uitvoerbestand."
 
+#. Translators: {output} is the output file; on Windows a ':' after the drive
+#. names a hidden
+#. "alternate data stream" of another file (a.py:evil), never a file of its
+#. own.
+#: src/pyguibud/codegen/_errors.py:60
+#, python-brace-format
+msgid ""
+"'{output}' contains ':', which Windows would write into a hidden part of "
+"another file; choose another output file."
+msgstr ""
+"'{output}' bevat ':', wat Windows in een verborgen deel van een ander "
+"bestand zou schrijven; kies een ander uitvoerbestand."
+
 #. Translators: {output} is the Python file that would be written; {option} is
 #. a command-line
 #. option; keep it unchanged.
-#: src/pyguibud/codegen/_errors.py:60
+#: src/pyguibud/codegen/_errors.py:66
 #, python-brace-format
 msgid ""
 "'{output}' was already written from another .ui file in this run; rename "
@@ -588,7 +602,7 @@ msgstr ""
 
 #. Translators: {name} is the class name found in the file.
 #: src/pyguibud/core/model.py:133 src/pyguibud/core/validate.py:367
-#: src/pyguibud/core/xml_io.py:878 src/pyguibud/core/xml_io.py:1499
+#: src/pyguibud/core/xml_io.py:894 src/pyguibud/core/xml_io.py:1520
 #, python-brace-format
 msgid "'{name}' is not a valid widget class name."
 msgstr "'{name}' is geen geldige widgetklassenaam."
@@ -1908,30 +1922,30 @@ msgstr "ToggleButton"
 msgid "Shape"
 msgstr "Vorm"
 
-#: src/pyguibud/core/xml_io.py:159
+#: src/pyguibud/core/xml_io.py:160
 msgid "This is a folder, not a .ui file."
 msgstr "Dit is een map, geen .ui-bestand."
 
-#: src/pyguibud/core/xml_io.py:164
+#: src/pyguibud/core/xml_io.py:165
 msgid "This is a device or another special file, not a .ui file."
 msgstr "Dit is een apparaat of een ander speciaal bestand, geen .ui-bestand."
 
-#: src/pyguibud/core/xml_io.py:172
+#: src/pyguibud/core/xml_io.py:173
 msgid "The file does not exist."
 msgstr "Het bestand bestaat niet."
 
 #. Translators: {reason} is an error description from the operating system.
-#: src/pyguibud/core/xml_io.py:178
+#: src/pyguibud/core/xml_io.py:179
 #, python-brace-format
 msgid "The file could not be read: {reason}"
 msgstr "Het bestand kon niet worden gelezen: {reason}"
 
-#: src/pyguibud/core/xml_io.py:203
+#: src/pyguibud/core/xml_io.py:204
 msgid "The file is not valid UTF-8 text; save it with UTF-8 encoding."
 msgstr "Het bestand is geen geldige UTF-8-tekst; sla het op met UTF-8-codering."
 
 #. Translators: {namespace} is the XML namespace URI of PyGUIbud files.
-#: src/pyguibud/core/xml_io.py:217
+#: src/pyguibud/core/xml_io.py:218
 #, python-brace-format
 msgid ""
 "This is not a PyGUIbud .ui file: the root element must be <pyguibud-ui> "
@@ -1941,21 +1955,21 @@ msgstr ""
 "zijn in de naamruimte {namespace}."
 
 #. Translators: {limit} is a whole number of mebibytes.
-#: src/pyguibud/core/xml_io.py:229 src/pyguibud/core/xml_io.py:1113
+#: src/pyguibud/core/xml_io.py:230 src/pyguibud/core/xml_io.py:1134
 #, python-brace-format
 msgid "The file is larger than the limit of {limit} MiB for .ui files."
 msgstr "Het bestand is groter dan de limiet van {limit} MiB voor .ui-bestanden."
 
 #. Translators: {element} is an XML element name, {attribute} an attribute
 #. name.
-#: src/pyguibud/core/xml_io.py:265 src/pyguibud/core/xml_io.py:503
+#: src/pyguibud/core/xml_io.py:266 src/pyguibud/core/xml_io.py:519
 #, python-brace-format
 msgid "The element <{element}> needs the attribute '{attribute}'."
 msgstr "Het element <{element}> vereist het attribuut '{attribute}'."
 
 #. Translators: {version} is the text found in the file; keep MAJOR.MINOR as it
 #. is.
-#: src/pyguibud/core/xml_io.py:277
+#: src/pyguibud/core/xml_io.py:278
 #, python-brace-format
 msgid ""
 "'{version}' is not a valid schema version; expected MAJOR.MINOR, for "
@@ -1966,7 +1980,7 @@ msgstr ""
 
 #. Translators: {version} and {current} are schema versions such as 2.0 and
 #. 1.0.
-#: src/pyguibud/core/xml_io.py:289
+#: src/pyguibud/core/xml_io.py:290
 #, python-brace-format
 msgid ""
 "This file uses schema version {version}; it needs a newer PyGUIbud (this "
@@ -1977,7 +1991,7 @@ msgstr ""
 
 #. Translators: {version} and {current} are schema versions such as 1.1 and
 #. 1.0.
-#: src/pyguibud/core/xml_io.py:307
+#: src/pyguibud/core/xml_io.py:308
 #, python-brace-format
 msgid ""
 "This file uses schema version {version}, newer than {current}; it is "
@@ -1988,7 +2002,7 @@ msgstr ""
 
 #. Translators: {version} and {current} are schema versions such as 0.9 and
 #. 1.0.
-#: src/pyguibud/core/xml_io.py:323
+#: src/pyguibud/core/xml_io.py:324
 #, python-brace-format
 msgid ""
 "The file was upgraded from schema version {version} to {current}; saving "
@@ -1997,9 +2011,21 @@ msgstr ""
 "Het bestand is bijgewerkt van schemaversie {version} naar {current}; bij "
 "het opslaan wordt de nieuwe versie geschreven."
 
+#. Translators: {prefix} is an XML namespace prefix such as tb; {uri} is the
+#. namespace it is bound to in the file. Keep both unchanged.
+#: src/pyguibud/core/xml_io.py:342
+#, python-brace-format
+msgid ""
+"The prefix '{prefix}' is bound to the foreign namespace '{uri}'; this "
+"content is not for ttkbootstrap and is saved under another prefix."
+msgstr ""
+"Het voorvoegsel '{prefix}' is gekoppeld aan de vreemde naamruimte "
+"'{uri}'; deze inhoud is niet voor ttkbootstrap en wordt onder een ander "
+"voorvoegsel opgeslagen."
+
 #. Translators: {count} is a number of XML comments and processing
 #. instructions.
-#: src/pyguibud/core/xml_io.py:343
+#: src/pyguibud/core/xml_io.py:359
 #, python-brace-format
 msgid ""
 "Comments and processing instructions ({count}) are not kept when the file"
@@ -2009,13 +2035,13 @@ msgstr ""
 "wanneer het bestand wordt opgeslagen."
 
 #. Translators: {element} is an XML element name.
-#: src/pyguibud/core/xml_io.py:405
+#: src/pyguibud/core/xml_io.py:421
 #, python-brace-format
 msgid "Text is not allowed directly inside <{element}>."
 msgstr "Tekst is niet toegestaan rechtstreeks binnen <{element}>."
 
 #. Translators: {element} and {parent} are XML element names.
-#: src/pyguibud/core/xml_io.py:426
+#: src/pyguibud/core/xml_io.py:442
 #, python-brace-format
 msgid ""
 "Unknown element <{element}> inside <{parent}> is kept as it is; check its"
@@ -2025,13 +2051,13 @@ msgstr ""
 "bewaard; controleer de spelling."
 
 #. Translators: {element} and {parent} are XML element names.
-#: src/pyguibud/core/xml_io.py:439
+#: src/pyguibud/core/xml_io.py:455
 #, python-brace-format
 msgid "<{element}> is not allowed inside <{parent}>."
 msgstr "<{element}> is niet toegestaan binnen <{parent}>."
 
 #. Translators: {element} and {parent} are XML element names.
-#: src/pyguibud/core/xml_io.py:448
+#: src/pyguibud/core/xml_io.py:464
 #, python-brace-format
 msgid ""
 "<{element}> inside <{parent}> belongs to a newer schema and is kept as it"
@@ -2041,13 +2067,13 @@ msgstr ""
 "ongewijzigd bewaard."
 
 #. Translators: {element} and {parent} are XML element names.
-#: src/pyguibud/core/xml_io.py:465
+#: src/pyguibud/core/xml_io.py:481
 #, python-brace-format
 msgid "<{element}> appears more than once inside <{parent}>."
 msgstr "<{element}> komt meer dan eens voor binnen <{parent}>."
 
 #. Translators: {attribute} is an XML attribute name, {element} an element.
-#: src/pyguibud/core/xml_io.py:488
+#: src/pyguibud/core/xml_io.py:504
 #, python-brace-format
 msgid ""
 "Unknown attribute '{attribute}' on <{element}> is kept as it is; check "
@@ -2058,7 +2084,7 @@ msgstr ""
 
 #. Translators: {attribute} is an attribute name, {element} an element name and
 #. {value} the text found in the file.
-#: src/pyguibud/core/xml_io.py:517
+#: src/pyguibud/core/xml_io.py:533
 #, python-brace-format
 msgid ""
 "The attribute '{attribute}' of <{element}> must be a whole number, not "
@@ -2069,7 +2095,7 @@ msgstr ""
 
 #. Translators: {attribute} is an attribute name, {element} an element name and
 #. {value} the text found in the file; keep true and false untranslated.
-#: src/pyguibud/core/xml_io.py:554
+#: src/pyguibud/core/xml_io.py:570
 #, python-brace-format
 msgid ""
 "The attribute '{attribute}' of <{element}> must be true or false, not "
@@ -2081,7 +2107,7 @@ msgstr ""
 #. Translators: {attribute} is an attribute name, {element} an element name,
 #. {choices} a comma-separated list of allowed values and {value} the text
 #. found.
-#: src/pyguibud/core/xml_io.py:584
+#: src/pyguibud/core/xml_io.py:600
 #, python-brace-format
 msgid ""
 "The attribute '{attribute}' of <{element}> must be one of {choices}, not "
@@ -2091,51 +2117,51 @@ msgstr ""
 "niet '{value}'."
 
 #. Translators: {id} is an identifier from the file.
-#: src/pyguibud/core/xml_io.py:655
+#: src/pyguibud/core/xml_io.py:671
 #, python-brace-format
 msgid "The resource id '{id}' is declared more than once."
 msgstr "De resource-id '{id}' is meer dan eens gedeclareerd."
 
 #. Translators: {id} is an identifier from the file.
-#: src/pyguibud/core/xml_io.py:684
+#: src/pyguibud/core/xml_io.py:700
 #, python-brace-format
 msgid "The variable id '{id}' is declared more than once."
 msgstr "De variabele-id '{id}' is meer dan eens gedeclareerd."
 
 #. Translators: {name} is a property name.
-#: src/pyguibud/core/xml_io.py:707
+#: src/pyguibud/core/xml_io.py:723
 #, python-brace-format
 msgid "The property '{name}' must contain plain text only, not elements."
 msgstr "De eigenschap '{name}' mag alleen platte tekst bevatten, geen elementen."
 
 #. Translators: {name} is a property name, {element} an XML element name.
-#: src/pyguibud/core/xml_io.py:734
+#: src/pyguibud/core/xml_io.py:750
 #, python-brace-format
 msgid "The property '{name}' is set more than once on <{element}>."
 msgstr "De eigenschap '{name}' is meer dan eens ingesteld bij <{element}>."
 
 #. Translators: {element} is an XML element name; keep <cell>, <pack> and
 #. <page>.
-#: src/pyguibud/core/xml_io.py:934
+#: src/pyguibud/core/xml_io.py:950
 #, python-brace-format
 msgid "<{element}> has more than one placement (<cell>, <pack> or <page>)."
 msgstr "<{element}> heeft meer dan één plaatsing (<cell>, <pack> of <page>)."
 
 #. Translators: {name} is a property name; keep 'text' untranslated.
-#: src/pyguibud/core/xml_io.py:985
+#: src/pyguibud/core/xml_io.py:1001
 #, python-brace-format
 msgid "A <page> can only hold the property 'text', not '{name}'."
 msgstr "Een <page> kan alleen de eigenschap 'text' bevatten, niet '{name}'."
 
 #. Translators: {reason} is an error description from the operating system.
-#: src/pyguibud/core/xml_io.py:1050
+#: src/pyguibud/core/xml_io.py:1071
 #, python-brace-format
 msgid "The file could not be saved: {reason}"
 msgstr "Het bestand kon niet worden opgeslagen: {reason}"
 
 #. Translators: {version} and {current} are schema versions such as 1.1 and
 #. 1.0.
-#: src/pyguibud/core/xml_io.py:1087
+#: src/pyguibud/core/xml_io.py:1108
 #, python-brace-format
 msgid ""
 "This document uses schema version {version}, newer than {current}; it was"
@@ -2146,7 +2172,7 @@ msgstr ""
 
 #. Translators: {version} is the version stored in the document, {current} the
 #. version this PyGUIbud writes.
-#: src/pyguibud/core/xml_io.py:1099
+#: src/pyguibud/core/xml_io.py:1120
 #, python-brace-format
 msgid ""
 "The document's schema version '{version}' cannot be saved; expected "
@@ -2158,36 +2184,36 @@ msgstr ""
 #. Translators: {where} is a technical path such as window[main]@kind; {value}
 #. is
 #. the offending value.
-#: src/pyguibud/core/xml_io.py:1134
+#: src/pyguibud/core/xml_io.py:1155
 #, python-brace-format
 msgid "{where} has the value '{value}', which the .ui format cannot store."
 msgstr "{where} heeft de waarde '{value}', die het .ui-formaat niet kan opslaan."
 
 #. Translators: {where} is a technical path; {key} and {name} are identifiers.
-#: src/pyguibud/core/xml_io.py:1178
+#: src/pyguibud/core/xml_io.py:1199
 #, python-brace-format
 msgid "{where}: the key '{key}' does not match the name '{name}'."
 msgstr "{where}: de sleutel '{key}' komt niet overeen met de naam '{name}'."
 
 #. Translators: {limit} is a number of nesting levels.
-#: src/pyguibud/core/xml_io.py:1198 src/pyguibud/core/xml_io.py:1244
-#: src/pyguibud/core/xmltree.py:259
+#: src/pyguibud/core/xml_io.py:1219 src/pyguibud/core/xml_io.py:1265
+#: src/pyguibud/core/xmltree.py:263
 #, python-brace-format
 msgid "Elements are nested more than {limit} levels deep."
 msgstr "Elementen zijn dieper dan {limit} niveaus genest."
 
 #. Translators: {name} is an XML attribute name; {where} is a technical path.
-#: src/pyguibud/core/xml_io.py:1211 src/pyguibud/core/xmltree.py:152
+#: src/pyguibud/core/xml_io.py:1232 src/pyguibud/core/xmltree.py:152
 #, python-brace-format
 msgid "'{name}' is not a valid attribute name here ({where})."
 msgstr "'{name}' is hier geen geldige attribuutnaam ({where})."
 
-#: src/pyguibud/core/xml_io.py:1226
+#: src/pyguibud/core/xml_io.py:1247
 msgid "RawXml.extra_attrs must be empty"
 msgstr "RawXml.extra_attrs moet leeg zijn"
 
 #. Translators: {element} is an XML element name.
-#: src/pyguibud/core/xml_io.py:1237
+#: src/pyguibud/core/xml_io.py:1258
 #, python-brace-format
 msgid "<{element}> is a .ui element and cannot be kept as preserved XML"
 msgstr ""
@@ -2195,7 +2221,7 @@ msgstr ""
 "behouden"
 
 #. Translators: {where} is a technical path; {detail} explains the damage.
-#: src/pyguibud/core/xml_io.py:1253 src/pyguibud/core/xmltree.py:375
+#: src/pyguibud/core/xml_io.py:1274 src/pyguibud/core/xmltree.py:383
 #, python-brace-format
 msgid "Preserved XML content of {where} is damaged: {detail}"
 msgstr "De bewaarde XML-inhoud van {where} is beschadigd: {detail}"
@@ -2217,7 +2243,7 @@ msgstr "De naamruimtedeclaratie '{prefix}' = '{uri}' is ongeldig."
 #. Translators: {element} is an XML element name; {attribute} is the literal
 #. XML
 #. attribute to remove; keep it unchanged.
-#: src/pyguibud/core/xmltree.py:277
+#: src/pyguibud/core/xmltree.py:281
 #, python-brace-format
 msgid ""
 "The element <{element}> has no namespace; remove {attribute} from the "
@@ -2227,28 +2253,28 @@ msgstr ""
 "het bestand."
 
 #. Translators: {encoding} is an encoding name such as ISO-8859-1.
-#: src/pyguibud/core/xmltree.py:322
+#: src/pyguibud/core/xmltree.py:328
 #, python-brace-format
 msgid "The file declares the encoding '{encoding}'; only UTF-8 is supported."
 msgstr ""
 "Het bestand declareert de codering '{encoding}'; alleen UTF-8 wordt "
 "ondersteund."
 
-#: src/pyguibud/core/xmltree.py:329
+#: src/pyguibud/core/xmltree.py:335
 msgid "DOCTYPE and entity declarations are not allowed in .ui files."
 msgstr "DOCTYPE- en entiteitsdeclaraties zijn niet toegestaan in .ui-bestanden."
 
 #. Translators: {detail} is an English description from the XML parser.
-#: src/pyguibud/core/xmltree.py:339 src/pyguibud/core/xmltree.py:348
+#: src/pyguibud/core/xmltree.py:345 src/pyguibud/core/xmltree.py:354
 #, python-brace-format
 msgid "The file is not well-formed XML: {detail}"
 msgstr "Het bestand is geen goedgevormde XML: {detail}"
 
-#: src/pyguibud/core/xmltree.py:391
+#: src/pyguibud/core/xmltree.py:399
 msgid "it is not valid Unicode text"
 msgstr "het is geen geldige Unicode-tekst"
 
-#: src/pyguibud/core/xmltree.py:397
+#: src/pyguibud/core/xmltree.py:405
 msgid "it contains comments or processing instructions"
 msgstr "het bevat opmerkingen of verwerkingsinstructies"
 
@@ -2289,39 +2315,39 @@ msgstr "objectboom"
 msgid "{action} ({shortcut})"
 msgstr "{action} ({shortcut})"
 
-#: src/pyguibud/designer/app.py:84
+#: src/pyguibud/designer/app.py:86
 msgid "PyGUIbud designer"
 msgstr "PyGUIbud-ontwerper"
 
-#: src/pyguibud/designer/app.py:85
+#: src/pyguibud/designer/app.py:87
 #, python-brace-format
 msgid "There is no theme called '{theme}'."
 msgstr "Er is geen thema met de naam '{theme}'."
 
 #. Translators: {name} is a file name such as "main.ui".
-#: src/pyguibud/designer/app.py:87
+#: src/pyguibud/designer/app.py:89
 #, python-brace-format
 msgid "Saved '{name}'."
 msgstr "'{name}' opgeslagen."
 
 #. Translators: {name} is a file name such as "main.ui".
-#: src/pyguibud/designer/app.py:89
+#: src/pyguibud/designer/app.py:91
 #, python-brace-format
 msgid "'{name}' was changed by another program since it was opened."
 msgstr "'{name}' is door een ander programma gewijzigd sinds het is geopend."
 
 #. Translators: the answers when the file changed on disk; _ marks the access
 #. key.
-#: src/pyguibud/designer/app.py:91
+#: src/pyguibud/designer/app.py:93
 msgid "_Overwrite"
 msgstr "_Overschrijven"
 
-#: src/pyguibud/designer/app.py:92 src/pyguibud/designer/standard_actions.py:97
+#: src/pyguibud/designer/app.py:94 src/pyguibud/designer/standard_actions.py:97
 msgid "Save _as…"
 msgstr "Opslaan a_ls…"
 
-#: src/pyguibud/designer/app.py:93 src/pyguibud/designer/dialogs/confirm.py:17
-#: src/pyguibud/designer/dialogs/export.py:44
+#: src/pyguibud/designer/app.py:95 src/pyguibud/designer/dialogs/confirm.py:17
+#: src/pyguibud/designer/dialogs/export.py:43
 #: src/pyguibud/designer/dialogs/new_file.py:20
 #: src/pyguibud/designer/dialogs/rename.py:20
 #: src/pyguibud/designer/dialogs/save_changes.py:18
@@ -2333,7 +2359,7 @@ msgstr "_Annuleren"
 #. (Alt+letter).
 #. Translators: the buttons of the rename dialog; _ marks the access key
 #. Translators: the buttons of the text dialog; _ marks the access key
-#: src/pyguibud/designer/app.py:94 src/pyguibud/designer/dialogs/message.py:21
+#: src/pyguibud/designer/app.py:96 src/pyguibud/designer/dialogs/message.py:21
 #: src/pyguibud/designer/dialogs/rename.py:19
 #: src/pyguibud/designer/dialogs/text.py:25
 msgid "_OK"
@@ -2343,32 +2369,55 @@ msgstr "_OK"
 #. Save anyway?".
 #. Translators: the buttons of the unsaved-changes question; _ marks the access
 #. key.
-#: src/pyguibud/designer/app.py:96
+#: src/pyguibud/designer/app.py:98
 #: src/pyguibud/designer/dialogs/save_changes.py:16
 #: src/pyguibud/designer/standard_actions.py:96
 msgid "_Save"
 msgstr "O_pslaan"
 
-#: src/pyguibud/designer/app.py:99
+#: src/pyguibud/designer/app.py:101
 msgid "_Clear list"
 msgstr "_Lijst wissen"
 
-#: src/pyguibud/designer/app.py:100
+#: src/pyguibud/designer/app.py:102
 msgid "Your settings could not be saved."
 msgstr "Uw instellingen konden niet worden opgeslagen."
 
-#: src/pyguibud/designer/app.py:101
+#. Translators: {reason} is an error description from the operating system;
+#. shown when quitting.
+#: src/pyguibud/designer/app.py:105
+#, python-brace-format
+msgid ""
+"Your settings could not be saved: {reason} Quit anyway? Your work is not "
+"affected."
+msgstr ""
+"Uw instellingen konden niet worden opgeslagen: {reason} Toch afsluiten? "
+"Uw werk wordt hierdoor niet beïnvloed."
+
+#. Translators: the {reason} above when the operating system gave none.
+#: src/pyguibud/designer/app.py:108
+msgid "The settings file cannot be read or written."
+msgstr "Het instellingenbestand kan niet worden gelezen of geschreven."
+
+#. Translators: the button of "Quit anyway?"; its access key must differ from
+#. "_Cancel".
+#: src/pyguibud/designer/app.py:110
+msgctxt "dialog"
+msgid "_Quit"
+msgstr "Af_sluiten"
+
+#: src/pyguibud/designer/app.py:111
 msgid "There is no unsaved work to recover."
 msgstr "Er is geen niet-opgeslagen werk om te herstellen."
 
-#: src/pyguibud/designer/app.py:102
+#: src/pyguibud/designer/app.py:112
 #: src/pyguibud/designer/dialogs/recovery.py:24
 msgid "_Discard"
 msgstr "_Negeren"
 
 #. Translators: status bar after opening a file; {count} is the number of
 #. warnings.
-#: src/pyguibud/designer/app.py:499
+#: src/pyguibud/designer/app.py:509
 #, python-brace-format
 msgid "Opened with {count} warning."
 msgid_plural "Opened with {count} warnings."
@@ -2377,7 +2426,7 @@ msgstr[1] "Geopend met {count} waarschuwingen."
 
 #. Translators: asked before saving; {count} is the number of errors in the
 #. document.
-#: src/pyguibud/designer/app.py:604
+#: src/pyguibud/designer/app.py:614
 #, python-brace-format
 msgid "The document has {count} error. Save anyway?"
 msgid_plural "The document has {count} errors. Save anyway?"
@@ -2530,60 +2579,60 @@ msgstr[1] "De inhoud van het klembord had {count} waarschuwingen."
 msgid "Confirm"
 msgstr "Bevestigen"
 
-#: src/pyguibud/designer/dialogs/export.py:33
+#: src/pyguibud/designer/dialogs/export.py:32
 msgid "Export Python code"
 msgstr "Python-code exporteren"
 
-#: src/pyguibud/designer/dialogs/export.py:34
+#: src/pyguibud/designer/dialogs/export.py:33
 msgid "Output file"
 msgstr "Uitvoerbestand"
 
-#: src/pyguibud/designer/dialogs/export.py:35
+#: src/pyguibud/designer/dialogs/export.py:34
 msgid "Class name"
 msgstr "Klassenaam"
 
-#: src/pyguibud/designer/dialogs/export.py:36
+#: src/pyguibud/designer/dialogs/export.py:35
 msgid "Rename the main window to change the class name."
 msgstr "Hernoem het hoofdvenster om de klassenaam te wijzigen."
 
-#: src/pyguibud/designer/dialogs/export.py:37
+#: src/pyguibud/designer/dialogs/export.py:36
 msgid "Also write a translation template (.pot)"
 msgstr "Ook een vertaalsjabloon (.pot) schrijven"
 
-#: src/pyguibud/designer/dialogs/export.py:38
+#: src/pyguibud/designer/dialogs/export.py:37
 msgid "Allow images and included files outside the .ui folder"
 msgstr "Afbeeldingen en ingesloten bestanden buiten de .ui-map toestaan"
 
-#: src/pyguibud/designer/dialogs/export.py:39
+#: src/pyguibud/designer/dialogs/export.py:38
 msgid "Run the module after export"
 msgstr "De module uitvoeren na het exporteren"
 
 #. Translators: opens a file chooser; the dialog has two of these buttons, so
 #. no access key.
-#: src/pyguibud/designer/dialogs/export.py:41
+#: src/pyguibud/designer/dialogs/export.py:40
 msgid "Browse…"
 msgstr "Bladeren…"
 
 #. Translators: the buttons of the Export dialog; _ marks the access key
 #. (Alt+letter).
-#: src/pyguibud/designer/dialogs/export.py:43
+#: src/pyguibud/designer/dialogs/export.py:42
 msgid "_Export"
 msgstr "_Exporteren"
 
 #. Translators: {name} is a file name such as "main.ui"; asked before the
 #. Export dialog opens.
-#: src/pyguibud/designer/dialogs/export.py:46
+#: src/pyguibud/designer/dialogs/export.py:45
 #, python-brace-format
 msgid "Export uses the saved file, and '{name}' has changes that are not saved."
 msgstr ""
 "Exporteren gebruikt het opgeslagen bestand, en '{name}' bevat wijzigingen"
 " die niet zijn opgeslagen."
 
-#: src/pyguibud/designer/dialogs/export.py:47
+#: src/pyguibud/designer/dialogs/export.py:46
 msgid "_Save and export"
 msgstr "_Opslaan en exporteren"
 
-#: src/pyguibud/designer/dialogs/export.py:48
+#: src/pyguibud/designer/dialogs/export.py:47
 #, python-brace-format
 msgid "'{output}' changed after it was written, so it was not run."
 msgstr ""
@@ -2968,9 +3017,36 @@ msgstr ""
 msgid "The folder '{folder}' cannot be written to."
 msgstr "In de map '{folder}' kan niet worden geschreven."
 
+#: src/pyguibud/designer/export.py:64
+#, python-brace-format
+msgid "The folder '{folder}' does not exist."
+msgstr "De map '{folder}' bestaat niet."
+
+#. Translators: {name} is what the user typed; the characters are the ones
+#. Windows forbids.
+#: src/pyguibud/designer/export.py:67
+#, python-brace-format
+msgid ""
+"'{name}' contains a character that file names cannot have, such as < > : "
+"\" | ? * or a control character. Choose another name."
+msgstr ""
+"'{name}' bevat een teken dat bestandsnamen niet mogen hebben, zoals < > :"
+" \" | ? * of een stuurteken. Kies een andere naam."
+
+#. Translators: {name} is a file name; .pot is the extension of translation
+#. templates.
+#: src/pyguibud/designer/export.py:71
+#, python-brace-format
+msgid ""
+"The template '{name}' does not end in .pot, so translation tools may skip"
+" it."
+msgstr ""
+"Het sjabloon '{name}' eindigt niet op .pot, dus vertaalprogramma's kunnen"
+" het overslaan."
+
 #. Translators: the quoted text is the label of the check box in the Export
 #. dialog.
-#: src/pyguibud/designer/export.py:66
+#: src/pyguibud/designer/export.py:74
 #, python-brace-format
 msgid ""
 "The path '{src}' used by '{path}' is absolute or outside the folder of "
@@ -2982,7 +3058,7 @@ msgstr ""
 " de .ui-map toestaan' in om het toch te exporteren."
 
 #. Translators: {output} is a file path.
-#: src/pyguibud/designer/export.py:73
+#: src/pyguibud/designer/export.py:81
 #, python-brace-format
 msgid ""
 "'{output}' was not written by PyGUIbud, so it is not replaced. Choose "
@@ -2991,7 +3067,7 @@ msgstr ""
 "'{output}' is niet door PyGUIbud geschreven en wordt daarom niet "
 "vervangen. Kies een andere naam."
 
-#: src/pyguibud/designer/export.py:75
+#: src/pyguibud/designer/export.py:83
 #, python-brace-format
 msgid "'{output}' holds translations, so it is not replaced. Choose another name."
 msgstr ""
@@ -3000,7 +3076,7 @@ msgstr ""
 
 #. Translators: {output} is the Python file of this export, also chosen as the
 #. .pot file.
-#: src/pyguibud/designer/export.py:78
+#: src/pyguibud/designer/export.py:86
 #, python-brace-format
 msgid ""
 "'{output}' is the Python file of this export. Choose another name for the"
@@ -3009,64 +3085,74 @@ msgstr ""
 "'{output}' is het Python-bestand van deze export. Kies een andere naam "
 "voor het sjabloon."
 
-#: src/pyguibud/designer/export.py:81
+#: src/pyguibud/designer/export.py:89
 #, python-brace-format
 msgid "Exported {output}."
 msgstr "{output} geëxporteerd."
 
 #. Translators: {pot} is the translation template (.pot) written with the
 #. module {output}.
-#: src/pyguibud/designer/export.py:83
+#: src/pyguibud/designer/export.py:91
 #, python-brace-format
 msgid "Exported {output} and {pot}."
 msgstr "{output} en {pot} geëxporteerd."
 
-#: src/pyguibud/designer/export.py:84
+#: src/pyguibud/designer/export.py:92
 msgid "The exported module cannot show the pseudo-locale."
 msgstr "De geëxporteerde module kan de pseudo-landinstelling niet tonen."
 
-#: src/pyguibud/designer/export.py:85
+#: src/pyguibud/designer/export.py:93
 #, python-brace-format
 msgid "The exported module stopped with exit code {code}."
 msgstr "De geëxporteerde module is gestopt met afsluitcode {code}."
 
 #. Translators: closes a list that was cut short; {count} is the number of
 #. items left out.
-#: src/pyguibud/designer/export.py:95
+#: src/pyguibud/designer/export.py:103
 #, python-brace-format
 msgid "… and {count} more"
 msgid_plural "… and {count} more"
 msgstr[0] "… en nog {count}"
 msgstr[1] "… en nog {count}"
 
-#: src/pyguibud/designer/files.py:60
+#: src/pyguibud/designer/files.py:62
 msgid "the file is write-protected"
 msgstr "het bestand is beveiligd tegen schrijven"
 
-#: src/pyguibud/designer/files.py:62
+#: src/pyguibud/designer/files.py:64
 msgid "the file no longer exists"
 msgstr "het bestand bestaat niet meer"
 
-#: src/pyguibud/designer/files.py:63
+#: src/pyguibud/designer/files.py:65
 msgid "it was written by a newer version of PyGUIbud"
 msgstr "het is geschreven door een nieuwere versie van PyGUIbud"
 
 #. Translators: {reason} is a short reason such as "the file is
 #. write-protected".
 #. Translators: {reason} says why, e.g. "the file is write-protected".
-#: src/pyguibud/designer/files.py:67
-#: src/pyguibud/designer/panels/inspector.py:65
+#: src/pyguibud/designer/files.py:69
+#: src/pyguibud/designer/panels/inspector.py:66
 #, python-brace-format
 msgid "This document is read-only: {reason}"
 msgstr "Dit document is alleen-lezen: {reason}"
 
-#: src/pyguibud/designer/files.py:68
+#: src/pyguibud/designer/files.py:70
 msgid "A document cannot be saved onto a file that it includes."
 msgstr ""
 "Een document kan niet worden opgeslagen in een bestand dat het zelf "
 "insluit."
 
-#: src/pyguibud/designer/files.py:358
+#. Translators: {name} is a file name such as "notes.txt".
+#: src/pyguibud/designer/files.py:72
+#, python-brace-format
+msgid ""
+"'{name}' is not a PyGUIbud file, so it is not replaced. Choose another "
+"name."
+msgstr ""
+"'{name}' is geen PyGUIbud-bestand en wordt daarom niet vervangen. Kies "
+"een andere naam."
+
+#: src/pyguibud/designer/files.py:398
 msgid "Update file paths"
 msgstr "Bestandspaden bijwerken"
 
@@ -3174,39 +3260,39 @@ msgstr "Verwijderen"
 msgid "Key"
 msgstr "Toets"
 
-#: src/pyguibud/designer/panels/inspector.py:58
+#: src/pyguibud/designer/panels/inspector.py:59
 msgid "Events"
 msgstr "Gebeurtenissen"
 
-#: src/pyguibud/designer/panels/inspector.py:59
+#: src/pyguibud/designer/panels/inspector.py:60
 #: src/pyguibud/designer/present/inspector.py:35
 msgid "Findings"
 msgstr "Bevindingen"
 
 #. Translators: the button that resets one field of the inspector to its
 #. default value.
-#: src/pyguibud/designer/panels/inspector.py:61
+#: src/pyguibud/designer/panels/inspector.py:62
 msgid "Reset to default"
 msgstr "Standaardwaarde herstellen"
 
-#: src/pyguibud/designer/panels/inspector.py:62
+#: src/pyguibud/designer/panels/inspector.py:63
 msgid "(mixed)"
 msgstr "(gemengd)"
 
-#: src/pyguibud/designer/panels/inspector.py:63
+#: src/pyguibud/designer/panels/inspector.py:64
 #, python-brace-format
 msgid "{count} elements selected; editing shared properties."
 msgstr "{count} elementen geselecteerd; gedeelde eigenschappen worden bewerkt."
 
-#: src/pyguibud/designer/panels/inspector.py:66
+#: src/pyguibud/designer/panels/inspector.py:67
 msgid "Bind to a new variable"
 msgstr "Aan een nieuwe variabele koppelen"
 
-#: src/pyguibud/designer/panels/inspector.py:67
+#: src/pyguibud/designer/panels/inspector.py:68
 msgid "Add image"
 msgstr "Afbeelding toevoegen"
 
-#: src/pyguibud/designer/panels/inspector.py:80
+#: src/pyguibud/designer/panels/inspector.py:81
 msgid "Inspector"
 msgstr "Inspecteur"
 
@@ -3574,7 +3660,7 @@ msgstr[1] "Het document bevat {count} fouten. Herstel ze om een voorbeeld te ton
 msgid "General"
 msgstr "Algemeen"
 
-#: src/pyguibud/designer/panels/inspector.py:57
+#: src/pyguibud/designer/panels/inspector.py:58
 #: src/pyguibud/designer/present/inspector.py:33
 #: src/pyguibud/designer/properties.py:64
 msgid "Properties"
@@ -3804,6 +3890,10 @@ msgstr "Bootstyle"
 msgid "Autosave failed: {reason}"
 msgstr "Automatisch opslaan mislukt: {reason}"
 
+#: src/pyguibud/designer/recovery.py:49
+msgid "Autosave works again."
+msgstr "Automatisch opslaan werkt weer."
+
 #. Translators: in place of an included component of another file while the
 #. document has no file.
 #: src/pyguibud/designer/render_plan.py:78
@@ -3874,12 +3964,12 @@ msgstr "Er is geen sjabloon met de naam '{template}'."
 msgid "(read-only)"
 msgstr "(alleen-lezen)"
 
-#: src/pyguibud/designer/settings.py:46
+#: src/pyguibud/designer/settings.py:48
 msgid "Your settings could not be read and were reset."
 msgstr "Uw instellingen konden niet worden gelezen en zijn teruggezet."
 
 #. Translators: status bar; {count} is the number of selected elements.
-#: src/pyguibud/designer/shell.py:713
+#: src/pyguibud/designer/shell.py:714
 #, python-brace-format
 msgid "{count} element selected"
 msgid_plural "{count} elements selected"
@@ -4487,14 +4577,14 @@ msgstr[1] "Laat los om {count} elementen te verplaatsen."
 msgid "Delete the window '{id}' and everything in it?"
 msgstr "Het venster '{id}' en alles erin verwijderen?"
 
-#: src/pyguibud/i18n.py:229
+#: src/pyguibud/i18n.py:230
 #, python-brace-format
 msgid "Unknown language '{code}'. Valid codes: {valid}."
 msgstr "Onbekende taal '{code}'. Geldige codes: {valid}."
 
 #. Translators: {domain} is a catalogue name, {lang} a language code and
 #. {directory} a folder.
-#: src/pyguibud/i18n.py:353
+#: src/pyguibud/i18n.py:370
 #, python-brace-format
 msgid ""
 "No usable translations '{domain}' for '{lang}' in '{directory}'; the "
@@ -4544,7 +4634,7 @@ msgstr "{option} kan niet samen met {other} worden gebruikt"
 msgid "{option} can be used with one input file only"
 msgstr "{option} kan slechts met één invoerbestand worden gebruikt"
 
-#: src/pyguibud/uic.py:57
+#: src/pyguibud/uic.py:58
 msgid ""
 "Check PyGUIbud .ui files, generate Python code from them and extract "
 "their texts for translation."
@@ -4554,7 +4644,7 @@ msgstr ""
 
 #. Translators: {group} is the name of a Python entry-point group; it is never
 #. translated.
-#: src/pyguibud/uic.py:62
+#: src/pyguibud/uic.py:63
 #, python-brace-format
 msgid ""
 "The check loads the installed widget plugins (entry point {group}), which"
@@ -4564,11 +4654,11 @@ msgstr ""
 " en voert daarmee hun code uit; controleer alleen bestanden met plug-ins "
 "die u vertrouwt."
 
-#: src/pyguibud/uic.py:83
+#: src/pyguibud/uic.py:84
 msgid "read and validate each file and report errors and warnings"
 msgstr "elk bestand lezen en valideren en fouten en waarschuwingen rapporteren"
 
-#: src/pyguibud/uic.py:88
+#: src/pyguibud/uic.py:89
 msgid ""
 "write a translation template (.pot) with the translatable texts of the "
 "files"
@@ -4579,7 +4669,7 @@ msgstr ""
 #. Translators: {pattern} is a file name pattern and {extract} a command-line
 #. option; both
 #. are never translated.
-#: src/pyguibud/uic.py:98
+#: src/pyguibud/uic.py:99
 #, python-brace-format
 msgid ""
 "output file (generate: default {pattern} next to the .ui file; {extract}:"
@@ -4589,7 +4679,7 @@ msgstr ""
 "{extract}: standaard standaarduitvoer)"
 
 #. Translators: {program} is the name of this command; it is never translated.
-#: src/pyguibud/uic.py:107
+#: src/pyguibud/uic.py:108
 #, python-brace-format
 msgid ""
 "replace an output file even if {program} did not generate it, and "
@@ -4599,30 +4689,30 @@ msgstr ""
 "gegenereerd, en code genereren uit afbeeldingen en insluitingen buiten de"
 " map van het .ui-bestand"
 
-#: src/pyguibud/uic.py:111
+#: src/pyguibud/uic.py:112
 msgid ".ui file to process"
 msgstr ".ui-bestand om te verwerken"
 
 #. Translators: {path} is a file name as typed by the user.
-#: src/pyguibud/uic.py:155
+#: src/pyguibud/uic.py:156
 #, python-brace-format
 msgid "{path}: no errors found"
 msgstr "{path}: geen fouten gevonden"
 
 #. Translators: {path} is the .ui file, {output} the Python file written from
 #. it.
-#: src/pyguibud/uic.py:201
+#: src/pyguibud/uic.py:202
 #, python-brace-format
 msgid "{path}: wrote {output}"
 msgstr "{path}: {output} geschreven"
 
 #. Translators: {output} is the translation template (.pot) that was written.
-#: src/pyguibud/uic.py:243
+#: src/pyguibud/uic.py:244
 #, python-brace-format
 msgid "wrote {output}"
 msgstr "{output} geschreven"
 
-#: src/pyguibud/uic.py:278
+#: src/pyguibud/uic.py:283
 msgid "no file matches this pattern"
 msgstr "geen bestand komt overeen met dit patroon"
 

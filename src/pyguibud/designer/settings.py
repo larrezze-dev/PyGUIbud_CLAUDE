@@ -24,11 +24,13 @@ from pyguibud.i18n import LANGUAGES, N_, PSEUDO_LANGUAGE, detect_language, norma
 
 __all__ = [
     "BACKEND_NAME",
+    "LAST_SAVE_ERROR",
     "MAX_SETTINGS_BYTES",
     "M_SETTINGS_RESET",
     "Settings",
     "config_dir",
     "load_settings",
+    "merge_disabled",
     "merge_recent",
     "parse_disabled_plugins",
     "parse_settings",
@@ -126,6 +128,13 @@ class Settings:
     #: Not stored: the file exists but could not be read at start-up (locked by another
     #: instance, a permission error). It is kept; a save merges into it (``save_settings``).
     unread: bool = False
+    #: Not stored: ``disabled_plugins`` as last read or written. A save applies only what this
+    #: instance toggled since then onto the file's list, so two designers keep each other's
+    #: changes (QA-17c-04, hardening D8).
+    disabled_base: tuple[str, ...] = field(default=(), compare=False)
+    #: Not stored: the file's ``disabled_plugins`` is not a list of names (a bad hand edit). It
+    #: is unknown, never "none disabled": a save keeps this instance's list (QA-19b-05).
+    disabled_unknown: bool = field(default=False, compare=False)
 
 
 def _whole(value: object, low: int, high: int) -> int | None:
@@ -187,7 +196,12 @@ def _from_mapping(data: Mapping[str, object]) -> Settings:
             and len(v) <= MAX_EXPORT_PATH
         ]
         result.exports = dict(valid[-MAX_EXPORTS:])
-    result.disabled_plugins = parse_disabled_plugins(data.get("disabled_plugins"))
+    stored = data.get("disabled_plugins", [])  # absent: none disabled (never written empty)
+    result.disabled_plugins = parse_disabled_plugins(stored)
+    result.disabled_base = result.disabled_plugins
+    result.disabled_unknown = not isinstance(stored, list) or not all(
+        isinstance(name, str) for name in stored
+    )
     seconds = _whole(data.get("autosave_seconds"), 15, 3600)
     result.autosave_seconds = _DEFAULT_AUTOSAVE if seconds is None else seconds
     return result
@@ -274,7 +288,26 @@ def _encode(settings: Settings, recent: tuple[str, ...]) -> bytes:
         data["exports"] = dict(settings.exports)
     if settings.disabled_plugins:
         data["disabled_plugins"] = list(settings.disabled_plugins)
-    return (json.dumps(data, ensure_ascii=False, indent=2, sort_keys=True) + "\n").encode()
+    try:
+        return (json.dumps(data, ensure_ascii=False, indent=2, sort_keys=True) + "\n").encode()
+    except UnicodeEncodeError:
+        # A lone surrogate (an undecodable Windows path, a hand edit) cannot be UTF-8; as a
+        # "\ud800" escape it reads back unchanged. It blocked every later save (QA-15b-09).
+        return (json.dumps(data, ensure_ascii=True, indent=2, sort_keys=True) + "\n").encode()
+
+
+def merge_disabled(
+    ours: Collection[str], base: Collection[str], on_disk: Collection[str]
+) -> tuple[str, ...]:
+    """``on_disk`` with this instance's toggles since ``base`` applied (hardening D8)."""
+    dropped = set(base) - set(ours)
+    added = [name for name in ours if name not in base]
+    merged = dict.fromkeys([*(n for n in on_disk if n not in dropped), *added])
+    return tuple(merged)[-MAX_DISABLED_PLUGINS:]
+
+
+#: The OS reason of the last failed :func:`save_settings` (one item, or empty).
+LAST_SAVE_ERROR: list[str] = []
 
 
 def save_settings(
@@ -297,11 +330,17 @@ def save_settings(
         readable = False
     on_disk = current.recent_files if current is not None else ()
     recent = merge_recent(settings.recent_files, on_disk, removed)
+    disabled = settings.disabled_plugins
+    if current is not None and not current.disabled_unknown:
+        disabled = merge_disabled(disabled, settings.disabled_base, current.disabled_plugins)
     target = settings
+    if disabled != settings.disabled_plugins:
+        target = replace(settings, disabled_plugins=disabled)
     if settings.unread:
         if not readable:
             return False  # still unreadable: never replace a file that was not read
         target = _merge_unread(settings, current)
+        target.disabled_plugins = disabled
         if current is not None and target == replace(current, recent_files=recent):
             return True  # nothing this run changed: the file stays as it is
     try:
@@ -309,10 +348,12 @@ def save_settings(
         write_atomic(path, _encode(target, recent))
     except (OSError, TypeError, ValueError) as exc:  # unserialisable extras of a fork
         _log.warning("Settings %s not saved: %s", path, exc)
+        # For the Quit message: only the OS's own wording, never a Python error text.
+        LAST_SAVE_ERROR[:] = [exc.strerror] if isinstance(exc, OSError) and exc.strerror else []
         return False
     if target is not settings:
         _adopt(settings, target)
-    settings.recent_files = recent
+    settings.recent_files, settings.disabled_base = recent, disabled
     return True
 
 

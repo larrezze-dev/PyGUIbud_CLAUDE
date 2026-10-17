@@ -32,7 +32,7 @@ from .codegen.output import (
 )
 from .core.diagnostics import Finding
 from .core.errors import XmlIoError, format_message
-from .core.files import DiskFiles
+from .core.files import DiskFiles, is_network_or_device_path
 from .core.registry import WIDGETS_GROUP, default_registry
 from .core.validate import validate_read
 from .core.xml_io import ReadResult, read_ui
@@ -48,6 +48,7 @@ _ESCAPES = {code: repr(chr(code))[1:-1] for code in _UNSAFE}  # "\n", "\x85", "\
 _M_EXCLUSIVE = N_("{option} cannot be used with {other}")
 # Translators: {option} is a command-line option ("-o"); it is never translated.
 _M_ONE_INPUT = N_("{option} can be used with one input file only")
+_M_NETWORK = N_("Network and device paths cannot be opened.")  # the designer's wording
 
 
 def _build_parser() -> argparse.ArgumentParser:
@@ -273,6 +274,10 @@ def main(argv: list[str] | None = None) -> int:
     ok = True
     paths: list[str] = []
     for argument in args.files:
+        if is_network_or_device_path(argument):  # never contacted, not even to test it (R82)
+            print(f"{argument}: error: ".translate(_ESCAPES) + _(_M_NETWORK), file=sys.stderr)
+            ok = False
+            continue
         found = _expand(argument)
         if not found:
             print(f"{argument}: error: " + _("no file matches this pattern"), file=sys.stderr)

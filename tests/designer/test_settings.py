@@ -220,3 +220,50 @@ def test_theme_precedence() -> None:
     assert resolve_theme("high-contrast", Settings(theme="dark")) == "high_contrast"
     assert resolve_theme(None, Settings(theme="dark")) == "dark"
     assert resolve_theme(None, Settings()) == "light"
+
+
+# ---------------------------------------------------------------- Step 19b (H21, H29)
+def test_a_lone_surrogate_no_longer_blocks_saving(tmp_path: Path) -> None:
+    """H21 (QA-15b-09): a ``\\ud800`` from the file (or a Windows path) is kept, escaped."""
+    path = tmp_path / "settings.json"
+    path.write_text(
+        '{"version": 1, "fork": "a\\ud800b", "recent_files": ["C:/x\\udc80.ui"]}',
+        encoding="utf-8",
+    )
+    settings, message = store.load_settings(path)
+    assert message is None and settings.extra["fork"] == "a\ud800b"
+    settings.theme = "dark"
+    assert store.save_settings(settings, path=path)
+    again = store.load_settings(path)[0]
+    assert again.theme == "dark" and again.extra["fork"] == "a\ud800b"
+    again.theme = "light"
+    assert store.save_settings(again, path=path)  # and every later save
+    assert store.load_settings(path)[0].theme == "light"
+
+
+def test_two_instances_merge_their_disabled_plugin_toggles(tmp_path: Path) -> None:
+    """H29 (QA-17c-04, D8): each save applies its own toggles onto the file's list."""
+    path = tmp_path / "settings.json"
+    assert store.save_settings(Settings(disabled_plugins=("old",)), path=path)
+    first, second = store.load_settings(path)[0], store.load_settings(path)[0]
+    first.disabled_plugins = ("old", "acme")
+    assert store.save_settings(first, path=path)
+    second.disabled_plugins = tuple(n for n in second.disabled_plugins if n != "old")
+    assert store.save_settings(second, path=path)
+    assert second.disabled_plugins == ("acme",)
+    assert store.load_settings(path)[0].disabled_plugins == ("acme",)
+    assert store.save_settings(first, path=path)  # nothing new from the first: no stale delta
+    assert store.load_settings(path)[0].disabled_plugins == ("acme",)
+
+
+@given(
+    ours=st.lists(st.sampled_from("abcde"), unique=True),
+    base=st.lists(st.sampled_from("abcde"), unique=True),
+    disk=st.lists(st.sampled_from("abcde"), unique=True),
+)
+def test_merge_disabled_applies_exactly_the_delta(
+    ours: list[str], base: list[str], disk: list[str]
+) -> None:
+    merged = set(store.merge_disabled(ours, base, disk))
+    assert merged == (set(disk) - (set(base) - set(ours))) | (set(ours) - set(base))
+    assert store.merge_disabled(ours, ours, disk) == tuple(disk)

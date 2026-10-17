@@ -193,3 +193,21 @@ def test_pseudo_preserves_placeholders(pieces: list[str]) -> None:
     out = _PSEUDO.gettext(message)
     assert _TOKEN.findall(out) == _TOKEN.findall(message)
     out.encode("cp1252")
+
+
+def test_a_context_key_is_translated_in_its_context(monkeypatch: pytest.MonkeyPatch) -> None:
+    # QA-19b-07: NC_ keeps a dialog's "_Quit" apart from the menu's "_Quit".
+    key = i18n.NC_("dialog", "_Quit")
+    assert i18n.gettext(key) == "_Quit"  # untranslated: the source text, never the key
+
+    class Catalogue(gettext.NullTranslations):
+        def gettext(self, message: str) -> str:
+            return f"menu {message}"
+
+        def pgettext(self, context: str, message: str) -> str:
+            return f"{context} {message}"
+
+    monkeypatch.setattr(i18n, "_translation", Catalogue())
+    assert i18n._(key) == "dialog _Quit" and i18n._("_Quit") == "menu _Quit"
+    monkeypatch.setattr(i18n, "_translation", PseudoTranslations())
+    assert "dialog" not in i18n.gettext(key) and "_Q" in i18n.gettext(key)

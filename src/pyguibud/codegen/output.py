@@ -13,7 +13,12 @@ import re
 import stat
 
 from pyguibud.codegen import GENERATED_MARKER
-from pyguibud.codegen._errors import M_ALREADY_WRITTEN, M_NOT_REGULAR, M_SAME_FILE
+from pyguibud.codegen._errors import (
+    M_ALREADY_WRITTEN,
+    M_NOT_REGULAR,
+    M_SAME_FILE,
+    M_STREAM_NAME,
+)
 from pyguibud.core.atomic import create_temporary
 from pyguibud.core.errors import XmlIoError
 from pyguibud.core.files import MAX_INCLUDE_FILES, DiskFiles, is_device_name
@@ -94,6 +99,13 @@ def protected_ui_files(path: str, result: ReadResult) -> list[str]:
                 if target not in keys:
                     keys.append(target)
     return [files.path_of(key) for key in keys]
+
+
+def _stream_name(output: str) -> bool:
+    """True if ``output`` names an NTFS alternate data stream (``a.py:evil``, QA-15b-08)."""
+    if os.name != "nt":
+        return False
+    return ":" in os.path.splitdrive(_plain(output))[1]
 
 
 def _regular_or_absent(output: str) -> bool:
@@ -179,6 +191,8 @@ def check_output(output: str, protected: list[str], written: list[str]) -> str |
         return M_SAME_FILE
     if any(same_file(output, path) for path in written):
         return M_ALREADY_WRITTEN
+    if _stream_name(output):
+        return M_STREAM_NAME
     if not _regular_or_absent(output):
         return M_NOT_REGULAR
     return None
@@ -191,7 +205,7 @@ def write_atomic(output: str, text: str) -> None:
         OSError: the file cannot be written; no temporary file is left behind.
     """
     folder = os.path.dirname(os.path.abspath(output))
-    descriptor, temporary = create_temporary(folder, prefix=".pyguibud-", suffix=".tmp")
+    descriptor, temporary = create_temporary(folder)
     try:
         with os.fdopen(descriptor, "w", encoding="utf-8", newline="\n") as stream:
             stream.write(text)

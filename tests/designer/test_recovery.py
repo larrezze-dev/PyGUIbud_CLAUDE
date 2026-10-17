@@ -177,7 +177,8 @@ def test_snapshot_failures_report_once_per_streak(tmp_path: Path) -> None:
     assert first is not None and first.startswith("Autosave failed: ")
     assert broken.snapshot(document(), path=None, name="Untitled") is None
     blocker.unlink()  # the state dir becomes available: the next tick retries and succeeds
-    assert broken.snapshot(document(), path=None, name="Untitled") is None
+    again = broken.snapshot(document(), path=None, name="Untitled")
+    assert again == "Autosave works again."  # replaces the failure in the status bar
     assert broken.folder is not None and (broken.folder / "document.ui").exists()
     broken.close()
     with RecoverySession(tmp_path / "ok") as live:
@@ -185,7 +186,7 @@ def test_snapshot_failures_report_once_per_streak(tmp_path: Path) -> None:
         (live.folder / "document.ui").mkdir()  # os.replace onto a folder fails
         assert live.snapshot(document(), path=None, name="x") is not None
         (live.folder / "document.ui").rmdir()
-        assert live.snapshot(document(), path=None, name="x") is None
+        assert live.snapshot(document(), path=None, name="x") == "Autosave works again."
 
 
 def test_autosave_policy(tmp_path: Path) -> None:

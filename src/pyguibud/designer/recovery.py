@@ -46,6 +46,7 @@ MAX_ORPHANS = 20
 MAX_AGE_DAYS = 30
 # Translators: {reason} is an error description, often from the operating system.
 _M_AUTOSAVE_FAILED = N_("Autosave failed: {reason}")
+_M_AUTOSAVE_RECOVERED = N_("Autosave works again.")
 _LOCK, _SNAPSHOT, _INFO = "owner.lock", "document.ui", "info.json"
 _FOLDER = re.compile(r"[0-9a-f]{32}")
 #: A folder without a lock file may be a peer between its ``mkdir`` and its lock.
@@ -274,8 +275,9 @@ class RecoverySession:
             except OSError as exc:
                 reason = exc.strerror or str(exc)
         if reason is None:
-            self._failing = False
-            return None
+            was_failing, self._failing = self._failing, False
+            # Replaces the "Autosave failed" line in the status bar (QA-15b-16).
+            return _(_M_AUTOSAVE_RECOVERED) if was_failing else None
         _log.warning("Autosave failed: %s", reason)
         first, self._failing = not self._failing, True
         return format_message(_M_AUTOSAVE_FAILED, {"reason": reason}) if first else None
@@ -288,7 +290,7 @@ class RecoverySession:
         if not force and session.revision == self._revision:
             return None
         message = self.snapshot(document, path=session.path, name=session.name, stamp=session.stamp)
-        if message is None and not self._failing:
+        if not self._failing:
             self._revision = session.revision
         return message
 
@@ -303,7 +305,7 @@ class RecoverySession:
     def adopt(self, entry: RecoveryEntry, session: DesignerSession) -> str | None:
         """After a restore: snapshot into this folder first, then delete the orphan."""
         message = self.autosave(session, force=True)
-        if message is None and not self._failing:
+        if not self._failing:
             entry.discard()
         return message
 

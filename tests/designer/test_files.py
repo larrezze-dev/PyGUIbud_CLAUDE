@@ -318,3 +318,23 @@ def test_recent_files_remove_and_clear_remember_removals(tmp_path: Path) -> None
     recent.add(a)
     assert files.path_key(a) not in recent.removed
     recent.remove("//srv/x.ui")  # harmless, never resolved
+
+
+@pytest.mark.parametrize(
+    ("head", "ours"),
+    [
+        (b'<pyguibud-ui schema_version="1.0"/>', True),
+        (b'\xef\xbb\xbf<?xml version="1.0"?>\n<!-- a -- note -->\r\n\t<pyguibud-ui\n>', True),
+        (b"<?xml version='1.0'?><!--<ui>--><pyguibud-ui>", True),
+        (b'<?xml version="1.0"?>\n<ui version="4.0"><class>Form</class></ui>', False),
+        (b"# Notes\n<pyguibud-ui schema_version='1.0'>", False),
+        (b"<pyguibud-uix/>", False),
+        (b"<!-- unterminated <pyguibud-ui>", False),
+        (b"<?xml version='1.0' <pyguibud-ui>", False),
+        (b"<!DOCTYPE x><pyguibud-ui/>", False),
+        (b"<pyguibud-ui", False),  # cut at the end of the scanned head
+    ],
+)
+def test_only_a_pyguibud_root_element_is_ours(head: bytes, ours: bool) -> None:
+    # QA-19b-03: the suffix never decides; the root element does, from a bounded scan.
+    assert files._ours(head) is ours

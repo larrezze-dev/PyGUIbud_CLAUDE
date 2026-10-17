@@ -54,6 +54,12 @@ M_TRANSLATIONS = N_(
 M_NOT_REGULAR = N_(
     "'{output}' is a folder, a device or a reserved device name; choose another output file."
 )
+# Translators: {output} is the output file; on Windows a ':' after the drive names a hidden
+# "alternate data stream" of another file (a.py:evil), never a file of its own.
+M_STREAM_NAME = N_(
+    "'{output}' contains ':', which Windows would write into a hidden part of another file; "
+    "choose another output file."
+)
 # Translators: {output} is the Python file that would be written; {option} is a command-line
 # option; keep it unchanged.
 M_ALREADY_WRITTEN = N_(

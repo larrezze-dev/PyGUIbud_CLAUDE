@@ -9,7 +9,7 @@ ADR-009 and designer-shell D4 (Accepted) already require an out-of-process previ
 - **Child entry `python -m pyguibud.preview`** (package `src/pyguibud/preview/`). It may import `pyguibud_runtime`, `pyguibud.core`, `pyguibud.i18n` and `pyguibud.backends`. It must **never** import `pyguibud.designer`, `pyguibud.cli`, `pyguibud.uic` or `pyguibud.codegen`. `tests/runtime/test_import_boundary.py` gains this case.
 - **Handoff:**
   - a clean, saved document: the child loads `session.path` itself, so paths and `<dir>/locale` resolve exactly as at runtime;
-  - otherwise: a snapshot written with `dump_ui` into a private `tempfile.mkdtemp(prefix="pyguibud-preview-")` folder, with paths rebased (`files.rebase_paths` on a copy) and `localedir=<.ui dir>/locale`.
+  - otherwise: a snapshot written with `dump_ui` into a private `core.atomic.make_temp_dir("pyguibud-preview-<pid>-")` folder (Step 19b H24; the sweep keeps folders of a running pid, H27), with paths rebased (`files.rebase_paths` on a copy) and `localedir=<.ui dir>/locale`.
 - **Control:** argv only (`shell=False`), `cwd` = the private folder, `CREATE_NO_WINDOW` on Windows.
   - stdin carries a line protocol (`theme NAME`, `lang CODE`, `raise`, `quit`). **stdin EOF ends the child**, so a crashed designer never leaves an orphan.
   - The child writes `ready.json` and `result.json` into the private folder. stderr goes to a file there (no pipe that can fill up). The designer polls with `after()`, never with `select`.

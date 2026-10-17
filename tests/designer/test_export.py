@@ -82,7 +82,7 @@ def test_template_folder_is_created_one_level_only(ui: Path) -> None:
     shutil.rmtree(ui.parent / "locale")
     _export(ui, "hello_ui.py", pot="locale/hello.pot")
     assert (ui.parent / "locale" / "hello.pot").is_file()
-    _refused(ui, "hello_ui.py", ex.M_FOLDER, pot="a/b/x.pot")
+    _refused(ui, "hello_ui.py", ex.M_NO_FOLDER, pot="a/b/x.pot")
 
 
 def test_regeneration_replaces_silently(ui: Path) -> None:
@@ -173,7 +173,7 @@ def test_e6_a_failed_write_leaves_no_temporary_file(
     assert outcome.written == () and outcome.failure is not None
     assert outcome.failure.msgid == M_WRITE_FAILED
     assert "Permission denied" in outcome.text()
-    assert not list(ui.parent.glob(".pyguibud-*.tmp"))
+    assert not list(ui.parent.glob("~pgb*.tmp"))
     assert not (ui.parent / "hello_ui.py").exists()
 
 
@@ -193,11 +193,11 @@ def test_e6_a_failed_template_keeps_the_module_and_says_which(
     outcome = ex.run_export(plan)
     assert outcome.written == (plan.output,)
     assert "hello.pot" in outcome.text() and "hello_ui.py" in outcome.text()
-    assert not list((ui.parent / "locale").glob(".pyguibud-*.tmp"))
+    assert not list((ui.parent / "locale").glob("~pgb*.tmp"))
 
 
 def test_e6_a_missing_folder_is_refused_before_generation(ui: Path) -> None:
-    _refused(ui, "missing/hello_ui.py", ex.M_FOLDER)
+    _refused(ui, "missing/hello_ui.py", ex.M_NO_FOLDER)
 
 
 # ---------------------------------------------------------------- E7, E8: the template
