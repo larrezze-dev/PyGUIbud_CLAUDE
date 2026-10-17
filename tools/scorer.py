@@ -405,9 +405,7 @@ def build_html(
     ]
     quality = quality or {}
     tiles += [
-        tile(label, quality[key], "", "good")
-        if key in quality
-        else tile(label, NA_TEXT, "", "na")
+        tile(label, quality[key], "", "good") if key in quality else tile(label, NA_TEXT, "", "na")
         for label, key in NA_ITEMS
     ]
     rows = []

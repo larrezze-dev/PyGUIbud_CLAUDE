@@ -28,14 +28,13 @@ _M_INSTALL = N_("PySide6 is not installed. Install it with: {extra}")
 _M_THREAD = N_("PySide6 interfaces must be loaded in the main thread.")
 # Translators: the application already runs a Qt core application, which cannot show windows.
 _M_NOT_GUI = N_("The running Qt application has no graphical interface (QCoreApplication).")
-# Translators: DISPLAY, WAYLAND_DISPLAY and QT_QPA_PLATFORM are environment variable names;
-# keep them unchanged.
-_M_NO_DISPLAY = N_(
-    "No display is set (DISPLAY, WAYLAND_DISPLAY or QT_QPA_PLATFORM), so Qt cannot open windows."
-)
-# Translators: {name} is the value of the QT_QPA_PLATFORM environment variable; keep
-# QT_QPA_PLATFORM unchanged.
-_M_NO_PLUGIN = N_("The Qt platform plugin '{name}' (QT_QPA_PLATFORM) is not installed.")
+# Translators: {variables} is a comma-separated list of environment variable names; keep it
+# unchanged.
+_M_NO_DISPLAY = N_("No display is set ({variables}), so Qt cannot open windows.")
+# Translators: {name} is the value of an environment variable and {variable} its name; keep
+# {variable} unchanged.
+_M_NO_PLUGIN = N_("The Qt platform plugin '{name}' ({variable}) is not installed.")
+_PLATFORM_VARIABLE = "QT_QPA_PLATFORM"
 _DISPLAY_VARIABLES = ("DISPLAY", "WAYLAND_DISPLAY")
 #: The QApplication this backend created: later sessions reusing it still quit it (§4.1).
 _created_app: Any = None
@@ -55,18 +54,24 @@ def display_problem(
     names = [part.split(":")[0].strip().lower() for part in value.split(";") if part.strip()]
     keys = _plugin_keys(plugins)
     if names and keys and not keys.intersection(names):  # exact keys: "win" is not "windows"
-        return _(_M_NO_PLUGIN).format(name=value[:64])
+        return _(_M_NO_PLUGIN).format(name=value[:64], variable=_PLATFORM_VARIABLE)
     if not platform.startswith(("linux", "freebsd", "openbsd", "netbsd", "dragonfly")):
         return None
     if not names:  # Qt picks xcb or wayland by itself
-        return None if any(environ.get(name) for name in _DISPLAY_VARIABLES) else _(_M_NO_DISPLAY)
+        return None if any(environ.get(name) for name in _DISPLAY_VARIABLES) else _no_display()
     for name in names:  # xcb and wayland need their display; offscreen, eglfs... need none
         need = (
             "DISPLAY" if name == "xcb" else "WAYLAND_DISPLAY" if name.startswith("wayland") else ""
         )
         if not need or environ.get(need):
             return None
-    return _(_M_NO_DISPLAY)
+    return _no_display()
+
+
+def _no_display() -> str:
+    """The no-display reason, naming the variables a user can set (names are not translated)."""
+    variables = ", ".join((*_DISPLAY_VARIABLES, _PLATFORM_VARIABLE))
+    return _(_M_NO_DISPLAY).format(variables=variables)
 
 
 def _plugin_keys(files: Iterable[str]) -> set[str]:

@@ -251,9 +251,11 @@ def test_dispose_removes_menu_keys_and_panels(designer_root: Any) -> None:
     assert designer_root.winfo_children() == []
 
 
-def test_long_language_still_fits_the_window(shell: DesignerApp) -> None:
-    """en_XA is about 40 percent longer: the root keeps its minimum size and shows all menus."""
-    shell.set_language("en_XA")
+@pytest.mark.parametrize("lang", ["en_XA", "de_DE", "nl_NL", "fr_FR", "pt_PT"])
+def test_long_language_still_fits_the_window(shell: DesignerApp, lang: str) -> None:
+    """en_XA is about 40 percent longer (and these real locales the longest): the root keeps its
+    minimum size and shows all menus."""
+    shell.set_language(lang)
     shell.root.update_idletasks()
     assert shell.shell.toolbar.winfo_reqwidth() < shell.root.winfo_reqwidth() + 1
     assert shell.shell.statusbar.winfo_reqheight() > 0

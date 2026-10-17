@@ -62,6 +62,8 @@ MESSAGE_MS = 5000
 #: Text-input classes keep their own keys: the document's undo must not steal a typed Ctrl+Z.
 _TEXT_CLASSES = frozenset({"TEntry", "Entry", "Text", "TCombobox", "TSpinbox", "Spinbox"})
 _TEXT_OWNED = frozenset({"edit.undo", "edit.redo"})
+#: The palette widens to fit its longest name, but never past this share of the window (QA-18-05).
+_PALETTE_SHARE = 0.4
 #: Bind tag placed before ``TButton`` on the toolbar buttons: a mouse click must not take the
 #: keyboard focus from the canvas or the tree, whose clipboard keys would stop (QA-14p-03).
 _NO_CLICK_FOCUS = "PyGUIbudNoClickFocus"
@@ -611,8 +613,18 @@ class Shell:
         if not panels:
             return 0
         if horizontal:
-            return max(p.heading.winfo_reqwidth() for p in panels) + 24
+            least = max(p.heading.winfo_reqwidth() for p in panels) + 24
+            if pane is self.palette.frame:  # long translated names are never cut (QA-18-05)
+                return max(least, min(self.palette.fit_width(), self._palette_cap()))
+            return least
         return max(p.heading.winfo_reqheight() for p in panels) * 3
+
+    def _palette_cap(self) -> int:
+        """At most 40 % of the window for the palette, so the canvas keeps the most room."""
+        width = self.body.winfo_width()
+        if width <= 1:  # not laid out yet: the window's minimum size
+            width = int(self.root.minsize()[0] or 0)
+        return int(width * _PALETTE_SHARE)
 
     def clamp_sashes(self) -> None:
         """Move any sash that hides a panel back, so no panel collapses below its heading."""
@@ -697,6 +709,7 @@ class Shell:
         if count == 1 and isinstance(node := self.session.selection.node, Include):
             path = self.canvas.engine.includes.describe(node)
         if count > 1:
+            # Translators: status bar; {count} is the number of selected elements.
             path = ngettext("{count} element selected", "{count} elements selected", count).format(
                 count=count
             )

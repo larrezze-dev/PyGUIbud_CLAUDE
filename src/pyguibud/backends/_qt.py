@@ -241,7 +241,13 @@ class QtSession:
             connect()
         self._wire.clear()
         if self._ignored:
-            plan.log(_M_IGNORED_STYLES, count=self._ignored, toolkit="pyside6")
+            plan.log(
+                _M_IGNORED_STYLES,
+                count=self._ignored,
+                package="ttkbootstrap",
+                attribute="tb:bootstyle",
+                toolkit="pyside6",
+            )
         if main is not None:
             main.installEventFilter(self._watch)
             main.show()

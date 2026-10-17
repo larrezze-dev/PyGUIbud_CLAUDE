@@ -39,10 +39,12 @@ __all__ = ["load_ui"]
 Handler = Callable[[], object]
 
 _M_UNREADABLE = N_("The .ui file '{path}' cannot be loaded: {reason}")
+# Translators: {count} is the number of validation errors, {path} the .ui file name.
 _M_INVALID = NP_(
     "{count} error prevents loading '{path}'.", "{count} errors prevent loading '{path}'."
 )
-_M_NO_MAIN = N_("'{path}' has no main window; pass master= to load its dialogs.")
+# Translators: {argument} is the name of a Python argument ("master="); keep it unchanged.
+_M_NO_MAIN = N_("'{path}' has no main window; pass {argument} to load its dialogs.")
 _M_ONLY_COMPONENTS = N_("'{path}' contains only components; include them from another .ui file.")
 # Translators: {target} is the handlers object (its type name), {names} a comma-separated list.
 _M_MISSING = NP_(
@@ -51,8 +53,9 @@ _M_MISSING = NP_(
 )
 _M_HANDLER = N_("The handler '{name}' is missing or not callable on {target}; it is not bound.")
 _M_BACKEND = N_("The backend '{name}' is not available: {reason}")
+# Translators: {argument} is the name of a Python argument ("master="); keep it unchanged.
 _M_ROOT = N_(
-    "A Tk root window already exists; pass it as master= to load another .ui file into it."
+    "A Tk root window already exists; pass it as {argument} to load another .ui file into it."
 )
 _M_DISPLAY = N_("No display is available, so no window can be opened: {reason}")
 _M_BUILD = N_("Building the interface from '{path}' failed: {reason}")
@@ -94,7 +97,7 @@ def load_ui(
         chosen = load_backend(backend, plan.registry)()
         chosen.prepare(master)
     except RootExistsError as exc:
-        raise UiError("runtime.root_exists", _M_ROOT, path=shown) from exc
+        raise UiError("runtime.root_exists", _M_ROOT, path=shown, argument="master=") from exc
     except Exception as exc:
         raise UiError(
             "runtime.backend_unavailable", _M_BACKEND, path=shown, name=backend, reason=_reason(exc)
@@ -164,7 +167,7 @@ def _prepare(
     if not mains and (master is None or not dialogs):
         if windows and all(w.kind == "component" for w in windows):
             raise UiError("runtime.nothing_to_load", _M_ONLY_COMPONENTS, path=shown)
-        raise UiError("runtime.no_main_window", _M_NO_MAIN, path=shown)
+        raise UiError("runtime.no_main_window", _M_NO_MAIN, path=shown, argument="master=")
     # P5: instance plan, expanded from the validated (cached) files
     ui = LoadedUi(shown)
     docs: dict[str, DocumentPlan] = {}

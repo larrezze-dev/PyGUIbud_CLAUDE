@@ -13,6 +13,7 @@ from collections.abc import Mapping
 from dataclasses import dataclass, field
 from typing import Literal
 
+from pyguibud.core.errors import format_message
 from pyguibud.core.model import NS_TB
 from pyguibud.core.validate import BOOTSTYLE_RE, MAX_TEXT_LENGTH
 from pyguibud.i18n import N_
@@ -69,6 +70,10 @@ _CLASSES = (
 _M_FALLBACK = N_("The widget class '{name}' is shown as its fallback '{fallback}'.")
 # Translators: a ttkbootstrap style name from a .ui file was not applied.
 _M_BOOTSTYLE = N_("The bootstyle '{value}' of '{id}' is ignored.")
+# Translators: {value} is the text of a date property that is not a real calendar date.
+_M_BAD_DATE = N_("The date '{value}' is not a valid calendar date; it is ignored.")
+# Translators: {given} and {expected} are numbers; {text} is the ';'-separated headings text.
+_M_HEADINGS = N_("{given} column headings for {expected} columns: '{text}'")
 _ELLIPSIS = "…"
 
 Wiring = tuple[Literal["command", "trace", "modified", "virtual", "bind", "key"], tuple[str, ...]]
@@ -161,12 +166,17 @@ def toggle_style(bootstyle: str | None, shape: str) -> str:
     return f"{colour}-{shape}-toggle" if colour else f"{shape}-toggle"
 
 
+def _warn(msgid: str, **params: object) -> None:
+    """Log a runtime warning in the current pyguibud language (as the loader's own ones)."""
+    _logger.warning("%s", format_message(msgid, params))
+
+
 def iso_date(value: str) -> datetime.date | None:
     """A ``YYYY-MM-DD`` value as a date; a calendar-invalid one is logged and gives None."""
     try:
         return datetime.date.fromisoformat(value)
     except ValueError:
-        _logger.warning("The date %r is not a valid calendar date; it is ignored.", value)
+        _warn(_M_BAD_DATE, value=value)
         return None
 
 
@@ -174,5 +184,5 @@ def split_headings(text: str, count: int) -> list[str]:
     """``count`` headings from a ``;``-separated text, padded or truncated (logged, D12)."""
     headings = text.split(";")
     if len(headings) != count:
-        _logger.warning("%d column headings for %d columns: %r", len(headings), count, text)
+        _warn(_M_HEADINGS, given=len(headings), expected=count, text=text)
     return (headings + [""] * count)[:count]

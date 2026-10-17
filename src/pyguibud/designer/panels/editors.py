@@ -32,6 +32,7 @@ _M_ADD_IMAGE = N_("Add image…")
 _M_CHOOSE = N_("Choose…")
 _M_EDIT_TEXT = N_("Edit text…")
 # Translators: the sticky sides of a grid cell: North, East, South, West (one letter each).
+# Keep the letters N, E, S, W: they are the values stored in the .ui file and named in messages.
 _STICKY = (("n", N_("N")), ("e", N_("E")), ("s", N_("S")), ("w", N_("W")))
 _BUTTONS = tuple((token, token) for token in ("ok", "cancel", "yes", "no", "close"))
 #: Pseudo values of the choice editors (never a valid id, so they cannot clash).

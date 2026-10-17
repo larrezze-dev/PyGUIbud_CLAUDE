@@ -14,7 +14,7 @@ PyGUIbud validator demo - every edit is checked before it is kept.
    Add a label on top of 'lbl_user' (row 0, column 0): BLOCKED: 'lbl_overlap' overlaps 'lbl_user' in the grid at row 0, column 0.
    Set the width of 'btn_greet' to -5: BLOCKED: width must be between 0 and 10000, not -5.
    Set the state of 'btn_greet' to 'maybe': BLOCKED: The property 'state' must be one of normal, disabled, not 'maybe'.
-   Handle the event 'key:' on 'btn_greet': BLOCKED: 'key:' is not a valid event; use command, change, select, activate, focus_in, focus_out or key:<sequence>.
+   Handle the event 'key:' on 'btn_greet': BLOCKED: 'key:' is not a valid event; use one of: command, change, select, activate, focus_in, focus_out, key:<sequence>.
    Use the handler '1abc' on 'btn_greet': BLOCKED: '1abc' is not a valid handler name: use letters, digits and underscores, starting with a letter, and no Python keyword.
    Add a check button bound to the text variable 'user_name': BLOCKED: Checkbutton cannot be bound to the string variable 'user_name'; use one of: bool, int.
    Give the notebook 'nbk_main' a layout: BLOCKED: 'nbk_main' (Notebook) shows its children as pages and cannot have a layout.

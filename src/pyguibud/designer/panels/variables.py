@@ -265,6 +265,8 @@ class VariablesPanel(PanelBase):
         if not count:
             self._run(remove_and_unbind(document, variable.id))
             return
+        # Translators: {id} is the identifier of a variable and {count} the number of widgets bound
+        # to it.
         question = ngettext(
             "'{id}' is bound to {count} widget. Unbind it and delete it?",
             "'{id}' is bound to {count} widgets. Unbind them and delete it?",

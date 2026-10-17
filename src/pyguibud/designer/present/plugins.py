@@ -32,6 +32,8 @@ _M_DISABLE_NEXT = N_("{status} (disabled on next start)")
 # Translators: {status} is a plugin status such as "Disabled"; the change needs a restart.
 _M_ENABLE_NEXT = N_("{status} (enabled on next start)")
 _M_NO_PROBLEMS = N_("No problems were reported.")
+# Translators: start-up note and status bar; {count} is the number of plugins that failed to
+# load; "Help ▸ Plugins" is the menu path (Help menu, Plugins entry).
 M_PROBLEMS = NP_(
     "{count} plugin problem — see Help ▸ Plugins.", "{count} plugin problems — see Help ▸ Plugins."
 )

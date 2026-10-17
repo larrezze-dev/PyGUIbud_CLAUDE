@@ -23,6 +23,7 @@ CHILD = [sys.executable, "-m", "pyguibud.preview"]
 ENV = {**os.environ, "PYTHONIOENCODING": "utf-8"}
 for _name in ("PYGUIBUD_LANG", "LANGUAGE", "LC_ALL", "LC_MESSAGES", "LANG"):
     ENV.pop(_name, None)
+ENV["PYGUIBUD_LANG"] = "en_GB"  # children must not follow the host locale
 
 
 def describe_child(ui: Path, *args: str, cwd: Path) -> dict[str, Any]:

@@ -28,6 +28,8 @@ def findings_summary(report: ValidationReport) -> str:
     if not errors and not warnings:
         return _(_M_NO_FINDINGS)
     return _(_M_SUMMARY).format(
+        # Translators: part of the problem summary; {count} is a number of errors.
         errors=ngettext("{count} error", "{count} errors", errors).format(count=errors),
+        # Translators: part of the problem summary; {count} is a number of warnings.
         warnings=ngettext("{count} warning", "{count} warnings", warnings).format(count=warnings),
     )

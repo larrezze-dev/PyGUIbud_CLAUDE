@@ -138,6 +138,7 @@ def generate_python(
             findings=outside,
             path=path,
             src=outside[0].params.get("path", ""),
+            force="--force",
         )
     document = result.document
     mains = [w for w in document.children if w.kind == "main"]

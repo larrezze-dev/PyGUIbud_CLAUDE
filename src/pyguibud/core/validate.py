@@ -259,10 +259,10 @@ _M_FALLBACK_MISMATCH: Final = N_(
     "The fallback '{fallback}' of '{id}' does not match {class_name}: one is a container and "
     "the other is not."
 )
-# Translators: {plugin} is a Python package name; keep the pip command as it is.
+# Translators: {command} is the literal install command ("pip install" and a package name); keep
+# it unchanged.
 _M_PLUGIN_MISSING: Final = N_(
-    "'{class_name}' is not installed, so '{fallback}' is shown instead; install it with: "
-    "pip install {plugin}"
+    "'{class_name}' is not installed, so '{fallback}' is shown instead; install it with: {command}"
 )
 _M_PLUGIN_MISSING_NAMELESS: Final = N_(
     "'{class_name}' is not installed, so '{fallback}' is shown instead."
@@ -284,8 +284,9 @@ _M_BAD_BOOTSTYLE: Final = N_(
 )
 _M_BOOTSTYLE_TOKEN: Final = N_("The bootstyle '{value}' of '{id}' has the unknown word '{token}'.")
 _M_BOOTSTYLE_IGNORED: Final = N_("{class_name} has no bootstyle; the one on '{id}' is ignored.")
+# Translators: {package} is the package name ttkbootstrap, inserted as it is.
 _M_UNKNOWN_TB_ATTR: Final = N_(
-    "The attribute '{name}' on '{id}' is not a ttkbootstrap attribute; it is kept but ignored."
+    "The attribute '{name}' on '{id}' is not a {package} attribute; it is kept but ignored."
 )
 # Translators: {hint} describes the expected format and is already translated.
 _M_BAD_PATTERN: Final = N_("The value of '{prop}' on '{id}' is not valid: {hint}")
@@ -320,11 +321,10 @@ _M_REF_NOT_ALLOWED: Final = N_(
     "The property '{name}' is not an image and cannot refer to a resource."
 )
 _M_UNKNOWN_RESOURCE: Final = N_("'{ref}' is not a declared image resource.")
-# Translators: keep the event names and key:<sequence> untranslated.
-_M_BAD_EVENT: Final = N_(
-    "'{name}' is not a valid event; use command, change, select, activate, focus_in, "
-    "focus_out or key:<sequence>."
-)
+# Translators: {events} is a comma-separated list of event names and "key:<sequence>"; keep it
+# unchanged.
+_M_BAD_EVENT: Final = N_("'{name}' is not a valid event; use one of: {events}.")
+_EVENT_NAMES: Final = "command, change, select, activate, focus_in, focus_out, key:<sequence>"
 _M_UNSUPPORTED_EVENT: Final = N_("{class_name} does not support the event '{name}'.")
 _M_DUPLICATE_EVENT: Final = N_("The event '{name}' is handled more than once on '{id}'.")
 _M_BAD_HANDLER: Final = N_(
@@ -389,17 +389,17 @@ _M_RESERVED_ID: Final = N_(
 _M_BAD_BUTTONS: Final = N_(
     "'{value}' is not a valid button list; use a comma-separated list of {choices} without repeats."
 )
-# Translators: {value} is the shortcut as typed in the file.
-_M_BAD_SHORTCUT: Final = N_(
-    "'{value}' is not a valid shortcut, for example Ctrl+S or Ctrl+Shift+F5."
-)
+# Translators: {value} is the shortcut as typed in the file; {example} and {other} are valid
+# shortcuts (Ctrl+S, Ctrl+Shift+F5), inserted as they are: a file must use these key names.
+_M_BAD_SHORTCUT: Final = N_("'{value}' is not a valid shortcut, for example {example} or {other}.")
+_SHORTCUT_EXAMPLES: Final = MappingProxyType({"example": "Ctrl+S", "other": "Ctrl+Shift+F5"})
 _M_SHORTCUT_MODIFIER: Final = N_(
     "The shortcut '{value}' needs Ctrl or Alt unless it is a function key (F1\u2013F24)."
 )
-# Translators: {value} is the key sequence as typed in the file.
-_M_BAD_KEY_SEQUENCE: Final = N_(
-    "'{value}' is not a valid key, for example key:Ctrl+S or key:<Control-s>."
-)
+# Translators: {value} is the key sequence as typed in the file; {example} and {other} are valid
+# key events (key:Ctrl+S, key:<Control-s>), inserted as they are: a file must use these names.
+_M_BAD_KEY_SEQUENCE: Final = N_("'{value}' is not a valid key, for example {example} or {other}.")
+_KEY_EXAMPLES: Final = MappingProxyType({"example": "key:Ctrl+S", "other": "key:<Control-s>"})
 # Translators: {shortcut} is a shortcut such as Ctrl+S, {window} a window id.
 _M_DUPLICATE_SHORTCUT: Final = N_(
     "The shortcut '{shortcut}' is used more than once in '{window}'; only the first one works."
@@ -420,6 +420,7 @@ _M_BAD_SOURCE_LOCALE: Final = N_(
     "'{value}' is not a valid language code for the source texts; use a code such as en_GB."
 )
 _M_INCLUDE_MISSING: Final = N_("The included file '{src}' does not exist or cannot be read.")
+# Translators: {src} is the path of an included file; {count} is its number of errors.
 _M_INCLUDE_ERRORS: Final = NP_(
     "The included file '{src}' has {count} error.",
     "The included file '{src}' has {count} errors.",
@@ -433,6 +434,7 @@ _M_INCLUDE_CYCLE: Final = N_("Including '{component}' from '{src}' creates a cyc
 _M_LIMIT_DEPTH: Final = N_("Including '{src}' nests includes deeper than {limit} levels.")
 _M_LIMIT_FILES: Final = N_("Including '{src}' reads more than {limit} files.")
 _M_LIMIT_NODES: Final = N_("Including '{src}' creates more than {limit} widgets.")
+# Translators: {count} is the number of problems left out of a list that was cut short.
 _M_TRUNCATED: Final = NP_(
     "{count} more problem was found but not listed.",
     "{count} more problems were found but not listed.",
@@ -948,6 +950,7 @@ class _Validator:
                     widget,
                     name=name,
                     id=label,
+                    package="ttkbootstrap",
                 )
             elif not isinstance(value, str):
                 continue  # R62 (check_extras)
@@ -1755,6 +1758,7 @@ class _Validator:
                     class_name=_clip(name),
                     fallback=_clip(fallback),
                     plugin=_clip(plugin),
+                    command=f"pip install {_clip(plugin)}",
                 )
             else:
                 sink.warning(
@@ -1783,7 +1787,14 @@ class _Validator:
                 continue
             name = event.name
             if not isinstance(name, str) or not is_valid_event(name):
-                sink.error("validate.bad_event", _M_BAD_EVENT, widget, part, name=_clip(name))
+                sink.error(
+                    "validate.bad_event",
+                    _M_BAD_EVENT,
+                    widget,
+                    part,
+                    name=_clip(name),
+                    events=_EVENT_NAMES,
+                )
             else:
                 if name.startswith("key:") and not keys.is_valid_key_sequence(name[4:]):
                     sink.error(
@@ -1792,6 +1803,7 @@ class _Validator:
                         widget,
                         part,
                         value=_clip(name[4:]),
+                        **_KEY_EXAMPLES,
                     )
                 if spec is not None:
                     supported = (
@@ -1932,8 +1944,12 @@ class _Validator:
             return  # None is fine; other types are R62 (chars)
         problem = keys.shortcut_problem(shortcut)
         if problem is not None:
-            msgid = _M_BAD_SHORTCUT if problem == "syntax" else _M_SHORTCUT_MODIFIER
-            self.sink.error("validate.bad_shortcut", msgid, action, "", value=_clip(shortcut))
+            syntax = problem == "syntax"
+            msgid = _M_BAD_SHORTCUT if syntax else _M_SHORTCUT_MODIFIER
+            examples = _SHORTCUT_EXAMPLES if syntax else {}
+            self.sink.error(
+                "validate.bad_shortcut", msgid, action, "", value=_clip(shortcut), **examples
+            )
             return
         chord = keys.parse_chord(shortcut)
         assert chord is not None

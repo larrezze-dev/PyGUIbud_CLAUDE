@@ -70,6 +70,7 @@ from pyguibud.i18n import (
     N_,
     _,
     add_language_listener,
+    catalogue_problem,
     get_language,
     ngettext,
     remove_language_listener,
@@ -303,6 +304,10 @@ class DesignerApp:
         except ValueError as exc:
             self.message.emit(str(exc))
             return
+        problem = catalogue_problem()
+        if problem is not None:  # a damaged catalogue: English is shown, and the user is told
+            self.message.emit(problem)  # after the switch, which clears the status line
+            return  # never remembered: the next start would only fall back again
         if code in LANGUAGES:  # only a menu choice is remembered, never ``--lang`` (spec 12)
             self.settings.language = code
             self._save_settings()
@@ -319,6 +324,7 @@ class DesignerApp:
         ]
         steps += [(f"{panel.name} panel", panel.retranslate) for panel in self.shell.all_panels]
         steps += [("title", self.retranslate), ("status bar", self.shell.retranslate_status)]
+        steps += [("panel widths", self.shell.clamp_sashes)]  # new names may need a wider palette
         steps += [("recent files", self._fill_recent)]
         steps += [("dialog", dialog.retranslate) for dialog in self._live_dialogs()]
         for name, step in steps:
@@ -489,6 +495,7 @@ class DesignerApp:
         report = self.session.report()
         count = len(opened.result.warnings) + len(report.errors) + len(report.warnings)
         if count:  # rule C1: after the first window is selected
+            # Translators: status bar after opening a file; {count} is the number of warnings.
             text = ngettext("Opened with {count} warning.", "Opened with {count} warnings.", count)
             self.message.emit(text.format(count=count))
         elif opened.read_only_reason is not None:
@@ -592,6 +599,7 @@ class DesignerApp:
             )  # fmt: skip
 
         if plan.error_count:
+            # Translators: asked before saving; {count} is the number of errors in the document.
             question = ngettext(
                 "The document has {count} error. Save anyway?",
                 "The document has {count} errors. Save anyway?",
@@ -660,7 +668,7 @@ class DesignerApp:
         notice, self._notice = self._notice, None
         due, self._plugins_due = self._plugins_due, False
         # One status line: a settings reset outranks the plugin note (Help > Plugins keeps it).
-        text = _(notice) if notice else None
+        text = _(notice) if notice else catalogue_problem()  # e.g. a damaged saved language
         if text is None and due:
             text = plugin_note(self.session.registry, safe_mode=self.plugins == "all")
         if text:

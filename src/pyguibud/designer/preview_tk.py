@@ -339,9 +339,9 @@ class PreviewController:
         reasons += [pv.R_THEME] if self._theme_differs() else []
         if (saved := self.settings.preview_backend) != self.toolkit() and self._told != saved:
             self._told = saved  # once per missing toolkit (spec backends D17)
-            parts.append(_(pv.M_NOT_INSTALLED_USE).format(name=pv.toolkit_label(saved)))
+            parts.append(pv.not_installed_text(saved))
         reasons += [pv.R_PSEUDO] if lang == PSEUDO_LANGUAGE else []
-        parts += [_(pv.M_DIFFERS).format(reason=_(r)) for r in reasons]
+        parts += [_(pv.M_DIFFERS).format(reason=pv.reason_text(r)) for r in reasons]
         path = self.session.path
         folder = current.localedir or (path.parent / "locale" if path is not None else None)
         if note := pv.catalogue_note(document, folder, lang):

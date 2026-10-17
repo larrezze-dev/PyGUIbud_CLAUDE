@@ -189,13 +189,16 @@ def test_default_rows_are_muted_and_the_reset_button_is_an_icon(
 
 
 @pytest.mark.gui
+@pytest.mark.parametrize("lang", ["en_XA", "de_DE", "nl_NL", "fr_FR", "pt_PT"])
 def test_label_column_fits_the_widest_label_in_the_pseudo_locale(
     app: DesignerApp,  # noqa: F811
     designer_root: Any,
+    lang: str,
 ) -> None:
     _open(app, designer_root, "lbl_username")
     inspector = app.shell.inspector
-    i18n.set_language("en_XA")
+    english = [str(row[0].cget("text")) for row in inspector._rows.values()]
+    i18n.set_language(lang)
     try:
         inspector.retranslate()
         _settle(designer_root)
@@ -207,7 +210,11 @@ def test_label_column_fits_the_widest_label_in_the_pseudo_locale(
         assert minsize == min(widest, int(room * 0.45)) and minsize > 0
         if widest > minsize:  # too wide for the share: wrapped, not cut
             assert all(int(lb.cget("wraplength")) == minsize for lb in labels)
-        assert all(str(lb.cget("text")).startswith("[") for lb in labels)
+        texts = [str(lb.cget("text")) for lb in labels]
+        if lang == "en_XA":
+            assert all(t.startswith("[") for t in texts)
+        else:
+            assert texts != english  # really translated
     finally:
         i18n.set_language("en_GB")
 

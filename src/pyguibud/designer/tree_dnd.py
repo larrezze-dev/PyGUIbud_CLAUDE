@@ -151,6 +151,7 @@ def release_text(nodes: Sequence[object], found: Target) -> str:
     if len(nodes) == 1:
         container = getattr(found.container, "id", "")
         return _(_M_RELEASE_MOVE).format(id=getattr(nodes[0], "id", ""), container=container)
+    # Translators: shown while dragging; {count} is the number of elements being moved.
     text = ngettext(
         "Release to move {count} element.", "Release to move {count} elements.", len(nodes)
     )

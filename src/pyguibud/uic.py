@@ -13,7 +13,7 @@ import os
 import sys
 
 from .__about__ import __version__
-from .cli import _language_arg, _make_stdout_safe, _select_initial_language
+from .cli import PyGUIbudParser, _language_arg, _make_stdout_safe, _select_initial_language
 from .codegen import (
     CodegenError,
     default_output,
@@ -33,7 +33,7 @@ from .codegen.output import (
 from .core.diagnostics import Finding
 from .core.errors import XmlIoError, format_message
 from .core.files import DiskFiles
-from .core.registry import default_registry
+from .core.registry import WIDGETS_GROUP, default_registry
 from .core.validate import validate_read
 from .core.xml_io import ReadResult, read_ui
 from .i18n import N_, _, get_language, set_language
@@ -43,24 +43,32 @@ _GLOB_CHARS = frozenset("*?[")
 _UNSAFE = [*range(0x20), *range(0x7F, 0xA0), *range(0x202A, 0x202F), *range(0x2066, 0x206A)]
 _ESCAPES = {code: repr(chr(code))[1:-1] for code in _UNSAFE}  # "\n", "\x85", "\u202e"
 # Usage errors go through argparse, so the msgids are marked here and translated when used.
-_M_O_CHECK = N_("-o cannot be used with --check")
-_M_FORCE_CHECK = N_("--force cannot be used with --check")
-_M_ONE_INPUT = N_("-o can be used with one input file only")
+# Translators: {option} and {other} are command-line options such as "-o" and "--check"; they
+# are never translated.
+_M_EXCLUSIVE = N_("{option} cannot be used with {other}")
+# Translators: {option} is a command-line option ("-o"); it is never translated.
+_M_ONE_INPUT = N_("{option} can be used with one input file only")
 
 
 def _build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(
+    parser = PyGUIbudParser(
         prog="pyguibud-uic",
         description=_(
             "Check PyGUIbud .ui files, generate Python code from them and extract their texts "
             "for translation."
         ),
+        # Translators: {group} is the name of a Python entry-point group; it is never translated.
         epilog=_(
-            "The check loads the installed widget plugins (entry point pyguibud.widgets), which "
+            "The check loads the installed widget plugins (entry point {group}), which "
             "runs their code; only check files with plugins you trust."
-        ),
+        ).format(group=WIDGETS_GROUP),
     )
-    parser.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
+    parser.add_argument(
+        "--version",
+        action="version",
+        version=f"%(prog)s {__version__}",
+        help=_("show the version number and exit"),
+    )
     parser.add_argument(
         "--lang",
         metavar="CODE",
@@ -84,18 +92,21 @@ def _build_parser() -> argparse.ArgumentParser:
         "--output",
         metavar="OUT",
         default=None,
+        # Translators: {pattern} is a file name pattern and {extract} a command-line option; both
+        # are never translated.
         help=_(
-            "output file (generate: default <name>_ui.py next to the .ui file; --extract: "
+            "output file (generate: default {pattern} next to the .ui file; {extract}: "
             "default standard output)"
-        ),
+        ).format(pattern="<name>_ui.py", extract="--extract"),
     )
     parser.add_argument(
         "--force",
         action="store_true",
+        # Translators: {program} is the name of this command; it is never translated.
         help=_(
-            "replace an output file even if pyguibud-uic did not generate it, and generate code "
+            "replace an output file even if {program} did not generate it, and generate code "
             "from images and includes outside the folder of the .ui file"
-        ),
+        ).format(program="pyguibud-uic"),
     )
     parser.add_argument("files", metavar="FILE", nargs="+", help=_(".ui file to process"))
     return parser
@@ -147,7 +158,9 @@ def _check(path: str) -> bool:
 
 def _refuse(output: str, msgid: str, **params: object) -> bool:
     """Print ``OUT: error: message`` for a refused or failed output; always False."""
-    message = format_message(msgid, {"output": output, **params})
+    # The option and program names are literals, kept out of the translatable text.
+    fixed = {"force": "--force", "option": "-o", "program": "pyguibud-uic"}
+    message = format_message(msgid, {"output": output, **fixed, **params})
     print(f"{output}: error: {message}", file=sys.stderr)
     return False
 
@@ -253,9 +266,9 @@ def main(argv: list[str] | None = None) -> int:
     if args.lang is not None and args.lang != get_language():
         set_language(args.lang)
     if args.check and args.output is not None:
-        parser.error(_(_M_O_CHECK))
+        parser.error(_(_M_EXCLUSIVE).format(option="-o", other="--check"))
     if args.force and args.check:
-        parser.error(_(_M_FORCE_CHECK))
+        parser.error(_(_M_EXCLUSIVE).format(option="--force", other="--check"))
 
     ok = True
     paths: list[str] = []
@@ -267,7 +280,7 @@ def main(argv: list[str] | None = None) -> int:
         paths += found
     generating = not (args.check or args.extract)
     if generating and args.output is not None and (len(args.files) > 1 or len(paths) > 1):
-        parser.error(_(_M_ONE_INPUT))
+        parser.error(_(_M_ONE_INPUT).format(option="-o"))
     if args.check:
         for path in paths:
             ok = _check(path) and ok

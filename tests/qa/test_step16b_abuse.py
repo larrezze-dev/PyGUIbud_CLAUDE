@@ -37,6 +37,7 @@ DIALOGS = ROOT / "tests" / "codegen" / "data" / "dialogs.ui"
 ENV = {**os.environ, "PYTHONIOENCODING": "utf-8", "QT_QPA_PLATFORM": "offscreen"}
 for _name in ("PYGUIBUD_LANG", "LANGUAGE", "LC_ALL", "LC_MESSAGES", "LANG"):
     ENV.pop(_name, None)
+ENV["PYGUIBUD_LANG"] = "en_GB"  # children must not follow the host locale
 LOCALES = ("en_GB", "es_ES", "pt_PT", "pt_BR", "de_DE", "it_IT", "nl_NL", "fr_FR", "en_XA")
 #: Rich text Qt would interpret if any slot were not plain: a local file, a link, bold, ``&``
 #: and Qt's window-modified marker.

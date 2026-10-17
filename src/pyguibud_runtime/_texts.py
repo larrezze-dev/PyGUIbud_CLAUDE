@@ -10,15 +10,19 @@ from typing import Protocol, TypeAlias
 
 from pyguibud.backends.base import TextSlot
 from pyguibud.core.errors import format_message
-from pyguibud.i18n import LANGUAGE_CODE_RE, LOCALE_DIR, N_, PSEUDO_LANGUAGE, PseudoTranslations
+from pyguibud.i18n import (
+    LANGUAGE_CODE_RE,
+    LOCALE_DIR,
+    PSEUDO_LANGUAGE,
+    PseudoTranslations,
+    UnusableCatalogue,
+    load_catalogue,
+)
+from pyguibud.i18n import M_CATALOGUE as _M_CATALOGUE
 
 __all__ = ["DocumentTexts", "Texts", "Translator", "check_lang", "check_translator", "log"]
 
 logger = logging.getLogger("pyguibud_runtime")
-# Translators: {domain} is a catalogue name, {lang} a language code and {directory} a folder.
-_M_CATALOGUE = N_(
-    "No usable translations '{domain}' for '{lang}' in '{directory}'; the source texts are shown."
-)
 
 
 class Translator(Protocol):
@@ -88,12 +92,13 @@ class Texts:
         self._by_doc = {
             key: translator or self._load(cache, doc) for key, doc in self._documents.items()
         }
-        languages = [self._code] if self._code else None
-        self._runtime = (
-            PseudoTranslations()
-            if self._code == PSEUDO_LANGUAGE
-            else gettext.translation("pyguibud", LOCALE_DIR, languages, fallback=True)
-        )
+        if self._code == PSEUDO_LANGUAGE:
+            self._runtime = PseudoTranslations()
+        else:
+            # A damaged pyguibud .mo shows the English button labels, never an error (QA-18-01).
+            self._runtime = load_catalogue("pyguibud", LOCALE_DIR, self._code)
+            if isinstance(self._runtime, UnusableCatalogue):
+                log(_M_CATALOGUE, **self._runtime.params)
 
     def snapshot(self) -> Snapshot:
         """The current translators, so that a failed ``retranslate`` can put them back."""
@@ -137,6 +142,9 @@ class Texts:
         if not prop.translatable or not prop.value:
             return prop.value
         translator = self._by_doc[slot.document]
+        if prop.name == "columns" and isinstance(translator, PseudoTranslations):
+            # Headings are shown one by one: pseudo-localise each, not the joined text (QA-17b-05).
+            return ";".join(translator.gettext(heading) for heading in prop.value.split(";"))
         if prop.context:
             result = translator.pgettext(prop.context, prop.value)
         else:

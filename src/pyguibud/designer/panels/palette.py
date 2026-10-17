@@ -2,13 +2,16 @@
 
 from __future__ import annotations
 
+import tkinter
+from tkinter import font as tkfont
+from tkinter import ttk
 from typing import Any, Protocol
 
 from pyguibud.designer.panels.base import PanelBase
 from pyguibud.designer.present.icons import class_icon
 from pyguibud.designer.present.palette import palette_groups
 from pyguibud.designer.session import DesignerSession
-from pyguibud.designer.theme_tk import FONT_HEADER
+from pyguibud.designer.theme_tk import FONT_HEADER, TREE_STYLE
 from pyguibud.i18n import N_, _
 
 __all__ = ["PalettePanel"]
@@ -16,6 +19,9 @@ __all__ = ["PalettePanel"]
 _M_PLUGIN = N_("{label} (plugin)")
 #: Queued at the end of a render, behind the render's own <<TreeviewSelect>> events.
 _RENDERED = "<<PaletteRendered>>"
+_INDENT = 20  # px: Tk's Treeview indent when the theme sets none
+_TEXT_PAD = 8  # px: the room Tk keeps around a row's text
+_WIDTH = 160  # px: the tree's usual width (``PanelBase._new_tree``); short names keep it
 
 
 class DragSink(Protocol):
@@ -61,7 +67,43 @@ class PalettePanel(PanelBase):
             tree.bind(sequence, lambda e: self._swallow(tree.identify_row(e.y)), add="+")
         tree.bind(_RENDERED, lambda _e: self._rendered(), add="+")
         self._renders = 0  # renders whose <<TreeviewSelect>> events are still queued
+        self._fit = 0  # the tree width that shows every row uncut (QA-18-05)
         self._render()
+
+    def fit_width(self) -> int:
+        """The pane width that shows every name uncut in the current language (QA-18-05).
+
+        The shell keeps the palette at least this wide (capped, see ``Shell._minimum``), so long
+        translated names are never clipped: it is the tree's need plus the scrollbar and ring.
+        """
+        tree = self.tree
+        if tree is None:
+            return 0
+        overhead = max(0, self.frame.winfo_reqwidth() - tree.winfo_reqwidth())
+        return self._fit + overhead
+
+    def _measure(self, rows: list[tuple[str, Any, bool]]) -> int:
+        """The widest row: depth indent, expand indicator, icon and text (category in bold)."""
+        tree = self.tree
+        if tree is None:
+            return 0
+        style = ttk.Style(tree)
+        try:
+            indent = int(tree.winfo_fpixels(style.lookup(TREE_STYLE, "indent") or _INDENT))
+            body = tkfont.nametofont(
+                str(style.lookup(TREE_STYLE, "font") or style.lookup("Treeview", "font")
+                    or "TkDefaultFont")
+            )  # fmt: skip
+            header = tkfont.nametofont(FONT_HEADER)
+        except (tkinter.TclError, ValueError):  # no theme fonts yet (an early render)
+            return 0
+        widest = 0
+        for text, icon, category in rows:
+            icon_px = int(tree.tk.call("image", "width", icon)) if icon else 0
+            font = header if category else body
+            depth = 1 if category else 2  # the indicator column, plus one level for an item
+            widest = max(widest, depth * indent + icon_px + font.measure(text) + _TEXT_PAD)
+        return widest
 
     def _on_select(self) -> None:
         picked = self.tree.selection() if self.tree is not None else ()
@@ -110,6 +152,7 @@ class PalettePanel(PanelBase):
         selected = tree.selection()
         scroll = self._scroll_state()
         tree.delete(*tree.get_children())
+        rows: list[tuple[str, Any, bool]] = []
         for index, group in enumerate(palette_groups(self.session.registry)):
             first = f"w:{group.items[0].name}" if group.items else ""
             category = tree.insert(
@@ -120,10 +163,15 @@ class PalettePanel(PanelBase):
                 open=opened.get(first, True),
                 tags=("category",),
             )
+            rows.append((group.category_label, "", True))
             for item in group.items:
                 label = _(_M_PLUGIN).format(label=item.label) if item.plugin else item.label
                 icon = self._icon(class_icon(item.name, self.session.registry))
                 tree.insert(category, "end", iid=f"w:{item.name}", text=label, image=icon)
+                rows.append((label, icon, False))
+        self._fit = self._measure(rows)
+        if self._fit:  # the requested width: the first layout already shows every name
+            tree.column("#0", width=max(_WIDTH, self._fit))
         if selected and tree.exists(selected[0]):
             tree.selection_set(selected[0])
         self._restore_scroll(scroll)

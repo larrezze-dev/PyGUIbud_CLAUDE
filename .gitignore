@@ -6,6 +6,7 @@ build/
 .pytest_cache/
 .ruff_cache/
 .mypy_cache/
+_Old/
 
 # Coverage / tooling artefacts
 *.egg-info/

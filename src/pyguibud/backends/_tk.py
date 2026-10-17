@@ -57,12 +57,15 @@ Tk: TypeAlias = Any
 # The pure tables live in ``_tkmap`` (shared with the code generator, ADR-008).
 # Translators: a keyboard shortcut appears twice in one window.
 _M_SHORTCUT = N_("The shortcut '{shortcut}' of '{id}' is already used in this window.")
+# Translators: {count} is a number of widgets whose style was not applied; {package} is the
+# package name ttkbootstrap and {attribute} the name of the .ui attribute (both inserted as they
+# are); {toolkit} is the name of the toolkit.
+_M_IGNORED_STYLES = NP_(
+    "{count} {package} style ({attribute}) is ignored by the {toolkit} toolkit.",
+    "{count} {package} styles ({attribute}) are ignored by the {toolkit} toolkit.",
+)
 # Translators: a text (usually a translation) is too long to display; {length} and {limit} are
 # numbers of characters.
-_M_IGNORED_STYLES = NP_(
-    "{count} ttkbootstrap style (tb:bootstyle) is ignored by the {toolkit} toolkit.",
-    "{count} ttkbootstrap styles (tb:bootstyle) are ignored by the {toolkit} toolkit.",
-)
 _M_CLIPPED = N_("The text of '{id}' has {length} characters; only the first {limit} are shown.")
 # Translators: a plugin's widget could not be created (runtime.plugin_failed).
 _M_PLUGIN_FAILED = N_(
@@ -209,7 +212,13 @@ class TkSession:
         self.apply_texts(plan.text, plan.runtime_text)
         self._after = self._root.after_idle(self._arm)
         if self._ignored:
-            plan.log(_M_IGNORED_STYLES, count=self._ignored, toolkit=self._backend)
+            plan.log(
+                _M_IGNORED_STYLES,
+                count=self._ignored,
+                package="ttkbootstrap",
+                attribute="tb:bootstyle",
+                toolkit=self._backend,
+            )
         if main is not None and self._embed is None:
             main.deiconify()
 

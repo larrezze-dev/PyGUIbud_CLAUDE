@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import replace
 from pathlib import Path
+from typing import Any
 
 import pytest
 
@@ -303,22 +304,48 @@ def test_every_menu_mnemonic_survives_the_pseudo_locale() -> None:
                 assert text[at] == plain[plain_at], item.label
 
 
-@pytest.mark.parametrize("lang", ["en_GB", "en_XA"])
-def test_mnemonics_are_unique_per_menu(lang: str) -> None:
-    i18n.set_language(lang)
-    registry = ActionRegistry()
-    register_standard_actions(registry, _callbacks([], preview=True))
-    assert "preview.toolkit" in registry.menu_ids()
-    for menu_id in registry.menu_ids():
-        marks: list[str] = []
-        for item in registry.menu_items(menu_id):
-            if isinstance(item, MenuDef) or (isinstance(item, ActionDef) and item.translate):
-                text, underline = split_mnemonic(i18n._(item.label))
-            else:
-                continue
-            if underline >= 0:
-                marks.append(text[underline].casefold())
-        assert len(marks) == len(set(marks)), (menu_id, marks)
+def _live_access_keys(menu: Any, path: str = "") -> dict[str, list[tuple[str, str]]]:
+    """``{menu path: [(label, access key)]}`` of a built Tk menu and all its cascades."""
+    refill = str(menu.cget("postcommand"))
+    if refill:  # filled when it opens (Open recent, Preview > Theme): open it as the user would
+        menu.tk.eval(refill)
+    found: dict[str, list[tuple[str, str]]] = {path: []}
+    last = menu.index("end")
+    for index in range(last + 1 if last is not None else 0):
+        kind = menu.type(index)
+        if kind in ("separator", "tearoff"):
+            continue
+        label = str(menu.entrycget(index, "label"))
+        underline = int(menu.entrycget(index, "underline"))
+        if 0 <= underline < len(label):
+            found[path].append((label, label[underline].casefold()))
+        if kind == "cascade":
+            sub = menu.nametowidget(menu.entrycget(index, "menu"))
+            found.update(_live_access_keys(sub, f"{path}/{label}"))
+    return found
+
+
+@pytest.mark.gui
+@pytest.mark.parametrize("lang", (*i18n.LANGUAGES, i18n.PSEUDO_LANGUAGE))
+def test_mnemonics_are_unique_per_menu(shell: Any, lang: str) -> None:
+    """Every built menu, the menu bar itself included, has one access key per entry (QA-18-08).
+
+    It walks the menus the designer really builds: a registry of the standard actions alone has
+    no Open, Save or Close and no Edit or Document menu, so it missed de_DE _Speichern /
+    _Schließen and it_IT _Nuovo da modello / Salva con _nome.
+    """
+    shell.set_language(lang)
+    menus = _live_access_keys(shell.shell.menubar)
+    top = [label for label, _key in menus[""]]  # the menu bar's own entries are checked too
+    assert len(top) == 6, top  # File, Edit, Document, Preview, View, Help
+    assert {"/" + label for label in top} <= set(menus)
+    assert len(menus) >= 10, sorted(menus)  # plus Open recent, Insert, Move, Theme, Language...
+    clashes = {
+        path: entries
+        for path, entries in menus.items()
+        if len({key for _label, key in entries}) != len(entries)
+    }
+    assert clashes == {}
 
 
 def test_shortcuts_are_registered_once() -> None:

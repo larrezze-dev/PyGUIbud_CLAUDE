@@ -36,6 +36,7 @@ HELLO = ROOT / "examples" / "hello.ui"
 ENV = {**os.environ, "PYTHONIOENCODING": "utf-8", "QT_QPA_PLATFORM": "offscreen"}
 for _name in ("PYGUIBUD_LANG", "LANGUAGE", "LC_ALL", "LC_MESSAGES", "LANG"):
     ENV.pop(_name, None)
+ENV["PYGUIBUD_LANG"] = "en_GB"  # children must not follow the host locale
 #: The platform plugins of a Windows PySide6 6.11 wheel (as ``_platform_plugins`` lists them).
 WINDOWS_PLUGINS = ["qdirect2d.dll", "qminimal.dll", "qoffscreen.dll", "qwindows.dll"]
 MARKUP = '<img src="file:///C:/Windows/win.ini"><a href="http://127.0.0.1:9/x">L</a><b>B</b> & [*]'

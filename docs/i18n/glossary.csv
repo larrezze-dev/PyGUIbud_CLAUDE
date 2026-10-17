@@ -4,7 +4,7 @@ container,widget that holds other widgets,container,contenedor,contentor,contêi
 handler,function called when an event fires,handler,manejador,gestor de eventos,manipulador de eventos,Ereignisbehandlung,gestore di eventi,gebeurtenishandler,gestionnaire d'événements
 variable,bound Tk variable,variable,variable,variável,variável,Variable,variabile,variabele,variable
 layout,arrangement of widgets (pack/grid/place),layout,disposición,disposição,layout,Layout,layout,indeling,disposition
-canvas,design surface where widgets are placed,canvas,lienzo,tela de desenho,tela de desenho,Zeichenfläche,area di disegno,tekenvlak,zone de dessin
+canvas,design surface where widgets are placed,canvas,lienzo,área de desenho,tela de desenho,Zeichenfläche,area di disegno,tekenvlak,zone de dessin
 palette,list of available widgets,palette,paleta,paleta,paleta,Palette,tavolozza,palet,palette
 inspector,panel to edit properties,inspector,inspector,inspetor,inspetor,Inspektor,ispettore,inspecteur,inspecteur
 object tree,hierarchy of widgets,object tree,árbol de objetos,árvore de objetos,árvore de objetos,Objektbaum,albero degli oggetti,objectboom,arborescence des objets
@@ -27,3 +27,106 @@ plugin,separately installed widget package (entry point pyguibud.widgets),plugin
 bootstyle,ttkbootstrap style token (kept untranslated),bootstyle,bootstyle,bootstyle,bootstyle,Bootstyle,bootstyle,bootstyle,bootstyle
 safe mode,start without loading plugins,safe mode,modo seguro,modo seguro,modo seguro,abgesicherter Modus,modalità provvisoria,veilige modus,mode sans échec
 help,menu title,help,ayuda,ajuda,ajuda,Hilfe,aiuto,help,aide
+fallback,used when the preferred option is unavailable (the core class shown for an extension widget),fallback,alternativa de reserva,alternativa,alternativa,Ersatzklasse,alternativa di riserva,terugvaloptie,solution de repli
+binding,link between a widget property and a variable,binding,enlace,ligação,vínculo,Bindung,associazione,koppeling,liaison
+event,something that happens in the GUI (click or key press),event,evento,evento,evento,Ereignis,evento,gebeurtenis,événement
+toolkit,GUI library (Tk or Qt),toolkit,toolkit,toolkit,toolkit,Toolkit,toolkit,toolkit,toolkit
+action,menu or toolbar command,action,acción,ação,ação,Aktion,azione,actie,action
+shortcut,keyboard shortcut,shortcut,atajo de teclado,atalho de teclado,atalho de teclado,Tastenkürzel,scorciatoia da tastiera,sneltoets,raccourci clavier
+mnemonic,underlined access key in a label,mnemonic,tecla de acceso,tecla de acesso,tecla de acesso,Zugriffstaste,tasto di accesso,toegangstoets,touche d'accès
+save as,menu command,save as,guardar como,guardar como,salvar como,Speichern unter,salva con nome,opslaan als,enregistrer sous
+new,menu command (file),new,nuevo,novo,novo,Neu,nuovo,nieuw,nouveau
+close,menu or dialog command,close,cerrar,fechar,fechar,Schließen,chiudi,sluiten,fermer
+quit,menu command (exit the application),quit,salir,sair,sair,Beenden,esci,afsluiten,quitter
+cancel,dialog button,cancel,cancelar,cancelar,cancelar,Abbrechen,annulla,annuleren,annuler
+overwrite,dialog button (replace an existing file),overwrite,sobrescribir,substituir,sobrescrever,Überschreiben,sovrascrivi,overschrijven,écraser
+discard,dialog button (drop unsaved changes),discard,descartar,descartar,descartar,Verwerfen,scarta,negeren,abandonner
+import,menu command (verb),import,importar,importar,importar,Importieren,importa,importeren,importer
+copy,edit command (verb),copy,copiar,copiar,copiar,Kopieren,copia,kopiëren,copier
+cut,edit command (verb),cut,cortar,cortar,recortar,Ausschneiden,taglia,knippen,couper
+paste,edit command (verb),paste,pegar,colar,colar,Einfügen,incolla,plakken,coller
+duplicate,edit command (verb),duplicate,duplicar,duplicar,duplicar,Duplizieren,duplica,dupliceren,dupliquer
+edit,menu title,edit,edición,editar,editar,Bearbeiten,modifica,bewerken,édition
+view,menu title,view,ver,ver,exibir,Ansicht,visualizza,beeld,affichage
+dark theme,visual style,dark theme,tema oscuro,tema escuro,tema escuro,Dunkles Design,tema scuro,donker thema,thème sombre
+light theme,visual style,light theme,tema claro,tema claro,tema claro,Helles Design,tema chiaro,licht thema,thème clair
+high contrast,accessibility theme,high contrast,alto contraste,alto contraste,alto contraste,Hoher Kontrast,alto contrasto,hoog contrast,contraste élevé
+warning,message severity,warning,advertencia,aviso,aviso,Warnung,avviso,waarschuwing,avertissement
+error,message severity,error,error,erro,erro,Fehler,errore,fout,erreur
+finding,validator result (error or warning),finding,hallazgo,ocorrência,ocorrência,Befund,rilievo,bevinding,constat
+rule,validator rule,rule,regla,regra,regra,Regel,regola,regel,règle
+validator,checks a .ui file against the rules,validator,validador,validador,validador,Validierer,validatore,validator,validateur
+recovery,restore after a crash,recovery,recuperación,recuperação,recuperação,Wiederherstellung,ripristino,herstel,récupération
+autosave,automatic periodic save,autosave,autoguardado,gravação automática,salvamento automático,automatisches Speichern,salvataggio automatico,automatisch opslaan,enregistrement automatique
+property,attribute of a widget,property,propiedad,propriedade,propriedade,Eigenschaft,proprietà,eigenschap,propriété
+attribute,XML attribute of a .ui element,attribute,atributo,atributo,atributo,Attribut,attributo,attribuut,attribut
+element,node of the form tree,element,elemento,elemento,elemento,Element,elemento,element,élément
+resource,image or other embedded asset,resource,recurso,recurso,recurso,Ressource,risorsa,resource,ressource
+image,picture resource,image,imagen,imagem,imagem,Bild,immagine,afbeelding,image
+dialog,secondary window asking for input,dialog,cuadro de diálogo,caixa de diálogo,caixa de diálogo,Dialog,finestra di dialogo,dialoogvenster,boîte de dialogue
+window,top-level window,window,ventana,janela,janela,Fenster,finestra,venster,fenêtre
+main window,root window of a form,main window,ventana principal,janela principal,janela principal,Hauptfenster,finestra principale,hoofdvenster,fenêtre principale
+screen,display,screen,pantalla,ecrã,tela,Bildschirm,schermo,scherm,écran
+user,person using the application,user,usuario,utilizador,usuário,Benutzer,utente,gebruiker,utilisateur
+tab,page of a notebook,tab,pestaña,separador,aba,Registerkarte,scheda,tabblad,onglet
+notebook,tabbed container (ttk.Notebook),notebook,cuaderno de pestañas,bloco de separadores,caderno de abas,Registerkarten-Container,contenitore a schede,tabbladencontainer,conteneur à onglets
+frame,plain container widget,frame,marco,moldura,quadro,Rahmen,riquadro,frame,cadre
+label frame,frame with a caption,label frame,marco con título,moldura com título,quadro com título,Beschriftungsrahmen,riquadro con titolo,frame met label,cadre avec titre
+label,static text widget,label,etiqueta,etiqueta,rótulo,Beschriftung,etichetta,label,étiquette
+button,push button widget,button,botón,botão,botão,Schaltfläche,pulsante,knop,bouton
+entry,single-line text input,entry,campo de entrada,campo de entrada,campo de entrada,Eingabefeld,campo di immissione,invoerveld,champ de saisie
+check button,check box widget,check button,casilla de verificación,caixa de verificação,caixa de seleção,Kontrollkästchen,casella di controllo,selectievakje,case à cocher
+radio button,option button widget,radio button,botón de opción,botão de opção,botão de opção,Optionsfeld,pulsante di opzione,keuzerondje,bouton radio
+combo box,drop-down list with entry,combo box,cuadro combinado,caixa de combinação,caixa de combinação,Kombinationsfeld,casella combinata,keuzelijst met invoer,liste déroulante
+spin box,numeric input with arrows,spin box,control numérico,caixa de rotação,caixa de incremento,Drehfeld,casella numerica,draaivak,zone de défilement numérique
+list box,list of selectable items,list box,cuadro de lista,caixa de listagem,caixa de listagem,Listenfeld,casella di riepilogo,keuzelijst,liste
+scale,slider widget,scale,control deslizante,controlo de deslize,controle deslizante,Schieberegler,cursore,schuifregelaar,curseur
+progress bar,shows progress,progress bar,barra de progreso,barra de progresso,barra de progresso,Fortschrittsbalken,barra di avanzamento,voortgangsbalk,barre de progression
+tree view,hierarchical list or table,tree view,vista de árbol,vista em árvore,exibição em árvore,Baumansicht,vista ad albero,boomstructuur,vue en arborescence
+table view,ttkbootstrap Tableview (table with paging),table view,vista de tabla,vista de tabela,exibição de tabela,Tabellenansicht,vista tabella,tabelweergave,vue tableau
+scrollbar,scrolling control,scrollbar,barra de desplazamiento,barra de deslocamento,barra de rolagem,Bildlaufleiste,barra di scorrimento,schuifbalk,barre de défilement
+separator,dividing line,separator,separador,separador,separador,Trennlinie,separatore,scheidingslijn,séparateur
+paned window,window with resizable panes,paned window,ventana con paneles,janela com painéis,janela com painéis,Fensterbereich mit Teilern,finestra a riquadri,venster met deelvensters,fenêtre à volets
+toplevel,secondary top-level window,toplevel,ventana secundaria,janela secundária,janela secundária,Zusatzfenster,finestra secondaria,extra venster,fenêtre secondaire
+text,multi-line text widget,text,texto,texto,texto,Text,testo,tekst,texte
+menu,menu widget,menu,menú,menu,menu,Menü,menu,menu,menu
+grid,geometry manager (rows and columns),grid,grid,grelha,grade,Grid,griglia,grid,grille
+pack,geometry manager (sides),pack,pack,pack,pack,Pack,pack,pack,pack
+place,geometry manager (coordinates),place,place,place,place,Place,place,place,place
+row,grid row,row,fila,linha,linha,Zeile,riga,rij,ligne
+column,grid column,column,columna,coluna,coluna,Spalte,colonna,kolom,colonne
+margin,outer spacing,margin,margen,margem,margem,Rand,margine,marge,marge
+padding,inner spacing,padding,relleno,espaçamento interno,preenchimento,Innenabstand,spaziatura interna,opvulling,marge intérieure
+width,size,width,ancho,largura,largura,Breite,larghezza,breedte,largeur
+height,size,height,alto,altura,altura,Höhe,altezza,hoogte,hauteur
+colour,colour value,colour,color,cor,cor,Farbe,colore,kleur,couleur
+font,text typeface,font,fuente,tipo de letra,fonte,Schriftart,carattere,lettertype,police
+code generation,export to Python,code generation,generación de código,geração de código,geração de código,Codegenerierung,generazione del codice,codegeneratie,génération de code
+form,the GUI being designed (a .ui document),form,formulario,formulário,formulário,Formular,modulo,formulier,formulaire
+project,set of files edited together,project,proyecto,projeto,projeto,Projekt,progetto,project,projet
+settings,preferences dialog,settings,configuración,definições,configurações,Einstellungen,impostazioni,instellingen,paramètres
+about,help menu command,about,acerca de,acerca de,sobre,Info,informazioni su,over,à propos
+Meter,ttkbootstrap widget class (kept untranslated),Meter,Meter,Meter,Meter,Meter,Meter,Meter,Meter
+Floodgauge,ttkbootstrap widget class (kept untranslated),Floodgauge,Floodgauge,Floodgauge,Floodgauge,Floodgauge,Floodgauge,Floodgauge,Floodgauge
+DateEntry,ttkbootstrap widget class (kept untranslated),DateEntry,DateEntry,DateEntry,DateEntry,DateEntry,DateEntry,DateEntry,DateEntry
+Tableview,ttkbootstrap widget class (kept untranslated),Tableview,Tableview,Tableview,Tableview,Tableview,Tableview,Tableview,Tableview
+ToggleButton,ttkbootstrap widget class (kept untranslated),ToggleButton,ToggleButton,ToggleButton,ToggleButton,ToggleButton,ToggleButton,ToggleButton,ToggleButton
+ttkbootstrap,library name (kept untranslated),ttkbootstrap,ttkbootstrap,ttkbootstrap,ttkbootstrap,ttkbootstrap,ttkbootstrap,ttkbootstrap,ttkbootstrap
+tkinter,library name (kept untranslated),tkinter,tkinter,tkinter,tkinter,tkinter,tkinter,tkinter,tkinter
+PySide6,library name (kept untranslated),PySide6,PySide6,PySide6,PySide6,PySide6,PySide6,PySide6,PySide6
+Qt,toolkit name (kept untranslated),Qt,Qt,Qt,Qt,Qt,Qt,Qt,Qt
+panel,main area of the designer window (palette; canvas; inspector),panel,panel,painel,painel,Bereich,pannello,paneel,panneau
+sticky,grid option: which cell edges a widget sticks to,sticky,anclaje,Sticky,Sticky,Sticky,aderenza,sticky,sticky
+fill,pack option: stretch to the free space,fill,rellenar,Fill,preencher,füllen,riempimento,vullen,remplissage
+expand,pack option: take extra space,expand,expandir,Expand,expandir,erweitern,espansione,uitbreiden,expansion
+gap,space between grid cells,gap,espaciado,intervalo,espaçamento,Abstand,distanza,tussenruimte,espacement
+weight,grid option: share of the extra space of a row or column,weight,peso,peso,peso,Gewicht,peso,gewicht,poids
+row span,number of grid rows a widget covers,row span,filas que abarca,extensão de linhas,linhas ocupadas,Zeilenspanne,righe occupate,rijen overspannen,étendue en lignes
+column span,number of grid columns a widget covers,column span,columnas que abarca,extensão de colunas,colunas ocupadas,Spaltenspanne,colonne occupate,kolommen overspannen,étendue en colonnes
+include,a component of another .ui file used inside a form,include,incluir / inclusión,incluir / inclusão,incluir / inclusão,einbinden / Einbindung,includere / inclusione,insluiten / insluiting,inclure / inclusion
+component,reusable window of a .ui file that other files include,component,componente,componente,componente,Komponente,componente,component,composant
+template,starting point for a new document or catalogue,template,plantilla,modelo,modelo,Vorlage,modello,sjabloon,modèle
+clipboard,system store used by cut; copy and paste,clipboard,portapapeles,área de transferência,área de transferência,Zwischenablage,Appunti,klembord,presse-papiers
+pseudo-locale,artificial language (en_XA) to test layouts,pseudo-locale,pseudolocale,pseudo-idioma,pseudoidioma,Pseudo-Locale,pseudo-lingua,pseudo-landinstelling,pseudo-locale
+entry point,Python packaging hook that plugins register,entry point,punto de entrada,ponto de entrada,ponto de entrada,Einstiegspunkt,punto di ingresso,entry point,point d'entrée
+backend,toolkit implementation that builds the widgets (ttkbootstrap; tkinter; PySide6),backend,backend,backend,backend,Backend,backend,backend,backend

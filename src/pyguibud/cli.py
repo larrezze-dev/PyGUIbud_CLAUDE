@@ -32,6 +32,45 @@ class _QuietParser(argparse.ArgumentParser):
         raise _PreParseError(message)
 
 
+class _Formatter(argparse.HelpFormatter):
+    """Help formatter whose "usage:" prefix is in the interface language."""
+
+    def add_usage(
+        self,
+        usage: str | None,
+        actions: Any,  # noqa: ANN401 - argparse's own iterable of actions
+        groups: Any,  # noqa: ANN401
+        prefix: str | None = None,
+    ) -> None:
+        # Translators: the word before the command-line synopsis in --help; keep the colon and
+        # the trailing space.
+        super().add_usage(usage, actions, groups, _("usage: ") if prefix is None else prefix)
+
+
+class PyGUIbudParser(argparse.ArgumentParser):
+    """An argument parser whose own fixed texts (usage, section titles, -h) are translated.
+
+    argparse translates them with its private catalogue, which has no pyguibud languages. Build
+    the parser only after the language is chosen (``_select_initial_language``).
+    """
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:  # noqa: ANN401 - argparse's own
+        kwargs.setdefault("formatter_class", _Formatter)
+        kwargs["add_help"] = False
+        super().__init__(*args, **kwargs)
+        # Translators: heading above the list of positional command-line arguments in --help.
+        self._positionals.title = _("positional arguments")
+        # Translators: heading above the list of command-line options in --help.
+        self._optionals.title = _("options")
+        self.add_argument(
+            "-h",
+            "--help",
+            action="help",
+            # Translators: help text of the -h/--help command-line option.
+            help=_("show this help message and exit"),
+        )
+
+
 def _make_stdout_safe() -> None:
     """Never crash on characters the console encoding cannot represent."""
     for stream in (sys.stdout, sys.stderr):
@@ -119,7 +158,7 @@ def main(argv: list[str] | None = None, *, launch: Callable[..., int] | None = N
     _make_stdout_safe()
     _select_initial_language(argv)
 
-    parser = argparse.ArgumentParser(
+    parser = PyGUIbudParser(
         prog="pyguibud",
         description=_("PyGUIbud: drag-and-drop GUI builder for Python."),
     )
@@ -127,6 +166,7 @@ def main(argv: list[str] | None = None, *, launch: Callable[..., int] | None = N
         "--version",
         action="version",
         version=f"%(prog)s {__version__}",
+        help=_("show the version number and exit"),
     )
     parser.add_argument(
         "--lang",
@@ -145,7 +185,11 @@ def main(argv: list[str] | None = None, *, launch: Callable[..., int] | None = N
         "--theme",
         choices=THEME_CHOICES,
         default=None,
-        help=_("designer colour theme (default: the last one used, else light)"),
+        # Translators: {default} is the --theme value used by default (light), inserted as it
+        # is: the option accepts only the untranslated names shown in its list of choices.
+        help=_("designer colour theme (default: the last one used, else {default})").format(
+            default=THEME_CHOICES[0]
+        ),
     )
     parser.add_argument(
         "--no-plugins",

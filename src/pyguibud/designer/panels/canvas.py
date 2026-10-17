@@ -18,6 +18,7 @@ from tkinter import ttk
 from typing import Any
 
 from pyguibud.core import StackEvent
+from pyguibud.core.errors import format_message
 from pyguibud.core.model import Include, Widget, Window
 from pyguibud.designer import sizing
 from pyguibud.designer.canvas import design
@@ -48,7 +49,10 @@ __all__ = ["CanvasPanel"]
 
 _log = logging.getLogger(__name__)
 
-_M_EMPTY = N_("No document. Press Ctrl+N for a new one or Ctrl+O to open a file.")
+# Translators: {new} and {open} are the shortcuts Ctrl+N and Ctrl+O, inserted as they are (key
+# names are not translated, like the accelerators in the menus).
+_M_EMPTY = N_("No document. Press {new} for a new one or {open} to open a file.")
+_EMPTY_KEYS = {"new": "Ctrl+N", "open": "Ctrl+O"}
 # Translators: shown on the canvas instead of a window that fails to render; {reason} is the
 # technical cause (usually in English).
 _M_CANNOT_DRAW = N_("This window cannot be drawn on the canvas: {reason}")
@@ -464,7 +468,7 @@ class CanvasPanel(PanelBase):
         self._unsubscribe_stack()
         self._unsubscribe_stack = _nothing
         if document is None or self.session.stack is None:
-            self.empty.configure(text=_(_M_EMPTY))
+            self.empty.configure(text=format_message(_M_EMPTY, _EMPTY_KEYS))
             self.empty.grid(row=1, column=0, columnspan=2)
             return
         self.empty.grid_remove()
@@ -600,6 +604,8 @@ class CanvasPanel(PanelBase):
         mark = icons(stage.card).get("error")
         message = ttk.Label(stage.card, style=STYLE_ERROR, text=reason, wraplength=wrap)
         message.grid(row=0, column=1, sticky="w", padx=(0, m), pady=(m, 0))
+        # Translators: under the message of a widget that failed to build; {count} is the number
+        # of errors.
         errors = ngettext("{count} error", "{count} errors", count).format(count=count)
         ttk.Label(stage.card, style=STYLE_MUTED, text=errors).grid(
             row=1, column=1, sticky="w", padx=(0, m), pady=(0, m)

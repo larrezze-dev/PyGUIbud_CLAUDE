@@ -31,17 +31,21 @@ __all__ = [
     "LANGUAGES",
     "LANGUAGE_CODE_RE",
     "LOCALE_DIR",
+    "M_CATALOGUE",
     "NP_",
     "N_",
     "PSEUDO_LANGUAGE",
     "SOURCE_LANGUAGE",
     "PseudoTranslations",
+    "UnusableCatalogue",
     "_",
     "add_language_listener",
+    "catalogue_problem",
     "detect_language",
     "get_language",
     "gettext",
     "language_listener",
+    "load_catalogue",
     "ngettext",
     "normalise_language",
     "pgettext",
@@ -213,6 +217,9 @@ def set_language(code: str, *, force: bool = False) -> str:
     the language code actually changes, or when ``force`` is true (e.g. after reloading
     catalogues).
 
+    A catalogue that exists but cannot be read (truncated, empty, not a ``.mo`` file) shows the
+    source texts and logs one warning (QA-18-01); :func:`catalogue_problem` then says so.
+
     Raises:
         ValueError: if the code is not a supported language.
     """
@@ -225,13 +232,16 @@ def set_language(code: str, *, force: bool = False) -> str:
         )
     global _translation, _language
     changed = resolved != _language
+    previous = _translation
     if resolved == PSEUDO_LANGUAGE:
         _translation = PseudoTranslations()
     else:
-        _translation = _gettext_module.translation(
-            DOMAIN, localedir=str(LOCALE_DIR), languages=[resolved], fallback=True
-        )
+        _translation = load_catalogue(DOMAIN, LOCALE_DIR, resolved)
     _language = resolved
+    if isinstance(_translation, UnusableCatalogue) and not (
+        isinstance(previous, UnusableCatalogue) and previous.params == _translation.params
+    ):  # once per damaged catalogue, not again when the same language is set twice (CLI)
+        _log.warning("%s", _translation.warning())
     if changed or force:
         # Snapshot so listeners may add or remove listeners while being notified.
         for listener in _live_listeners():
@@ -334,3 +344,49 @@ def NP_(singular: str, plural: str) -> str:  # noqa: N802 - conventional gettext
 def plural_of(singular: str) -> str | None:
     """Return the plural msgid registered with :func:`NP_` for ``singular``, or None."""
     return _plurals.get(singular)
+
+
+# ---------------------------------------------------------------- damaged catalogues
+#: Shared with ``pyguibud_runtime`` (its own and the applications' catalogues).
+# Translators: {domain} is a catalogue name, {lang} a language code and {directory} a folder.
+M_CATALOGUE = N_(
+    "No usable translations '{domain}' for '{lang}' in '{directory}'; the source texts are shown."
+)
+
+
+class UnusableCatalogue(_gettext_module.NullTranslations):
+    """The source texts, in place of a catalogue file that exists but cannot be read."""
+
+    def __init__(self, domain: str, lang: str, directory: str) -> None:
+        super().__init__()
+        self.params: dict[str, str] = {"domain": domain, "lang": lang, "directory": directory}
+
+    def warning(self) -> str:
+        """The translated :data:`M_CATALOGUE` for this catalogue (in the current language)."""
+        return gettext(M_CATALOGUE).format(**self.params)
+
+
+def load_catalogue(
+    domain: str, localedir: str | os.PathLike[str], code: str | None
+) -> _gettext_module.NullTranslations:
+    """``gettext.translation(..., fallback=True)`` that also falls back on a damaged file.
+
+    gettext falls back only when no file is found; a file that is found but cannot be parsed
+    raises (``OSError``, ``struct.error``, ``UnicodeDecodeError``, ``LookupError`` for an unknown
+    charset, ``ValueError`` for a bad ``Plural-Forms``...). Such a file gives an
+    :class:`UnusableCatalogue` instead; the caller tells the user. ``code=None`` lets gettext
+    read the environment, as ``gettext.translation`` does.
+    """
+    try:
+        return _gettext_module.translation(
+            domain, localedir=str(localedir), languages=[code] if code else None, fallback=True
+        )
+    except Exception:  # a damaged .mo file must never stop the program; reported by the caller
+        _log.debug("The catalogue %r for %r cannot be read", domain, code, exc_info=True)
+        return UnusableCatalogue(domain, code or "", str(localedir))
+
+
+def catalogue_problem() -> str | None:
+    """Why the active language shows the source texts (a damaged catalogue), or None."""
+    translation = _translation
+    return translation.warning() if isinstance(translation, UnusableCatalogue) else None

@@ -16,7 +16,7 @@ from pyguibud.designer import files
 from pyguibud.designer.app import DesignerApp
 from pyguibud.designer.dialogs import files as file_dialogs
 from pyguibud.designer.dialogs.message import ChoiceDialog, message_dialog
-from pyguibud.i18n import _
+from pyguibud.i18n import LANGUAGES, PSEUDO_LANGUAGE, _
 from tests.designer.test_edit import shown  # noqa: F401 - key events need a focused root
 from tests.designer.test_qa14a1_abuse import (  # noqa: F401 - fixtures
     HELLO,
@@ -258,7 +258,7 @@ def test_undoing_the_deletion_of_a_variable_does_not_invent_a_selection(
 
 # ---------------------------------------------------------------- 22: access keys
 @pytest.mark.gui
-@pytest.mark.parametrize("language", ["en_GB", "en_XA", "de_DE"])
+@pytest.mark.parametrize("language", [*LANGUAGES, PSEUDO_LANGUAGE])
 def test_the_buttons_of_every_dialog_have_unique_access_keys(
     qa_app: DesignerApp, language: str
 ) -> None:
@@ -294,7 +294,9 @@ def test_the_buttons_of_every_dialog_have_unique_access_keys(
                 letters.append(str(button.cget("text"))[underline].lower())
             assert len(letters) == len(set(letters)), (type(dialog).__name__, letters)
         text_dialog = dialogs[2]
-        text_dialog._on_alt(SimpleNamespace(char="c"))  # Alt+C is Cancel
+        cancel = text_dialog.cancel_button  # its access key depends on the language
+        key = str(cancel.cget("text"))[int(cancel.cget("underline"))].lower()
+        text_dialog._on_alt(SimpleNamespace(char=key))
         assert text_dialog.closed
     finally:
         i18n.set_language("en_GB")

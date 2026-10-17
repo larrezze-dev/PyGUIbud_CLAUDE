@@ -272,9 +272,11 @@ class _TreeBuilder:
         if not tag.startswith("{"):
             raise self.error(
                 "xml.no_namespace_element",
-                # Translators: {element} is an XML element name; keep xmlns="" as it is.
-                N_('The element <{element}> has no namespace; remove xmlns="" from the file.'),
+                # Translators: {element} is an XML element name; {attribute} is the literal XML
+                # attribute to remove; keep it unchanged.
+                N_("The element <{element}> has no namespace; remove {attribute} from the file."),
                 element=tag,
+                attribute='xmlns=""',
             )
         element = ET.Element(tag, {self.clark(key): value for key, value in attrs.items()})
         self.positions[element] = position

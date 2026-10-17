@@ -19,6 +19,7 @@ def clean_i18n(monkeypatch: pytest.MonkeyPatch) -> Iterator[None]:
     monkeypatch.setattr(i18n, "_translation", gettext.NullTranslations())
     monkeypatch.setattr(i18n, "_language", "en_GB")
     monkeypatch.setattr(i18n, "_listeners", [])
+    monkeypatch.setattr("locale.getlocale", lambda *a, **k: (None, None))  # host locale
     reset_default_registry()
     yield
     reset_default_registry()

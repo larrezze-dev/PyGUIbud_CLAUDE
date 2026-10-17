@@ -32,6 +32,7 @@ ACME_DEMO = ROOT / "examples" / "acme_demo.ui"
 ENV = {**os.environ, "PYTHONIOENCODING": "utf-8", "QT_QPA_PLATFORM": "offscreen"}
 for _name in ("PYGUIBUD_LANG", "LANGUAGE", "LC_ALL", "LC_MESSAGES", "LANG"):
     ENV.pop(_name, None)
+ENV["PYGUIBUD_LANG"] = "en_GB"  # children must not follow the host locale
 _HEAD = (
     '<?xml version="1.0" encoding="UTF-8"?>\n'
     '<pyguibud-ui schema_version="1.0" xmlns="urn:pyguibud:ui:1"'
@@ -291,11 +292,9 @@ def test_live_retranslation_with_tb_widgets_in_every_locale() -> None:
     assert len(out["texts"]["en_XA"][1]) == 3  # the pseudo-locale keeps the heading count
 
 
-@pytest.mark.xfail(strict=True, reason="QA-17b-05")
 def test_qa17b_05_pseudo_locale_brackets_each_tableview_heading() -> None:
-    """en_XA wraps the whole ';'-joined text, so only the first heading gets '[' and the last
-    one gets all the padding and ']'. Expected: each heading is pseudo-localised on its own
-    (bracketed and lengthened), so heading truncation can be checked in en_XA."""
+    """QA-17b-05 (fixed): each heading is pseudo-localised on its own (bracketed and
+    lengthened), so heading truncation can be checked in en_XA."""
     out = _run(_LOAD, str(ACME_DEMO), _RETRANSLATE)
     headings = out["texts"]["en_XA"][1]
     assert all(h.startswith("[") and h.endswith("]") for h in headings), headings

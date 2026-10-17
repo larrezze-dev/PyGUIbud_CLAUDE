@@ -91,6 +91,7 @@ _MAX_LISTED = 10
 
 def more_text(count: int) -> str:
     """``… and {count} more`` (after a list cut short)."""
+    # Translators: closes a list that was cut short; {count} is the number of items left out.
     return ngettext("… and {count} more", "… and {count} more", count).format(count=count)
 
 

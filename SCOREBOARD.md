@@ -1,9 +1,9 @@
 # PyGUIbud scoreboard
 
-_Last updated: 2026-10-15 19:10:58 UTC+0200_
+_Last updated: 2026-10-16 19:40:03 UTC+0200_
 
-- **Steps done:** 18/23
-- **Current step:** 17 Widget plugin API + ttkbootstrap extensions (🧪)
+- **Steps done:** 19/23
+- **Current step:** 18 Translations (7 languages) (⏳)
 - **Tests:** 5287/5300 passed (gate figures 2026-10-15, pytest not run by scorer)
 - **Coverage:** 91.1 %
 - **Test detail:** 5300 collected, 0 failed, 0 errors, 13 skipped, 0.00 s
@@ -38,7 +38,7 @@ _Last updated: 2026-10-15 19:10:58 UTC+0200_
 | 14b | Direct-manipulation sizing & structure | FRONTEND + BACKEND | ✅ done |
 | 15 | Preview & export | FRONTEND + BACKEND | ✅ done |
 | 16 | tkinter + PySide6 backends | BACKEND + FRONTEND | ✅ done |
-| 17 | Widget plugin API + ttkbootstrap extensions | ARCHITECT + BACKEND (opus) + FRONTEND | 🧪 awaiting UAT |
+| 17 | Widget plugin API + ttkbootstrap extensions | ARCHITECT + BACKEND (opus) + FRONTEND | ✅ done |
 | 18 | Translations (7 languages) | TRANSLATOR + QA | ⏳ pending |
 | 19 | QA hardening ("idiot-proof") | QA + DEBUGGER | ⏳ pending |
 | 20 | Packaging & release candidate | DEPLOYER | ⏳ pending |
@@ -46,8 +46,8 @@ _Last updated: 2026-10-15 19:10:58 UTC+0200_
 
 ## Recent commits
 
+- `2da74d8 011`
 - `e6ae6b7 010`
 - `dfee602 009`
 - `f5f5af9 008`
 - `2621983 007`
-- `ff016eb 006`

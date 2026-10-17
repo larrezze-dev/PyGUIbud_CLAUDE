@@ -368,7 +368,7 @@ All of these are pure, so they also run in the command guards. R89/R90 are skipp
   - **QA-17b-01** (MAJOR): a pre-1900 DateEntry value with `%y` crashed the exported module on Windows. **QA-17b-03** (MINOR): the 2.2.3 picker failed at 9999-12-31, or at 0001-01-01 with first weekday 6. Both fixed by narrowing `value` to 1900–9998 (R89, with a new hint msgid). Picking a December 1899 day from the grid by hand is ttkbootstrap's problem.
   - **QA-17b-02** (MAJOR): the Floodgauge was drawn at 1×1 on the design canvas. Fixed: `<<ThemeChanged>>` joins `_GEOMETRY` in `designer/canvas/design.py`. A test pins Meter and DateEntry inertness on the canvas.
   - **QA-17b-04** (MINOR): each Tableview build leaked the `_trace_pagesize` Tcl command. Fixed in `_tbwidgets.tableview` by wrapping the instance `destroy()`.
-  - **QA-17b-05** (MINOR): `en_XA` pseudo-localises the whole heading string rather than each heading → Step 18 (strict xfail).
+  - **QA-17b-05** (MINOR): `en_XA` pseudo-localised the whole heading string rather than each heading → fixed in Step 18a (`Texts.text` pseudo-localises each `;`-separated heading; the xfail is gone).
 - **Test-order notes (→ Step 19, test isolation):**
   - Running `tests/runtime` before `tests/codegen` in one process raises 33 "single application root" errors. This predates 17b.
   - Running `tests/runtime` before `tests/designer` in one process hangs `test_13a_gaps.py::test_no_listener_reenters_the_stack_in_any_designer_flow` in Tk's `update_idletasks`. Not bisected, and not checked against pre-17b code (user ruling 2026-10-14).

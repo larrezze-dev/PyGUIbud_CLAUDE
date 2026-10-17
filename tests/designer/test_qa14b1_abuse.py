@@ -593,19 +593,22 @@ def test_save_and_reopen_after_resizes_is_identical(
 
 
 @pytest.mark.gui
+@pytest.mark.parametrize("lang", ["en_XA", "de_DE", "nl_NL", "fr_FR", "pt_PT"])
 def test_qa14b1_06_q13_the_longest_resize_message_fits_the_minimum_window(
     app: DesignerApp,  # noqa: F811
     designer_root: Any,
     tk_errors: list[BaseException],  # noqa: F811
+    lang: str,
 ) -> None:
     """Spec 11 Q13 / 9: en_XA texts fit the status bar, elided with the full text on hover.
-    At the minimum window size (800 x 500) the component release text is cut mid-word."""
+    At the minimum window size (800 x 500) the component release text is cut mid-word.
+    Step 18: the longest real locales too (a text that fits is shown whole)."""
     from pyguibud import i18n
 
     _open(app, designer_root)
     language = i18n.get_language()
     designer_root.geometry("800x500")
-    i18n.set_language("en_XA")
+    i18n.set_language(lang)
     try:
         _settle(designer_root, 5)
         cleared = sizing.window_release_text("part", (None, None), (True, True))
@@ -615,9 +618,10 @@ def test_qa14b1_06_q13_the_longest_resize_message_fits_the_minimum_window(
         shown = str(status.cget("text"))
         assert status.winfo_reqwidth() <= status.winfo_width()  # it fits ...
         message = app.shell._message
-        assert shown.endswith("…") and message.startswith(shown[:-1].rstrip())  # elided, ...
-        assert message[len(shown[:-1].rstrip())] == " "  # ... at a word boundary
-        assert app.shell._status_tip.cget("text") == message  # the full text on hover
+        if lang == "en_XA" or shown != message:
+            assert shown.endswith("…") and message.startswith(shown[:-1].rstrip())  # elided, ...
+            assert message[len(shown[:-1].rstrip())] == " "  # ... at a word boundary
+            assert app.shell._status_tip.cget("text") == message  # the full text on hover
     finally:  # a withdrawn root keeps its last size: the next files' canvas must stay wide
         i18n.set_language(language)
         designer_root.geometry("1400x900")

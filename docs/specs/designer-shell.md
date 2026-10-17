@@ -207,7 +207,7 @@ All options include the neutral fallback. **What forks see:** neutral themes. NO
 - The language menu calls `set_language(code)` on the Tk main thread only. An unknown code cannot occur (the menu lists `LANGUAGES` + `PSEUDO_LANGUAGE`). `set_language` raising `ValueError` → status bar message.
 - **`en_XA` (D5):** always listed, after a separator (S3).
 - **No fixed widths:** no `width=` on labels or buttons; `Treeview` columns get `stretch=True` with min widths only; dialogs size to their content (`update_idletasks` + `minsize`).
-- Mnemonics must be unique per menu in every locale. A test covers the source and `en_XA` now, and every locale once Step 18 fills the catalogues.
+- Mnemonics must be unique per menu in every locale. `test_mnemonics_are_unique_per_menu` is parametrised over all 8 locales and `en_XA` (it passes trivially until Step 18 fills the catalogues).
 - **Catalogue sync (every sub-step that adds strings):** run the `pybabel extract` and `pybabel update` commands in `docs/i18n/README.md`, then `pybabel compile`. `tests/test_catalogues.py::test_pot_matches_fresh_extraction` must stay green. The removed CLI placeholder msgid disappears from the `.pot`.
 - **D6 (user decision 2026-10-06: deferred):** the shell strings are **not** translated in Step 12; only the catalogue sync runs (new msgids land untranslated in the 7 `.po` files). The live switch is verified with `en_XA` and with the existing stub strings; full translation stays in Step 18.
 - **D7 persistence:** deferred to the Step 14 settings store (alongside recent files). Step 12 resolves the start-up language as `--lang` → `PYGUIBUD_LANG`/locale → `en_GB`, and the theme as `--theme` → `light`.

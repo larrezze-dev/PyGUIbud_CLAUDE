@@ -40,5 +40,12 @@ reveal truncation and untranslated strings. Try `pyguibud --lang en_XA`.
 
 ## Status
 
-The seven target catalogues are currently empty stubs (the runtime falls back to the English
-source). Step 18 completes the translations (100 % per locale, no fuzzy entries).
+Since Step 18 the seven target catalogues are 100 % translated with no fuzzy entries;
+`tests/test_catalogues.py` keeps them that way (placeholders, mnemonics, plural forms, stale `.mo`,
+pt_PT/pt_BR variants). A damaged `.mo` falls back to the English source with one warning.
+
+## Helper
+
+`tools/po_roundtrip.py` fills a catalogue without hand-editing it:
+`dump <locale> <file.json> [--all]` → edit the `msgstr` values → `load <locale> <file.json>`
+(refuses placeholder or access-key mismatches) → `check <locale>`. Then compile (step 3).

@@ -618,6 +618,7 @@ class DragController:
         count = len(self._payload.nodes)
         if count == 1:
             return _(_M_RELEASE_MOVE).format(id=self._label, container=container)
+        # Translators: shown while dragging; {count} is the number of elements being moved.
         return ngettext(
             "Release to move {count} element.", "Release to move {count} elements.", count
         ).format(count=count)

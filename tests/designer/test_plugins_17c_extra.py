@@ -37,6 +37,8 @@ ROOT = Path(__file__).resolve().parents[2]
 ACME_SRC = ROOT / "examples" / "acme_plugin" / "src"
 DEMO = ROOT / "examples" / "acme_demo.ui"
 ACME = "acme-pyguibud"
+#: The pseudo-locale and the longest real locales (Step 18 fit checks).
+LONG_LANGUAGES = ("en_XA", "de_DE", "nl_NL", "fr_FR", "pt_PT")
 HEADER = (
     '<?xml version="1.0" encoding="UTF-8"?>'
     '<pyguibud-ui schema_version="1.0" xmlns="urn:pyguibud:ui:1">'
@@ -402,11 +404,12 @@ def test_the_bootstyle_row_refuses_with_the_reason_and_undoes(designer_root: Any
 
 
 @pytest.mark.gui
-def test_en_xa_dialog_opened_fresh_fits(designer_root: Any) -> None:
+@pytest.mark.parametrize("lang", LONG_LANGUAGES)
+def test_en_xa_dialog_opened_fresh_fits(designer_root: Any, lang: str) -> None:
     from tests.designer.test_plugins_17c import _all_statuses
 
     english = _("_Disable on next start")
-    set_language("en_XA")
+    set_language(lang)
     assert _("_Disable on next start") != english  # really pseudo-localised
     app = _app(designer_root, _all_statuses())
     try:
@@ -426,12 +429,13 @@ def test_en_xa_dialog_opened_fresh_fits(designer_root: Any) -> None:
 
 
 @pytest.mark.gui
-def test_en_xa_start_up_note_fits_the_minimum_window(designer_root: Any) -> None:
+@pytest.mark.parametrize("lang", LONG_LANGUAGES)
+def test_en_xa_start_up_note_fits_the_minimum_window(designer_root: Any, lang: str) -> None:
     from pyguibud.designer import theme_tk
     from tests.designer.test_plugins_17c import _all_statuses
 
     english = plugin_note(_all_statuses(), safe_mode=False)
-    set_language("en_XA")
+    set_language(lang)
     for safe in (False, True):
         note = plugin_note(_all_statuses(), safe_mode=safe)
         assert note is not None and note != english

@@ -76,6 +76,7 @@ def canvas_tabs(document: Document) -> list[CanvasTab]:
         count = _widget_count(window)
         summary = (
             layout,
+            # Translators: summary under a window tab; {count} is the number of widgets in it.
             ngettext("{count} widget", "{count} widgets", count).format(count=count),
         )
         tabs.append(CanvasTab(window, text, kind_label(window), summary))

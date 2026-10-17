@@ -401,7 +401,7 @@ def test_installed_script_exit_codes(tmp_path: Path) -> None:
     script = _script()
     if script is None:
         pytest.skip("pyguibud-uic is not installed in this environment (run uv sync)")
-    env = {**os.environ, "PYTHONIOENCODING": "utf-8"}
+    env = {**os.environ, "PYTHONIOENCODING": "utf-8", "PYGUIBUD_LANG": "en_GB"}
     bad = tmp_path / "bad.ui"
     bad.write_text(CORRUPTIONS["newer-major"](GOOD), "utf-8")
 
@@ -544,7 +544,7 @@ def test_installed_script_runs_the_validator(tmp_path: Path) -> None:
         capture_output=True,
         text=True,
         encoding="utf-8",
-        env={**os.environ, "PYTHONIOENCODING": "utf-8"},
+        env={**os.environ, "PYTHONIOENCODING": "utf-8", "PYGUIBUD_LANG": "en_GB"},
         timeout=60,
         check=False,
     )

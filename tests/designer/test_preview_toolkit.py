@@ -101,14 +101,10 @@ def test_a_toolkit_change_adds_the_reason_and_drops_the_theme(tmp_path: Path) ->
         )
         prepared = pv.prepare_preview(request, tmp_path, ())
         assert isinstance(prepared, pv.PreparedPreview)
-        assert [_(r) for r in prepared.differences] == expected
+        assert [pv.reason_text(r) for r in prepared.differences] == expected
     assert isinstance(prepared, pv.PreparedPreview)
     assert "--backend" in pv.child_argv(prepared, tmp_path, ui_lang="en_GB", lang=None, theme=None,
                                         backend="tkinter")  # fmt: skip
-
-
-def _(msgid: str) -> str:
-    return msgid  # en_GB: the msgid is the text
 
 
 @pytest.mark.parametrize(

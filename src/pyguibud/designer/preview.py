@@ -18,6 +18,7 @@ from pathlib import Path
 from typing import Literal
 
 from pyguibud.core import Finding, ReadResult, Registry, XmlIoError, validate
+from pyguibud.core.errors import format_message
 from pyguibud.core.files import DiskFiles
 from pyguibud.core.model import Document, GridCell, GridLine, Include, Layout, Prop, Window
 from pyguibud.core.xml_io import dump_ui, read_ui_bytes
@@ -73,8 +74,9 @@ M_CRASHED = N_("The preview stopped unexpectedly (exit code {code}).")
 M_TEMP = N_("The preview needs a temporary folder: {reason}.")
 M_NO_WINDOW = N_("The document has no window to preview.")
 M_NO_PYTHON = N_("The preview cannot start: no Python interpreter was found.")
-# Translators: Preview > Toolkit: {name} is a toolkit name (ttkbootstrap, tkinter, PySide6).
-M_NOT_INSTALLED_USE = N_("{name} is not installed; the preview uses ttkbootstrap.")
+# Translators: Preview > Toolkit: {name} is a toolkit name (ttkbootstrap, tkinter, PySide6) and
+# {fallback} the toolkit used instead (ttkbootstrap), inserted as it is.
+M_NOT_INSTALLED_USE = N_("{name} is not installed; the preview uses {fallback}.")
 # Translators: Preview > Toolkit menu entry of a toolkit that is not installed.
 M_NOT_INSTALLED = N_("{name} (not installed)")
 #: Toolkit names that are written differently from their backend name (proper nouns).
@@ -83,7 +85,8 @@ _IMPORT_NAMES = {"pyside6": "PySide6"}  # the importable top-level module of an 
 # Translators: the reasons that complete "This preview differs from the exported module: ...".
 R_PSEUDO = N_("the exported module cannot show the pseudo-locale")
 R_THEME = N_("the theme is chosen for the preview only")
-R_TOOLKIT = N_("the exported module uses ttkbootstrap")
+# Translators: {toolkit} is the toolkit name ttkbootstrap, inserted as it is.
+R_TOOLKIT = N_("the exported module uses {toolkit}")
 R_COMPONENT = N_("a component is shown inside a host dialog")
 R_SNAPSHOT = N_("included files from other folders show their source texts until it is saved")
 _MAX_RESULT = 64 * 1024
@@ -93,6 +96,19 @@ _TAIL_BYTES, _TAIL_LINES = 8 * 1024, 20
 def toolkit_label(backend: str) -> str:
     """The toolkit's display name (a proper noun, never translated)."""
     return TOOLKIT_NAMES.get(backend, backend)
+
+
+def reason_text(reason: str) -> str:
+    """A difference from the exported module (``R_*``), translated, with its toolkit filled in."""
+    return format_message(reason, {"toolkit": toolkit_label(DEFAULT_BACKEND)})
+
+
+def not_installed_text(backend: str) -> str:
+    """:data:`M_NOT_INSTALLED_USE` for ``backend``, naming the toolkit used instead."""
+    return format_message(
+        M_NOT_INSTALLED_USE,
+        {"name": toolkit_label(backend), "fallback": toolkit_label(DEFAULT_BACKEND)},
+    )
 
 
 def toolkit_installed(backend: str) -> bool:
@@ -200,6 +216,7 @@ def prepare_preview(
         return Refusal(_(M_SAVE_FIRST))
     errors = [f for f in findings if f.is_error]
     if errors:
+        # Translators: {count} is the number of errors that prevent the preview.
         text = ngettext(
             "The document has {count} error. Fix it to preview.",
             "The document has {count} errors. Fix them to preview.",

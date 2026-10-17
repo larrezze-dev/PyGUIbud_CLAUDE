@@ -401,7 +401,7 @@ def test_the_dialog_fits_and_is_translated_in_every_locale(app: Any, lang: str) 
         set_language("en_GB")
 
 
-@pytest.mark.parametrize("lang", ["en_GB", "de_DE", PSEUDO_LANGUAGE])
+@pytest.mark.parametrize("lang", ["en_GB", "de_DE", "nl_NL", "fr_FR", "pt_PT", PSEUDO_LANGUAGE])
 def test_qa17c_07_the_status_column_shows_the_whole_next_start_status(app: Any, lang: str) -> None:
     set_language(lang)
     try:

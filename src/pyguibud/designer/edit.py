@@ -165,6 +165,8 @@ class EditActions:
             self._remove(nodes)
             return
         if len(nodes) == 1:
+            # Translators: {id} is the identifier of the selected element and {count} the number
+            # of elements inside it.
             question = ngettext(
                 "Delete '{id}' and its {count} element?",
                 "Delete '{id}' and its {count} elements?",

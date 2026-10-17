@@ -147,14 +147,17 @@ class Measured:
 
 def unit_text(value: int, unit: Unit) -> str:
     """``value`` with its unit, e.g. "14 characters" (one plural form per unit, spec 9)."""
-    # Translators: {count} is a size in screen pixels, characters, lines or list rows.
+    # Translators: {count} is a size in characters.
     if unit == "chars":
         text = ngettext("{count} character", "{count} characters", value)
     elif unit == "lines":
+        # Translators: {count} is a size in text lines.
         text = ngettext("{count} line", "{count} lines", value)
     elif unit == "rows":
+        # Translators: {count} is a size in list rows.
         text = ngettext("{count} row", "{count} rows", value)
     else:
+        # Translators: {count} is a size in screen pixels.
         text = ngettext("{count} pixel", "{count} pixels", value)
     return text.format(count=value)
 
