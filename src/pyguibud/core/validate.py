@@ -918,6 +918,7 @@ class _Validator:
         self._specs: dict[str, WidgetSpec | None] = {}
         self._defs: dict[int, tuple[WidgetSpec | None, dict[str, PropertyDef]]] = {}
         self._dists: dict[str, frozenset[str]] = {}
+        self._real: dict[tuple[str, str | None], str | None] = {}
 
     # ------------------------------------------------ small services
     def spec(self, name: str) -> WidgetSpec | None:
@@ -931,6 +932,15 @@ class _Validator:
             found = getattr(self.registry, method, None)
             self._dists[method] = frozenset(found()) if callable(found) else frozenset()
         return self._dists[method]
+
+    def real_plugin(self, class_name: str, declared: str | None) -> str | None:
+        """H67: the registry's real distribution for the prefix of ``class_name`` (cached)."""
+        key = (class_name.partition(":")[0], declared)
+        if key not in self._real:
+            find = getattr(self.registry, "plugin_for_prefix", None)
+            found = find(*key) if callable(find) else None
+            self._real[key] = found if isinstance(found, str) else None
+        return self._real[key]
 
     def check_tb_attrs(self, widget: Widget, core_name: str | None) -> None:
         """R83 to R85 for the ``tb:`` attributes of a widget."""
@@ -1715,6 +1725,15 @@ class _Validator:
                 id=label,
             )
             plugin = None  # R28 then uses its nameless text: never a pip hint with junk
+        known_names = self.distributions("failed_distributions") | self.distributions(
+            "disabled_distributions"
+        )
+        if (
+            registered is None
+            and not (isinstance(plugin, str) and canonical_distribution(plugin) in known_names)
+            and (real := self.real_plugin(name, plugin if isinstance(plugin, str) else None))
+        ):
+            plugin = real  # H67: a file saved before QA-17c-01 may name a self-declared plugin
         if registered is not None:
             if (
                 fallback_spec is not None

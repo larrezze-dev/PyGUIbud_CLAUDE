@@ -38,8 +38,17 @@ def test_qa16b_01_a_platform_plugin_that_is_not_installed_is_refused(platform: s
     assert len(display_problem(platform, many, _PLUGINS) or "") < 200  # the value is clipped
 
 
+@pytest.mark.parametrize("platform", ["win32", "linux"])
+@pytest.mark.parametrize("value", ["   ", ";", ":", " ; ", " XCB ", "offscreen "])
+def test_qa19d_09_a_value_naming_no_plugin_is_refused(platform: str, value: str) -> None:
+    """Qt 6 skips empty ';'/':' parts but strips nothing, then hangs: refused, even unlisted."""
+    assert display_problem(platform, {"QT_QPA_PLATFORM": value}, _PLUGINS) is not None
+    if not value.strip(";:"):  # no name at all: refused even with unknown plugin folders
+        assert display_problem(platform, {"QT_QPA_PLATFORM": value}, ()) is not None
+
+
 @pytest.mark.parametrize(
-    "value", ["offscreen", "windows:darkmode=2", "wayland", "bogus;xcb", " XCB ", ""]
+    "value", ["offscreen", "windows:darkmode=2", "wayland", "bogus;xcb", "XCB", ":xcb;;", ""]
 )
 def test_an_installed_platform_plugin_passes(value: str) -> None:
     assert display_problem("win32", {"QT_QPA_PLATFORM": value}, _PLUGINS) is None

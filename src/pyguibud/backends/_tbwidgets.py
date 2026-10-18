@@ -16,8 +16,11 @@ from pyguibud.i18n import _
 __all__ = ["date_entry", "floodgauge", "meter", "tableview", "toggle_button"]
 
 
-def link(own: Any, bound: Any) -> None:  # noqa: ANN401 - Tk variables
-    """Keep a widget's own variable and the bound one equal; the bound value wins at first."""
+def link(own: Any, bound: Any, owner: Any = None) -> None:  # noqa: ANN401 - Tk objects
+    """Keep a widget's own variable and the bound one equal; the bound value wins at first.
+
+    Destroying ``owner`` removes the trace on ``bound`` (H56): it outlives the session.
+    """
     busy = [False]
 
     def copy(source: Any, target: Any) -> Any:  # noqa: ANN401 - Tk variables and callback
@@ -32,8 +35,17 @@ def link(own: Any, bound: Any) -> None:  # noqa: ANN401 - Tk variables
         return callback
 
     own.set(bound.get())
-    bound.trace_add("write", copy(bound, own))
+    name = bound.trace_add("write", copy(bound, own))
     own.trace_add("write", copy(own, bound))
+    if owner is not None:
+        close = owner.destroy
+
+        def destroy() -> None:
+            bound.trace_remove("write", name)
+            owner.destroy = close  # once: a second trace_remove would delete a missing command
+            close()
+
+        owner.destroy = destroy
 
 
 def _make(
@@ -61,7 +73,7 @@ def _make(
     if variable is not None and ext.link == "inner":
         inner.configure(**{str(ext.variable): variable})
     elif variable is not None and ext.link == "link":
-        link(getattr(outer, str(ext.variable)), variable)
+        link(getattr(outer, str(ext.variable)), variable, outer)
     return outer if inner is outer else (outer, inner)
 
 

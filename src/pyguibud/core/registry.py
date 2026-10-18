@@ -11,6 +11,7 @@ from __future__ import annotations
 import dataclasses
 import importlib
 import importlib.metadata
+import re
 import traceback
 from collections.abc import Callable, Collection, Iterable, Mapping
 from dataclasses import dataclass, field
@@ -49,8 +50,12 @@ __all__ = [
 WIDGETS_GROUP: Final = "pyguibud.widgets"
 BACKENDS_GROUP: Final = "pyguibud.backends"
 
-_BUILTIN_PREFIX = "pyguibud.core.widgets:"
 _BUILTIN_DISTRIBUTION = "pyguibud"
+#: The value prefix of PyGUIbud's own entry points, per group (H66: both must match).
+_BUILTIN_PREFIXES: Final[Mapping[str, str]] = MappingProxyType(
+    {WIDGETS_GROUP: "pyguibud.core.widgets:", BACKENDS_GROUP: "pyguibud.backends."}
+)
+_MODULE_NAME = re.compile(r"[A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9_]{0,98}[A-Za-z0-9]")
 _UNKNOWN_DISTRIBUTION = "unknown"
 #: Class-name prefix only the built-in entry points may use (spec plugins D2).
 _RESERVED_PREFIX = "tb"
@@ -152,14 +157,31 @@ class BackendInfo:
 
 
 def _distribution(ep: EntryPointLike) -> str:
+    """The distribution name shown and filtered on. Another entry point of a distribution named
+    ``pyguibud`` (a fork, a hand-edited install) is named after its top-level module instead, so
+    it never joins the Built-in row nor hides its errors from R87 (H66)."""
     dist = ep.dist
-    return dist.name if dist is not None else _UNKNOWN_DISTRIBUTION
+    if dist is None:
+        return _UNKNOWN_DISTRIBUTION
+    if canonical_distribution(dist.name) != _BUILTIN_DISTRIBUTION or _is_builtin(ep):
+        return dist.name
+    module = ep.value.partition(":")[0].partition(".")[0].strip()
+    plain = (
+        _MODULE_NAME.fullmatch(module) and canonical_distribution(module) != _BUILTIN_DISTRIBUTION
+    )
+    return module if plain else _UNKNOWN_DISTRIBUTION
 
 
 def _is_builtin(ep: EntryPointLike) -> bool:
-    """Both conditions: a value prefix alone is spoofable by a third-party module (D2)."""
-    builtin_dist = canonical_distribution(_distribution(ep)) == _BUILTIN_DISTRIBUTION
-    return builtin_dist and ep.value.startswith(_BUILTIN_PREFIX)
+    """Distribution, group and value prefix: a prefix alone is spoofable by a third party (D2),
+    and a distribution name alone by a fork or a hand-made ``pyguibud`` metadata folder (H66)."""
+    dist, prefix = ep.dist, _BUILTIN_PREFIXES.get(ep.group)
+    return (
+        dist is not None
+        and prefix is not None
+        and canonical_distribution(dist.name) == _BUILTIN_DISTRIBUTION
+        and ep.value.startswith(prefix)
+    )
 
 
 def _traceback(exc: BaseException) -> str:
@@ -212,6 +234,8 @@ class Registry:
         self._backend_eps: dict[str, EntryPointLike] = {}
         self._backends: list[BackendInfo] = []
         self._backend_cache: dict[str, object] = {}
+        #: Non-built-in widget entry point name -> its distribution (H67's last resort).
+        self._entry_dists: dict[str, str] = {}
 
     # ------------------------------------------------------------ loading
     def load(self) -> None:
@@ -225,9 +249,12 @@ class Registry:
         self._disabled.clear()
         self._factories.clear()
         self._failures.clear()
+        self._entry_dists.clear()
         self.revision += 1
         self._loaded = True
         for ep in self._sorted(WIDGETS_GROUP):
+            if not _is_builtin(ep):
+                self._entry_dists.setdefault(ep.name, _distribution(ep))
             if not self._skip_disabled(ep):
                 self._load_widget_entry_point(ep)
         self._ensure_core()
@@ -621,6 +648,36 @@ class Registry:
         self._ensure_loaded()
         return frozenset(self._disabled)
 
+    def plugin_for_prefix(self, prefix: str, declared: str | None = None) -> str | None:
+        """The real distribution behind the class prefix ``prefix``, or None (H67: a file saved
+        before QA-17c-01 may name the plugin's self-declared name instead).
+
+        Exact for a class the registry has seen (registered, or named by a diagnostic). Otherwise
+        the distribution whose widget entry point is named like the prefix (acme's ``acme``): a
+        heuristic for a plugin that is disabled or failed before naming its classes, used only
+        when the file's ``declared`` name is absent or is that entry point name (QA-19d-04: an
+        unrelated distribution must never replace a correct ``plugin=``).
+        """
+        self._ensure_loaded()
+        if prefix == _RESERVED_PREFIX:  # PyGUIbud's own; a plugin claiming it was refused
+            return None
+        seen = [(spec.name, spec.plugin) for spec in self._specs.values()]
+        seen += [
+            (d.params.get("name", ""), d.distribution)
+            for d in self._diagnostics
+            if d.group == WIDGETS_GROUP
+        ]
+        for name, plugin in seen:
+            if (
+                name.startswith(f"{prefix}:")
+                and plugin
+                and plugin not in (_BUILTIN_DISTRIBUTION, _UNKNOWN_DISTRIBUTION)
+            ):
+                return plugin
+        if declared and canonical_distribution(declared) != canonical_distribution(prefix):
+            return None
+        return self._entry_dists.get(prefix)
+
     def load_factory(self, spec: WidgetSpec, backend: str) -> Callable[..., object] | None:
         """The factory of ``spec`` for ``backend``, importing a string reference once.
 
@@ -707,9 +764,10 @@ class Registry:
         if is_extension(class_name) and fallback in CORE_CLASS_NAMES:
             core = self._specs.get(fallback or "")
             if core is not None:
-                failed = plugin is not None and (
-                    canonical_distribution(plugin) in self.failed_distributions()
-                )
+                failed_names = self.failed_distributions()
+                if plugin is None or canonical_distribution(plugin) not in failed_names:
+                    plugin = self.plugin_for_prefix(class_name.partition(":")[0], plugin) or plugin
+                failed = plugin is not None and canonical_distribution(plugin) in failed_names
                 return Resolved(
                     spec=core,
                     requested=class_name,

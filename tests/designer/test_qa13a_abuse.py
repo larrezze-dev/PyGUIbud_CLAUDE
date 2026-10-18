@@ -677,7 +677,9 @@ def test_an_error_card_survives_language_and_theme_switches_and_recovers(
         _settle(designer_root)
         stage = panel.stages[0]
         texts = [c.cget("text") for c in stage.card.winfo_children()]
-        assert stage.view is None and "factory exploded" in texts[0], (lang, texts)
+        assert stage.view is None and stage.error is not None, (lang, texts)
+        # H68: the card shows the reason translated into the current language, never raw text
+        assert str(stage.error) in texts[0] and "factory exploded" not in texts[0], (lang, texts)
         assert stage.card.winfo_manager() == "grid"
     window = _window(app)
     for node in list(window.walk())[:8]:  # the tree and inspector keep working

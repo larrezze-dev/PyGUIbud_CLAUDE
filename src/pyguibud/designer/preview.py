@@ -70,6 +70,12 @@ M_SAVE_FIRST = N_(
 )
 M_UNSAVEABLE = N_("The document cannot be previewed: {reason}")
 M_TIMEOUT = N_("The preview did not start within 20 seconds.")
+# Translators: the Qt platform plugin is the PySide6 display layer; {variable} is an
+# environment variable name (QT_QPA_PLATFORM), inserted as it is.
+M_TIMEOUT_QT = N_(
+    "The preview did not start within 20 seconds: the Qt platform plugin could not start. "
+    "Check {variable} and the display."
+)
 M_CRASHED = N_("The preview stopped unexpectedly (exit code {code}).")
 M_TEMP = N_("The preview needs a temporary folder: {reason}.")
 M_NO_WINDOW = N_("The document has no window to preview.")

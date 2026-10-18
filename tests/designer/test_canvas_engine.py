@@ -23,6 +23,8 @@ from pyguibud.designer.templates import TEMPLATES
 from tests.codegen.test_parity import _widget, diff
 from tests.designer.conftest import best_of
 
+_UNEXPECTED = "an unexpected error occurred; see the log"  # H68: the card never shows raw text
+
 pytestmark = pytest.mark.gui
 
 RICH = Path(__file__).resolve().parents[1] / "codegen" / "data" / "rich.ui"
@@ -113,9 +115,9 @@ def test_a_failing_window_shows_an_error_card_and_the_others_render(
     shell.session.open_result(read_ui_string(TWO_WINDOWS, source="two"), name="two")
     first, second = panel.stages
     panel.show_window(first.window)
-    assert first.view is None and first.error == "factory exploded"
+    assert first.view is None and str(first.error) == _UNEXPECTED  # H68: no raw text
     texts = [c.cget("text") for c in first.card.winfo_children()]
-    assert texts[0] == "This window cannot be drawn on the canvas: factory exploded"
+    assert texts[0] == f"This window cannot be drawn on the canvas: {_UNEXPECTED}"
     assert texts[1] == "0 errors"
     panel.show_window(second.window)
     assert second.view is not None and second.error is None
@@ -410,7 +412,7 @@ def test_a_failure_inside_the_build_leaves_no_frame_behind(
     monkeypatch.setattr(ttkbootstrap, "Button", explode)
     shell.session.open_result(read_ui_string(TWO_WINDOWS, source="two"), name="two")
     stage = shell.shell.canvas.stages[0]
-    assert stage.view is None and stage.error == "no buttons today"
+    assert stage.view is None and str(stage.error) == _UNEXPECTED
     assert stage.stage.grid_slaves(row=2, column=0) == [stage.card]
     chrome = {str(w) for w in (stage.card, stage.strip, stage.title.master)}
     leftovers = [

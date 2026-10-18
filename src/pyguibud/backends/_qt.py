@@ -37,6 +37,7 @@ from pyguibud.backends._tk import (
     _M_IGNORED_STYLES,
     _M_PLUGIN_FAILED,
     _M_SHORTCUT,
+    _M_TEXT_FAILED,
     _raw,
     _Slot,
     apply_slots,
@@ -159,15 +160,43 @@ class _Filter(QtCore.QObject):
         self.calls: list[tuple[Q, Q, Callable[[], object]]] = []  # (event type, key or None, fn)
 
     def eventFilter(self, watched: Q, event: Q) -> bool:  # noqa: N802
-        kind, pressed = event.type(), None
-        if kind == QtCore.QEvent.Type.KeyPress:
-            combo = event.keyCombination()
-            modifiers = combo.keyboardModifiers() & ~Qt.KeyboardModifier.KeypadModifier
-            pressed = QtGui.QKeySequence(QtCore.QKeyCombination(modifiers, combo.key()))
-        for wanted, key, fn in list(self.calls):
-            if wanted == kind and (key is None or key == pressed):
-                fn()
+        kind, calls = event.type(), list(self.calls)
+        press = kind == QtCore.QEvent.Type.KeyPress
+        scores = [_match(k, event) if press and k is not None else 0 for _w, k, _f in calls]
+        best = max(
+            (n for (w, k, _f), n in zip(calls, scores, strict=True) if w == kind and k is not None),
+            default=-1,
+        )
+        for (wanted, key, fn), score in zip(calls, scores, strict=True):
+            if wanted == kind and (key is None or score == best >= 0):
+                try:  # as a Tk callback: reported, and the other handlers still run; never
+                    fn()  # raised out of this C++ override, which PySide6 reports on fd 2
+                except Exception:
+                    sys.excepthook(*sys.exc_info())
         return False
+
+
+_SHIFT = Qt.KeyboardModifier.ShiftModifier.value
+
+
+def _pointers(widgets: Iterable[Q]) -> set[int]:
+    """The C++ addresses of ``widgets``: a stable identity, unlike their Python wrappers."""
+    return {shiboken6.getCppPointer(w)[0] for w in widgets}
+
+
+def _match(wanted: Q, event: Q) -> int:
+    """H54, Tk's rule: the same key with at least the wanted modifiers held (Shift exactly on a
+    letter, whose case is part of a Tk keysym); the most modifiers wins. -1: no match."""
+    want, got = wanted[0], event.keyCombination()
+    need = want.keyboardModifiers().value
+    held = (got.keyboardModifiers() & ~Qt.KeyboardModifier.KeypadModifier).value
+    key = got.key()
+    if key == Qt.Key.Key_Backtab:  # QA-19d-05: Qt's Shift+Tab; Tk sees Tab with Shift held
+        key, held = Qt.Key.Key_Tab, held | _SHIFT
+    letter = Qt.Key.Key_A.value <= key.value <= Qt.Key.Key_Z.value
+    if want.key() != key or need & ~held or (letter and (need ^ held) & _SHIFT):
+        return -1
+    return bin(need).count("1")
 
 
 def _align(names: Iterable[str]) -> Q:
@@ -208,6 +237,7 @@ class QtSession:
         self._ignored = 0  # tb:bootstyle attributes (D5)
         self._wire: list[Callable[[], object]] = []  # connections made after the build
         self._groups: dict[int, Q] = {}  # id(variable) -> its exclusive QButtonGroup (D13)
+        self._traces: list[tuple[_vars.Var[Any], str]] = []  # removed on destroy (H56)
         _LIVE.add(self)
 
     # ------------------------------------------------------------ build
@@ -224,7 +254,8 @@ class QtSession:
         plan = self._plan
         tk = sys.modules.get("tkinter")  # never imported here: only an existing root matters
         root = getattr(tk, "_default_root", None)
-        if root is not None and _alive_tk(root):
+        if root is not None and _alive_tk(root) and not getattr(root, "_pyguibud_mixed", False):
+            root._pyguibud_mixed = True  # B9: once per Tk root, not once per Qt build
             plan.log(_M_MIXED)
         for key, path in plan.images.items():
             pixmap = QtGui.QPixmap(str(path))
@@ -271,10 +302,16 @@ class QtSession:
             self._plan.log(message, **params)
 
     def _slot(
-        self, inst: Instance, label: str, prop: Prop | None, setter: Setter, split: bool
+        self,
+        inst: Instance,
+        label: str,
+        prop: Prop | None,
+        setter: Setter,
+        split: bool,
+        failed: Callable[[BaseException], object] | None = None,
     ) -> None:
         if prop is not None:
-            self._slots.append(_Slot(TextSlot(inst.doc.key, prop), setter, split, label))
+            self._slots.append(_Slot(TextSlot(inst.doc.key, prop), setter, split, label, failed))
 
     def _pixmap(self, inst: Instance, ref: str | None) -> Q:
         return None if ref is None else self._pixmaps.get((inst.doc.key, ref))
@@ -535,7 +572,12 @@ class QtSession:
             elif raw is not None:
                 props[definition.name] = _CONVERT.get(definition.type, str)(raw)
         before = [c for c in parent.children() if c.isWidgetType()]
-        outer: Q = None
+        existing = _pointers(QtWidgets.QApplication.allWidgets())
+
+        def old(widget: Q) -> bool:  # it existed before the factory ran
+            return bool(_pointers([widget]) & existing)
+
+        outer = inner = None
         stage: FactoryStage = "create"
         try:
             if factory is None:  # the import failed (reported by the registry)
@@ -549,28 +591,47 @@ class QtSession:
                 and isinstance(inner, getattr(QtWidgets, _QT_CLASS[fallback]))
                 and outer.parent() == parent
                 and new == [outer]
+                and (inner is outer or outer.isAncestorOf(inner))  # H59
+                and not (old(outer) or old(inner))  # QA-19d-08: made anew, as in Tk
             ):
                 raise TypeError(f"the factory of {spec.name} returned {made!r}")
             if text is not None:
                 method = inner.setTitle if fallback == "LabelFrame" else inner.setText
                 setter = self._amp(method) if fallback in _AMP else self._plain(inner)
                 setter(text, -1)  # inside the guard; the slot sets it again
-                self._slot(inst, node.id, node.props.get("text"), setter, fallback in _AMP)
+                failed = partial(self._text_failed, node)  # H49: a later set is isolated
+                self._slot(inst, node.id, node.props.get("text"), setter, fallback in _AMP, failed)
         except (Exception, SystemExit) as exc:  # isolation point (D7): fall back, never crash
             if factory is not None:  # before the sweep, which may meet a deleted parent
                 registry.report_failure(spec.name, "pyside6", stage, exc)
-            kids = parent.children() if shiboken6.isValid(parent) else []
+            alive = shiboken6.isValid(parent)
+            kids = parent.children() if alive else []
             strays = [c for c in kids if c.isWidgetType() and c not in before]
-            for widget in {
+            for widget in {  # H61: only what the factory made, never an existing widget
                 id(w): w
-                for w in (outer, *strays)
-                if isinstance(w, QtCore.QObject) and shiboken6.isValid(w)
+                for w in (outer, inner, *strays)
+                if isinstance(w, QtWidgets.QWidget) and shiboken6.isValid(w)
             }.values():
+                if old(widget):  # QA-19d-08: an existing widget the factory moved into parent
+                    if widget in strays:  # goes back out (taken from elsewhere), never deleted
+                        widget.setParent(None)
+                    continue
+                for kid in widget.findChildren(QtWidgets.QWidget):  # QA-19d-07: nor one
+                    up = kid.parentWidget()  # None under a plain QObject
+                    if old(kid) and not (up is not None and old(up)):  # moved into a new one
+                        kid.setParent(None)
                 widget.setParent(None)
                 widget.deleteLater()
-            self._once(_M_PLUGIN_FAILED, node.class_name, name=node.class_name, fallback=fallback)
+            if alive:  # H62: else the fallback cannot be shown and the build aborts
+                self._once(
+                    _M_PLUGIN_FAILED, node.class_name, name=node.class_name, fallback=fallback
+                )
             return None
         return outer, inner
+
+    def _text_failed(self, node: Widget, exc: BaseException) -> None:
+        self._once(_M_TEXT_FAILED, node.class_name, name=node.class_name, id=node.id)
+        self._plan.registry.report_failure(node.class_name, "pyside6", "wire", exc)
 
     @staticmethod
     def _sizes(name: str, node: Widget, outer: Q, inner: Q, value: Value) -> None:
@@ -752,7 +813,13 @@ class QtSession:
             signal = w.textChanged
         elif name == "Combobox":
             signal, read = w.currentTextChanged, w.currentText
-            write = lambda v: w.setCurrentText(str(v))  # noqa: E731
+            # A read-only list selects nothing for a value it lacks; setCurrentText would keep
+            # the item Qt selected by itself (H55).
+            write = lambda v: (  # noqa: E731
+                w.setCurrentText(str(v))
+                if w.isEditable()
+                else w.setCurrentIndex(w.findText(str(v)))
+            )
         elif name == "Checkbutton":
             signal, read, write = w.toggled, w.isChecked, lambda v: w.setChecked(bool(v))
         elif name == "Spinbox":
@@ -782,9 +849,36 @@ class QtSession:
                 busy[0] = False
 
         guarded(lambda: write(var.get()))
-        var.trace_add("write", lambda *_: guarded(lambda: write(var.get())))
+        self._trace(var, lambda *_: guarded(lambda: write(var.get())))
+        moving = [False]  # the Combobox list is changing: its index moves, not the user
         if signal is not None:
-            signal.connect(lambda *_: guarded(lambda: var.set(read())))
+
+            def changed(*_: object) -> None:
+                if not moving[0]:
+                    guarded(lambda: var.set(read()))
+
+            signal.connect(changed)
+        if name == "Combobox":  # H55: Tk selects nothing when items are added to an empty list
+            w.setPlaceholderText(" ")  # Qt selects the first one only without a placeholder
+
+            def settle(*_: object) -> None:  # QA-19d-06: as Tk, new values keep the variable,
+                moving[0] = False  # whose value shows again once its item exists
+                if busy[0]:  # a trace of this variable changed the list: no echo can follow
+                    write(var.get())
+                else:
+                    guarded(lambda: write(var.get()))
+
+            model = w.model()
+            for start, end in (
+                (model.rowsAboutToBeInserted, model.rowsInserted),
+                (model.rowsAboutToBeRemoved, model.rowsRemoved),
+                (model.modelAboutToBeReset, model.modelReset),
+            ):
+                start.connect(lambda *_: moving.__setitem__(0, True))
+                end.connect(settle)
+
+    def _trace(self, var: _vars.Var[Any], callback: Callable[..., object]) -> None:
+        self._traces.append((var, var.trace_add("write", callback)))
 
     def _radio(self, w: Q, var: Q, raw: str) -> tuple[Q, Callable[[], object], Callable[..., None]]:
         """D13: one exclusive group per variable object (across parents)."""
@@ -828,7 +922,7 @@ class QtSession:
                 continue
             call, pair = _call(fn), (name, event.name)
             if event.name == "change" and var is not None:
-                self._wire.append(partial(var.trace_add, "write", call))
+                self._wire.append(partial(self._trace, var, call))
             elif pair == ("Radiobutton", "change"):
                 self._wire.append(partial(w.toggled.connect, _call(fn, checked=True)))
             elif pair in SIGNALS:
@@ -905,6 +999,9 @@ class QtSession:
                 top.hide()
                 top.deleteLater()
         self._created.clear()
+        for var, token in self._traces:  # H56: a dead session's handlers never fire again
+            var.trace_remove("write", token)
+        self._traces.clear()
         self._pixmaps.clear()
         for group in self._groups.values():
             group.deleteLater()

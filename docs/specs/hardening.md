@@ -286,6 +286,7 @@ Total: est. ≈ 2,280, caps 2,920. 19a goes first because every later gate depen
   3. Open `examples/acme_demo.ui` without acme → a warning only.
   4. `uv pip uninstall acme-pyguibud` afterwards.
 - **Cap 600.** **Trims:** T1 H54 documented · T2 H59–H60 keep only H61 (data loss) · T3 H64 documented (`ui.<id>.master.master`) · T4 H69 dropped · T5 H57 documented.
+- **As built (2026-10-18):** 253 / 600 net src lines (plus 18 in acme). Only **T4** applied (H69 dropped: plugin factories receive `bootstyle` and may honour it; pinned "no R84"). Fixed: H49 (`ACME_PYGUIBUD_BREAK=setter`; plugin text slots guarded on retranslate, `_M_TEXT_FAILED`), H52, H54, H55, H56, H57, H59–H62, H65–H68; the Qt eventFilter line was a raising `key:` handler (now `sys.excepthook`). H50 audit: `docs/specs/backends-audit-19d.md` (QA-19d-01: the mixed-toolkit warning once per Tk root). Documented in runtime.md §16: H51, H53, H58, H63, H64. QA REJECT (1 major) → QA-19d-02…09 fixed (fr NUL byte + new control-character catalogue gate; translator comments; H67 never overrides a correct declared `plugin=`; Qt Backtab; bound Combobox across `clear()`/removals; Qt sweep keeps stolen/pre-existing widgets; `QT_QPA_PLATFORM` parsed as Qt does). Details: plugins.md §14d, backends.md §14.
 
 ### 19e — CLI, messages and catalogues (H70–H84)
 - **Scope:**

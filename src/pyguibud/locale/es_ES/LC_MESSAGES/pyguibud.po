@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PyGUIbud 0.1.0\n"
 "Report-Msgid-Bugs-To: https://github.com/larrezze/PyGUIbud/issues\n"
-"POT-Creation-Date: 2026-10-18 08:35+0200\n"
+"POT-Creation-Date: 2026-10-18 16:47+0200\n"
 "PO-Revision-Date: 2026-10-05 17:46+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: es_ES\n"
@@ -19,7 +19,7 @@ msgstr ""
 "Generated-By: Babel 2.18.0\n"
 
 #. Translators: a program shows both Tk (tkinter) and Qt windows.
-#: src/pyguibud/backends/_qt.py:73
+#: src/pyguibud/backends/_qt.py:74
 msgid ""
 "Tk and Qt windows in one process: only one toolkit's windows respond at a"
 " time."
@@ -29,13 +29,13 @@ msgstr ""
 
 #. Translators: an image file of the .ui could not be decoded by Qt; it is not
 #. shown.
-#: src/pyguibud/backends/_qt.py:75
+#: src/pyguibud/backends/_qt.py:76
 #, python-brace-format
 msgid "The image '{image}' cannot be displayed by Qt; it is left out."
 msgstr "Qt no puede mostrar la imagen '{image}'; se omite."
 
 #. Translators: {name} is a colour name from a .ui file, such as SeaGreen3.
-#: src/pyguibud/backends/_qt.py:77
+#: src/pyguibud/backends/_qt.py:78
 #, python-brace-format
 msgid ""
 "The colour '{name}' of '{id}' is not known to Qt; the default colour is "
@@ -44,35 +44,35 @@ msgstr ""
 "Qt no reconoce el color '{name}' de '{id}'; se usa el color "
 "predeterminado."
 
-#: src/pyguibud/backends/_qt.py:78
+#: src/pyguibud/backends/_qt.py:79
 #, python-brace-format
 msgid "The minimum of '{id}' is greater than its maximum; Qt uses them swapped."
 msgstr "El mínimo de '{id}' es mayor que su máximo; Qt los usa intercambiados."
 
 #. Translators: padx and pady are .ui attribute names; keep them unchanged.
-#: src/pyguibud/backends/_qt.py:80
+#: src/pyguibud/backends/_qt.py:81
 #, python-brace-format
 msgid "The padding (padx, pady) of '{id}' is ignored by Qt."
 msgstr "Qt ignora el relleno (padx, pady) de '{id}'."
 
-#: src/pyguibud/backends/_qt.py:81
+#: src/pyguibud/backends/_qt.py:82
 #, python-brace-format
 msgid "The label '{id}' has an image and a text; Qt shows the image only."
 msgstr "La etiqueta '{id}' tiene una imagen y un texto; Qt muestra solo la imagen."
 
 #. Translators: a spin box is bound to a text variable whose value is not a
 #. number.
-#: src/pyguibud/backends/_qt.py:83
+#: src/pyguibud/backends/_qt.py:84
 #, python-brace-format
 msgid "The spin box '{id}' cannot show a value that is not a number."
 msgstr "El control numérico '{id}' no puede mostrar un valor que no sea un número."
 
-#: src/pyguibud/backends/_tbwidgets.py:83
+#: src/pyguibud/backends/_tbwidgets.py:95
 msgid "Select a date"
 msgstr "Seleccionar una fecha"
 
 #. Translators: a keyboard shortcut appears twice in one window.
-#: src/pyguibud/backends/_tk.py:59
+#: src/pyguibud/backends/_tk.py:60
 #, python-brace-format
 msgid "The shortcut '{shortcut}' of '{id}' is already used in this window."
 msgstr "El atajo de teclado '{shortcut}' de '{id}' ya se usa en esta ventana."
@@ -82,7 +82,7 @@ msgstr "El atajo de teclado '{shortcut}' de '{id}' ya se usa en esta ventana."
 #. package name ttkbootstrap and {attribute} the name of the .ui attribute
 #. (both inserted as they
 #. are); {toolkit} is the name of the toolkit.
-#: src/pyguibud/backends/_tk.py:64
+#: src/pyguibud/backends/_tk.py:65
 #, python-brace-format
 msgid "{count} {package} style ({attribute}) is ignored by the {toolkit} toolkit."
 msgid_plural ""
@@ -98,7 +98,7 @@ msgstr[1] ""
 #. Translators: a text (usually a translation) is too long to display; {length}
 #. and {limit} are
 #. numbers of characters.
-#: src/pyguibud/backends/_tk.py:69
+#: src/pyguibud/backends/_tk.py:70
 #, python-brace-format
 msgid ""
 "The text of '{id}' has {length} characters; only the first {limit} are "
@@ -108,7 +108,7 @@ msgstr ""
 "primeros {limit}."
 
 #. Translators: a plugin's widget could not be created (runtime.plugin_failed).
-#: src/pyguibud/backends/_tk.py:72
+#: src/pyguibud/backends/_tk.py:73
 #, python-brace-format
 msgid ""
 "The widget class '{name}' failed to build; its fallback '{fallback}' is "
@@ -117,9 +117,17 @@ msgstr ""
 "La clase de widget '{name}' no se pudo crear; se muestra su alternativa "
 "'{fallback}'."
 
+#. Translators: a plugin's widget raised an error when its text was set again
+#. (for example
+#. after a language change); {name} is its widget class.
+#: src/pyguibud/backends/_tk.py:77
+#, python-brace-format
+msgid "The widget class '{name}' could not show the new text of '{id}'."
+msgstr "La clase de widget '{name}' no pudo mostrar el nuevo texto de '{id}'."
+
 #. Translators: a widget does not accept the handler of an event
 #. (runtime.event_unsupported).
-#: src/pyguibud/backends/_tk.py:75
+#: src/pyguibud/backends/_tk.py:79
 #, python-brace-format
 msgid "The event '{event}' of '{id}' is not supported by '{name}'."
 msgstr "El evento '{event}' de '{id}' no es compatible con '{name}'."
@@ -681,7 +689,7 @@ msgstr "La longitud máxima de la propiedad '{name}' está fuera de rango."
 msgid "The pattern of property '{name}' is not a valid regular expression."
 msgstr "El patrón de la propiedad '{name}' no es una expresión regular válida."
 
-#: src/pyguibud/core/registry.py:63
+#: src/pyguibud/core/registry.py:68
 #, python-brace-format
 msgid ""
 "The factory of widget '{name}' from '{distribution}' for backend "
@@ -690,7 +698,7 @@ msgstr ""
 "No se pudo importar la factoría del widget '{name}' de '{distribution}' "
 "para el backend '{backend}': {error}"
 
-#: src/pyguibud/core/registry.py:67
+#: src/pyguibud/core/registry.py:72
 #, python-brace-format
 msgid ""
 "The factory of widget '{name}' from '{distribution}' failed to create the"
@@ -699,7 +707,7 @@ msgstr ""
 "La factoría del widget '{name}' de '{distribution}' no pudo crear el "
 "widget con el backend '{backend}': {error}"
 
-#: src/pyguibud/core/registry.py:71
+#: src/pyguibud/core/registry.py:76
 #, python-brace-format
 msgid ""
 "The factory of widget '{name}' from '{distribution}' returned an unusable"
@@ -708,7 +716,7 @@ msgstr ""
 "La factoría del widget '{name}' de '{distribution}' devolvió un widget "
 "inutilizable con el backend '{backend}': {error}"
 
-#: src/pyguibud/core/registry.py:75
+#: src/pyguibud/core/registry.py:80
 #, python-brace-format
 msgid ""
 "The widget '{name}' from '{distribution}' could not be set up with "
@@ -717,22 +725,22 @@ msgstr ""
 "No se pudo configurar el widget '{name}' de '{distribution}' con el "
 "backend '{backend}': {error}"
 
-#: src/pyguibud/core/registry.py:241
+#: src/pyguibud/core/registry.py:268
 #, python-brace-format
 msgid "The backend '{name}' from '{distribution}' is already registered."
 msgstr "El backend '{name}' de '{distribution}' ya está registrado."
 
-#: src/pyguibud/core/registry.py:262
+#: src/pyguibud/core/registry.py:289
 #, python-brace-format
 msgid "The plugin '{distribution}' is disabled and was not loaded."
 msgstr "El plugin '{distribution}' está desactivado y no se cargó."
 
-#: src/pyguibud/core/registry.py:278
+#: src/pyguibud/core/registry.py:305
 #, python-brace-format
 msgid "The entry points of group '{group}' could not be read: {error}"
 msgstr "No se pudieron leer los puntos de entrada del grupo '{group}': {error}"
 
-#: src/pyguibud/core/registry.py:330
+#: src/pyguibud/core/registry.py:357
 #, python-brace-format
 msgid ""
 "The entry point '{entry_point}' from '{distribution}' does not provide a "
@@ -742,7 +750,7 @@ msgstr ""
 "una especificación de widget, un iterable de ellas ni un invocable que "
 "las devuelva."
 
-#: src/pyguibud/core/registry.py:343
+#: src/pyguibud/core/registry.py:370
 #, python-brace-format
 msgid ""
 "The entry point '{entry_point}' from '{distribution}' failed to load: "
@@ -751,7 +759,7 @@ msgstr ""
 "El punto de entrada '{entry_point}' de '{distribution}' no se pudo "
 "cargar: {error}"
 
-#: src/pyguibud/core/registry.py:356
+#: src/pyguibud/core/registry.py:383
 #, python-brace-format
 msgid ""
 "The entry point '{entry_point}' from '{distribution}' provided an item "
@@ -760,7 +768,7 @@ msgstr ""
 "El punto de entrada '{entry_point}' de '{distribution}' proporcionó un "
 "elemento que no es una especificación de widget: {item}"
 
-#: src/pyguibud/core/registry.py:369
+#: src/pyguibud/core/registry.py:396
 #, python-brace-format
 msgid ""
 "The widget '{name}' from '{distribution}' targets widget API version "
@@ -770,12 +778,12 @@ msgstr ""
 "{version} de la API de widgets, pero esta versión de PyGUIbud requiere la"
 " versión {required}."
 
-#: src/pyguibud/core/registry.py:384
+#: src/pyguibud/core/registry.py:411
 #, python-brace-format
 msgid "The widget class name '{name}' from '{distribution}' is not valid."
 msgstr "El nombre de clase de widget '{name}' de '{distribution}' no es válido."
 
-#: src/pyguibud/core/registry.py:393
+#: src/pyguibud/core/registry.py:420
 #, python-brace-format
 msgid ""
 "The widget '{name}' from '{distribution}' has no prefix; plugin widgets "
@@ -786,7 +794,7 @@ msgstr ""
 "plugins necesitan un nombre con prefijo, como 'acme:{name}', y no pueden "
 "sustituir a los widgets del núcleo."
 
-#: src/pyguibud/core/registry.py:404
+#: src/pyguibud/core/registry.py:431
 #, python-brace-format
 msgid ""
 "The widget '{name}' from '{distribution}' uses the prefix '{prefix}', "
@@ -795,7 +803,7 @@ msgstr ""
 "El widget '{name}' de '{distribution}' usa el prefijo '{prefix}', "
 "reservado para los widgets propios de PyGUIbud; se ignoró."
 
-#: src/pyguibud/core/registry.py:416
+#: src/pyguibud/core/registry.py:443
 #, python-brace-format
 msgid ""
 "The widget '{name}' from '{distribution}' has an invalid factory "
@@ -804,7 +812,7 @@ msgstr ""
 "El widget '{name}' de '{distribution}' tiene una factoría no válida "
 "({factory}) y se ignoró."
 
-#: src/pyguibud/core/registry.py:430
+#: src/pyguibud/core/registry.py:457
 #, python-brace-format
 msgid ""
 "The widget '{name}' from '{distribution}' has no display name and was "
@@ -813,7 +821,7 @@ msgstr ""
 "El widget '{name}' de '{distribution}' no tiene nombre para mostrar y se "
 "ignoró."
 
-#: src/pyguibud/core/registry.py:440
+#: src/pyguibud/core/registry.py:467
 #, python-brace-format
 msgid ""
 "The widget '{name}' from '{distribution}' is already registered by "
@@ -824,7 +832,7 @@ msgstr ""
 
 #. Translators: {declared} is the plugin name a widget claims; {distribution}
 #. is the package it really comes from, which PyGUIbud uses instead.
-#: src/pyguibud/core/registry.py:461
+#: src/pyguibud/core/registry.py:488
 #, python-brace-format
 msgid ""
 "The widget '{name}' from '{distribution}' declares the plugin "
@@ -833,12 +841,12 @@ msgstr ""
 "El widget '{name}' de '{distribution}' declara el plugin '{declared}'; se"
 " usa '{distribution}' en su lugar."
 
-#: src/pyguibud/core/registry.py:491
+#: src/pyguibud/core/registry.py:518
 #, python-brace-format
 msgid "The built-in widgets could not be loaded: {error}"
 msgstr "No se pudieron cargar los widgets integrados: {error}"
 
-#: src/pyguibud/core/registry.py:507
+#: src/pyguibud/core/registry.py:534
 #, python-brace-format
 msgid ""
 "Built-in widgets were missing from the installed package metadata and "
@@ -848,7 +856,7 @@ msgstr ""
 "registraron directamente: {names}. Reinstalar PyGUIbud puede "
 "solucionarlo."
 
-#: src/pyguibud/core/registry.py:528
+#: src/pyguibud/core/registry.py:555
 #, python-brace-format
 msgid ""
 "The widget '{name}' from '{distribution}' has no valid core fallback "
@@ -857,7 +865,7 @@ msgstr ""
 "El widget '{name}' de '{distribution}' no tiene una clase de reserva del "
 "núcleo válida ('{fallback}') y se ignoró."
 
-#: src/pyguibud/core/registry.py:534
+#: src/pyguibud/core/registry.py:561
 #, python-brace-format
 msgid ""
 "The widget '{name}' from '{distribution}' and its fallback '{fallback}' "
@@ -866,7 +874,7 @@ msgstr ""
 "El widget '{name}' de '{distribution}' y su alternativa de reserva "
 "'{fallback}' no coinciden en si son contenedores; el widget se ignoró."
 
-#: src/pyguibud/core/registry.py:543
+#: src/pyguibud/core/registry.py:570
 #, python-brace-format
 msgid ""
 "The widget '{name}' from '{distribution}' supports events or variable "
@@ -876,17 +884,17 @@ msgstr ""
 " que su alternativa de reserva '{fallback}' no admite; el widget se "
 "ignoró."
 
-#: src/pyguibud/core/registry.py:734 src/pyguibud/preview/_host.py:22
+#: src/pyguibud/core/registry.py:792 src/pyguibud/preview/_host.py:22
 #, python-brace-format
 msgid "Unknown backend '{name}'."
 msgstr "Backend desconocido '{name}'."
 
-#: src/pyguibud/core/registry.py:739
+#: src/pyguibud/core/registry.py:797
 #, python-brace-format
 msgid "The backend '{name}' from '{distribution}' failed to load: {error}"
 msgstr "El backend '{name}' de '{distribution}' no se pudo cargar: {error}"
 
-#: src/pyguibud/core/registry.py:755
+#: src/pyguibud/core/registry.py:813
 #, python-brace-format
 msgid "Unknown widget class '{name}'."
 msgstr "Clase de widget desconocida '{name}'."
@@ -1779,7 +1787,7 @@ msgstr "Mostrar"
 msgid "Scrollbar"
 msgstr "Barra de desplazamiento"
 
-#: src/pyguibud/core/widgets.py:298 src/pyguibud/designer/panels/canvas.py:97
+#: src/pyguibud/core/widgets.py:298 src/pyguibud/designer/panels/canvas.py:100
 msgid "Canvas"
 msgstr "Lienzo"
 
@@ -3170,24 +3178,31 @@ msgstr ""
 "No hay ningún documento. Pulse {new} para crear uno nuevo o {open} para "
 "abrir un archivo."
 
+#. Translators: the reason on the canvas card when a widget fails to build for
+#. an unforeseen
+#. cause; the technical detail is in the log file.
+#: src/pyguibud/designer/panels/canvas.py:58
+msgid "an unexpected error occurred; see the log"
+msgstr "se produjo un error inesperado; consulte el registro"
+
 #. Translators: shown on the canvas instead of a window that fails to render;
 #. {reason} is the
 #. technical cause (usually in English).
-#: src/pyguibud/designer/panels/canvas.py:58
+#: src/pyguibud/designer/panels/canvas.py:61
 #, python-brace-format
 msgid "This window cannot be drawn on the canvas: {reason}"
 msgstr "Esta ventana no se puede dibujar en el lienzo: {reason}"
 
 #. Translators: shown in the status bar when the canvas gets the keyboard
 #. focus.
-#: src/pyguibud/designer/panels/canvas.py:61
+#: src/pyguibud/designer/panels/canvas.py:64
 msgid "Tab selects the next widget; F6 moves to the next panel."
 msgstr "Tab selecciona el widget siguiente; F6 pasa al panel siguiente."
 
 #. Translators: status bar after a large multi-selection; {count} is the number
 #. of
 #. selected elements, {shown} how many of them the canvas outlines (fewer).
-#: src/pyguibud/designer/panels/canvas.py:214
+#: src/pyguibud/designer/panels/canvas.py:217
 #, python-brace-format
 msgid "{count} element selected; only {shown} are outlined."
 msgid_plural "{count} elements selected; only {shown} are outlined."
@@ -3198,7 +3213,7 @@ msgstr[1] "Hay {count} elementos seleccionados; solo se resaltan {shown}."
 #. the number
 #. of errors.
 #. Translators: part of the problem summary; {count} is a number of errors.
-#: src/pyguibud/designer/panels/canvas.py:612
+#: src/pyguibud/designer/panels/canvas.py:621
 #: src/pyguibud/designer/present/status.py:32
 #, python-brace-format
 msgid "{count} error"
@@ -3603,21 +3618,33 @@ msgstr "No se puede mostrar la vista previa del documento: {reason}"
 msgid "The preview did not start within 20 seconds."
 msgstr "La vista previa no se inició en 20 segundos."
 
-#: src/pyguibud/designer/preview.py:73
+#. Translators: the Qt platform plugin is the PySide6 display layer; {variable}
+#. is an
+#. environment variable name (QT_QPA_PLATFORM), inserted as it is.
+#: src/pyguibud/designer/preview.py:76
+#, python-brace-format
+msgid ""
+"The preview did not start within 20 seconds: the Qt platform plugin could"
+" not start. Check {variable} and the display."
+msgstr ""
+"La vista previa no se inició en 20 segundos: no se pudo iniciar el "
+"complemento de plataforma de Qt. Compruebe {variable} y la pantalla."
+
+#: src/pyguibud/designer/preview.py:79
 #, python-brace-format
 msgid "The preview stopped unexpectedly (exit code {code})."
 msgstr "La vista previa se detuvo inesperadamente (código de salida {code})."
 
-#: src/pyguibud/designer/preview.py:74
+#: src/pyguibud/designer/preview.py:80
 #, python-brace-format
 msgid "The preview needs a temporary folder: {reason}."
 msgstr "La vista previa necesita una carpeta temporal: {reason}."
 
-#: src/pyguibud/designer/preview.py:75
+#: src/pyguibud/designer/preview.py:81
 msgid "The document has no window to preview."
 msgstr "El documento no tiene ninguna ventana de la que mostrar una vista previa."
 
-#: src/pyguibud/designer/preview.py:76
+#: src/pyguibud/designer/preview.py:82
 msgid "The preview cannot start: no Python interpreter was found."
 msgstr ""
 "No se puede iniciar la vista previa: no se encontró ningún intérprete de "
@@ -3626,39 +3653,39 @@ msgstr ""
 #. Translators: Preview > Toolkit: {name} is a toolkit name (ttkbootstrap,
 #. tkinter, PySide6) and
 #. {fallback} the toolkit used instead (ttkbootstrap), inserted as it is.
-#: src/pyguibud/designer/preview.py:79
+#: src/pyguibud/designer/preview.py:85
 #, python-brace-format
 msgid "{name} is not installed; the preview uses {fallback}."
 msgstr "{name} no está instalado; la vista previa usa {fallback}."
 
 #. Translators: Preview > Toolkit menu entry of a toolkit that is not
 #. installed.
-#: src/pyguibud/designer/preview.py:81
+#: src/pyguibud/designer/preview.py:87
 #, python-brace-format
 msgid "{name} (not installed)"
 msgstr "{name} (no instalado)"
 
 #. Translators: the reasons that complete "This preview differs from the
 #. exported module: ...".
-#: src/pyguibud/designer/preview.py:86
+#: src/pyguibud/designer/preview.py:92
 msgid "the exported module cannot show the pseudo-locale"
 msgstr "el módulo exportado no puede mostrar el pseudolocale"
 
-#: src/pyguibud/designer/preview.py:87
+#: src/pyguibud/designer/preview.py:93
 msgid "the theme is chosen for the preview only"
 msgstr "el tema se elige solo para la vista previa"
 
 #. Translators: {toolkit} is the toolkit name ttkbootstrap, inserted as it is.
-#: src/pyguibud/designer/preview.py:89
+#: src/pyguibud/designer/preview.py:95
 #, python-brace-format
 msgid "the exported module uses {toolkit}"
 msgstr "el módulo exportado usa {toolkit}"
 
-#: src/pyguibud/designer/preview.py:90
+#: src/pyguibud/designer/preview.py:96
 msgid "a component is shown inside a host dialog"
 msgstr "un componente se muestra dentro de un cuadro de diálogo anfitrión"
 
-#: src/pyguibud/designer/preview.py:91
+#: src/pyguibud/designer/preview.py:97
 msgid ""
 "included files from other folders show their source texts until it is "
 "saved"
@@ -3667,7 +3694,7 @@ msgstr ""
 "hasta que se guarde el documento"
 
 #. Translators: {count} is the number of errors that prevent the preview.
-#: src/pyguibud/designer/preview.py:221
+#: src/pyguibud/designer/preview.py:227
 #, python-brace-format
 msgid "The document has {count} error. Fix it to preview."
 msgid_plural "The document has {count} errors. Fix them to preview."
@@ -5109,4 +5136,18 @@ msgstr[1] "… y {count} problemas más."
 
 #~ msgid "the exported module uses ttkbootstrap"
 #~ msgstr "el módulo exportado usa ttkbootstrap"
+
+#~ msgid ""
+#~ "The preview did not start within "
+#~ "20 seconds: the Qt platform plugin "
+#~ "could not start. Check QT_QPA_PLATFORM "
+#~ "and the display."
+#~ msgstr ""
+#~ "La vista previa no se inició en"
+#~ " 20 segundos: no se pudo iniciar "
+#~ "el complemento de plataforma de Qt. "
+#~ "Compruebe QT_QPA_PLATFORM y la pantalla."
+
+#~ msgid "pyside6"
+#~ msgstr "pyside6"
 

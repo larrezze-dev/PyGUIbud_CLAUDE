@@ -17,6 +17,7 @@ from pyguibud.backends._tkmap import (
     _BOOTSTYLE,
     _BOOTSTYLE_RE,
     _CLASSES,
+    _M_BAD_DATE,
     _M_BOOTSTYLE,
     _M_FALLBACK,
     _MNEMONIC,
@@ -398,7 +399,9 @@ class Emitter:
             if ext is not None and prop_name not in ext.options:
                 continue
             if date is None and (name, prop_name) == ("tb:DateEntry", "value"):
-                continue  # a calendar-invalid date is left out (logged), as the factory does
+                # Left out, as the factory does; reported so the export is not silent (H65).
+                self._warn(node, "codegen.bad_date", _M_BAD_DATE, value=text)
+                continue
             if date is not None:
                 code = f"datetime.date({lit(date.year)}, {lit(date.month)}, {lit(date.day)})"
             elif prop_name == "columns":

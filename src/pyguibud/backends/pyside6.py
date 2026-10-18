@@ -51,9 +51,12 @@ def display_problem(
     platform plugins; none known (an unreadable folder) never refuses.
     """
     value = environ.get("QT_QPA_PLATFORM", "")
-    names = [part.split(":")[0].strip().lower() for part in value.split(";") if part.strip()]
+    # As Qt: empty ';' and ':' parts are skipped and nothing is stripped (" xcb" names no
+    # plugin), so a set value naming none ("   ", ";") is refused too (QA-19d-09).
+    parts = [[arg for arg in part.split(":") if arg] for part in value.split(";")]
+    names = [args[0].lower() for args in parts if args]
     keys = _plugin_keys(plugins)
-    if names and keys and not keys.intersection(names):  # exact keys: "win" is not "windows"
+    if (value and not names) or (names and keys and not keys.intersection(names)):  # exact keys
         return _(_M_NO_PLUGIN).format(name=value[:64], variable=_PLATFORM_VARIABLE)
     if not platform.startswith(("linux", "freebsd", "openbsd", "netbsd", "dragonfly")):
         return None

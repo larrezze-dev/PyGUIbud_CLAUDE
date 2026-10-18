@@ -124,7 +124,7 @@ def test_the_error_card_is_framed_in_the_error_colour(
     monkeypatch.setattr(panel.engine, "build", lambda *_a: (_ for _ in ()).throw(RuntimeError("x")))
     panel._build(stage)
     tokens = design_tokens(panel._spec)
-    assert stage.view is None and stage.error == "x"
+    assert stage.view is None and stage.error is not None
     assert str(stage.card.cget("highlightbackground")).lower() == tokens.error_border.lower()
     assert [str(c.cget("style")) for c in stage.card.winfo_children()][:2] == [
         "Designer.Error.TLabel",

@@ -23,6 +23,7 @@ Set `ACME_PYGUIBUD_BREAK` before starting the designer to see how a broken plugi
 | `import` | the module raises while it is imported |
 | `spec` | `widgets()` raises |
 | `factory` | the widget factory raises when the widget is built |
+| `setter` | the widget is built, then setting its text raises (the swatch needs a Text value, as in `acme_demo.ui`) |
 | `exit` | the module calls `sys.exit(3)` while it is imported |
 
 ## Trust boundary

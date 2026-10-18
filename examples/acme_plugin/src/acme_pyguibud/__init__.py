@@ -2,8 +2,9 @@
 
 Registered through the ``pyguibud.widgets`` entry point. The toolkits are imported inside the
 factories only, so reading the specification never needs Tk or Qt.
-``ACME_PYGUIBUD_BREAK`` (``import``, ``spec``, ``factory`` or ``exit``) makes the plugin fail on
-purpose, to try the designer's isolation of broken plugins.
+``ACME_PYGUIBUD_BREAK`` (``import``, ``spec``, ``factory``, ``setter`` or ``exit``) makes the
+plugin fail on purpose, to try the designer's isolation of broken plugins. ``setter`` builds the
+swatch, then raises when its text is set (a swatch needs a Text value, as in ``acme_demo.ui``).
 """
 
 # ruff: noqa: ANN401  (toolkit widgets are untyped here: the toolkits are imported lazily)
@@ -66,7 +67,18 @@ def tk_swatch(parent: Any, props: dict[str, Any], variable: Any, bootstyle: str 
     _break("factory")
     import tkinter
 
-    label = tkinter.Label(parent, bg=props.get("colour", "#2E86DE"), fg="white", padx=8, pady=4)
+    class Broken(tkinter.Label):
+        """Its text setter raises: both spellings, and ``w["text"] = ...`` (a dict)."""
+
+        def configure(self, cnf: Any = None, **kw: Any) -> Any:
+            if "text" in kw or (isinstance(cnf, dict) and "text" in cnf):
+                _break("setter")
+            return super().configure(cnf, **kw)
+
+        config = configure
+
+    kind = Broken if os.environ.get(_BREAK) == "setter" else tkinter.Label
+    label = kind(parent, bg=props.get("colour", "#2E86DE"), fg="white", padx=8, pady=4)
     if variable is not None:
         label.configure(textvariable=variable)
     return label
@@ -77,7 +89,12 @@ def qt_swatch(parent: Any, props: dict[str, Any]) -> Any:
     _break("factory")
     from PySide6.QtWidgets import QLabel
 
-    label = QLabel(parent)
+    class Broken(QLabel):
+        def setText(self, text: str) -> None:  # noqa: N802 - the Qt name
+            _break("setter")
+            super().setText(text)
+
+    label = (Broken if os.environ.get(_BREAK) == "setter" else QLabel)(parent)
     label.setStyleSheet(
         f"background: {props.get('colour', '#2E86DE')}; color: white; padding: 4px;"
     )

@@ -114,8 +114,12 @@ class _Collect(logging.Handler):
         self._room = _MAX_WARNING_BYTES
 
     def emit(self, record: logging.LogRecord) -> None:
-        message = record.getMessage()[:_MAX_MESSAGE]
-        size = len(json.dumps(message))  # as ready.json stores it (one message always fits)
+        try:  # logging's convention: a bad record (e.g. broken %-args) never breaks the child
+            message = record.getMessage()[:_MAX_MESSAGE]
+            size = len(json.dumps(message))  # as ready.json stores it (one message always fits)
+        except Exception:  # handed to handleError, as logging.Handler does
+            self.handleError(record)
+            return
         if len(self.messages) < _MAX_WARNINGS and size <= self._room:
             self.messages.append(message)
             self._room -= size

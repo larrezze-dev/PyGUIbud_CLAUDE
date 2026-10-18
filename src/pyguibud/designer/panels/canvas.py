@@ -18,7 +18,7 @@ from tkinter import ttk
 from typing import Any
 
 from pyguibud.core import StackEvent
-from pyguibud.core.errors import format_message
+from pyguibud.core.errors import PyGUIbudError, format_message
 from pyguibud.core.model import Include, Widget, Window
 from pyguibud.designer import sizing
 from pyguibud.designer.canvas import design
@@ -53,6 +53,9 @@ _log = logging.getLogger(__name__)
 # names are not translated, like the accelerators in the menus).
 _M_EMPTY = N_("No document. Press {new} for a new one or {open} to open a file.")
 _EMPTY_KEYS = {"new": "Ctrl+N", "open": "Ctrl+O"}
+# Translators: the reason on the canvas card when a widget fails to build for an unforeseen
+# cause; the technical detail is in the log file.
+_M_UNEXPECTED = N_("an unexpected error occurred; see the log")
 # Translators: shown on the canvas instead of a window that fails to render; {reason} is the
 # technical cause (usually in English).
 _M_CANNOT_DRAW = N_("This window cannot be drawn on the canvas: {reason}")
@@ -86,7 +89,7 @@ class _Stage:
     plate: tkinter.Frame  # the window's framed backdrop: the lowest child of ``stage`` (R3)
     view: WindowView | None = None
     stale: bool = True
-    error: str | None = None  # why the last build failed
+    error: PyGUIbudError | None = None  # why the last build failed (translated when shown)
     chrome: dict[int, Any] = field(default_factory=dict)  # id(menu bar / menu) -> strip widget
 
 
@@ -575,7 +578,12 @@ class CanvasPanel(PanelBase):
         except Exception as exc:
             _log.exception("The window %r cannot be drawn on the canvas", stage.window.id)
             self._drop_view(stage)
-            stage.error = str(exc) or type(exc).__name__
+            # H68: never raw Tcl/exception text on the card (it stays in the log above).
+            stage.error = (
+                exc
+                if isinstance(exc, PyGUIbudError)
+                else PyGUIbudError("canvas.build", _M_UNEXPECTED)
+            )
             self._show_card(stage)
             return
         if stage.view is not None:  # a rebuild keeps the shown Notebook pages
@@ -603,6 +611,7 @@ class CanvasPanel(PanelBase):
             child.destroy()
         count, m = len(self.session.report().errors), space(stage.card, "m")
         wrap = self._scaled(480)
+        # str() of the stored error translates lazily: a rebuilt card follows a language switch.
         reason = _(_M_CANNOT_DRAW).format(reason=stage.error)
         mark = icons(stage.card).get("error")
         message = ttk.Label(stage.card, style=STYLE_ERROR, text=reason, wraplength=wrap)

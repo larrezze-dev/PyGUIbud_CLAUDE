@@ -406,7 +406,9 @@ class PreviewController:
         if self.state.exited():
             self._spawn()
         elif timed_out:
-            self.post(_(pv.M_TIMEOUT))
+            qt = self.toolkit() == "pyside6"
+            message = pv.M_TIMEOUT_QT if qt else pv.M_TIMEOUT
+            self.post(_(message).format(variable="QT_QPA_PLATFORM"))
         elif result[0] == "ok" or self._stopped:  # QA-15a-03: a stop the user asked for
             self.post(_(pv.M_CLOSED))
         elif result[0] != "crash" and code == 1:

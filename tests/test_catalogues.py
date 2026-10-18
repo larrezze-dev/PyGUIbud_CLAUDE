@@ -191,6 +191,16 @@ def test_every_form_keeps_the_placeholders_of_its_source(code: str) -> None:
     assert problems == []
 
 
+_CONTROL = re.compile(r"[\x00-\x08\x0b-\x1f\x7f]")  # C0 (bar \t and \n) and DEL
+
+
+@pytest.mark.parametrize("code", list(LANGUAGES))
+def test_no_translation_contains_a_control_character(code: str) -> None:
+    """QA-19d-02: a broken escape (NUL + 'a0' for U+00A0) showed a control char on the card."""
+    bad = [(m.id, f) for m in _messages(code) for f in _forms(m) if _CONTROL.search(f)]
+    assert bad == []
+
+
 def test_the_mnemonic_gate_sees_the_menu_labels() -> None:
     sources = [m.id for m in _load(POT_PATH) if isinstance(m.id, str) and _has_mnemonic(m.id)]
     assert "_File" in sources and "C_reate" in sources and "Save _as…" in sources

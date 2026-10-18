@@ -398,6 +398,11 @@ All of these are pure, so they also run in the command guards. R89/R90 are skipp
   - the Bootstyle value on a plugin widget that ignores it gives no R84.
 - **→ Step 18:** `en_XA` and catalogue gaps noted by QA (older CLI help strings and "_Keyboard shortcuts…" untranslated); one translator comment missing on the start-up plural.
 
+## 14d. Step 19d (2026-10-18)
+- **Fixed:** H59 the Qt check requires `inner` inside `outer`; H60/H61 the sweeps destroy only widgets the factory created (Tk: a Tcl path snapshot; Qt: a widget-pointer snapshot), so an existing widget returned as `inner` survives and a stray made outside `parent` is removed; H62 no fallback warning before a destroyed-parent abort; H65 a calendar-invalid DateEntry date gives the `codegen.bad_date` Finding at export; H66 built-in needs the `pyguibud` distribution **and** a known group **and** the group's value prefix (`pyguibud.core.widgets:` / `pyguibud.backends.`), any other entry point of a `pyguibud` distribution is named after its module; H67 `Registry.plugin_for_prefix` gives R87/R88/R28 the real distribution behind a misdeclared `plugin=` (exact evidence first: a registered class or a diagnostic naming the class; the entry point named like the prefix fills in only when the file declares no `plugin=` or declares that entry point's name, so a correct declared name is never overridden, QA-19d-04); H68 the canvas card shows a translated reason only; H49 `ACME_PYGUIBUD_BREAK=setter`, and a plugin text setter that fails on retranslate is isolated (`_M_TEXT_FAILED`, registry stage `wire`).
+- **Trim T4 (H69 dropped):** a `tb:bootstyle` on a plugin widget gives no R84. Factories receive `bootstyle` and may honour it, and `WidgetSpec` cannot declare whether they do, so a warning would be false for compliant plugins (pinned by `tests/core/test_hardening_19d.py`).
+- **Documented (runtime.md §16):** H63 DateEntry ISO variable, H64 the outer Tableview handle.
+
 ## 15. Affected documents (applied 2026-10-14)
 - ✔ FEATURES §3: the fallback column for DateEntry/Tableview = Entry/Treeview (D11); ToggleButton = a Checkbutton toggle bootstyle; tkinter and PySide6 show the core fallbacks.
 - ✔ validate-commands §5 + §5.1: R83–R90 rows as built (17a), R91 marked dropped (T4), `bind_types`.

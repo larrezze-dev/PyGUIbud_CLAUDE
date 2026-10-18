@@ -11,6 +11,7 @@ import contextlib
 import warnings
 from collections.abc import Callable, Iterable, Mapping
 from dataclasses import dataclass
+from functools import partial
 from typing import Any, TypeAlias
 
 from pyguibud.backends._tkmap import (
@@ -71,6 +72,9 @@ _M_CLIPPED = N_("The text of '{id}' has {length} characters; only the first {lim
 _M_PLUGIN_FAILED = N_(
     "The widget class '{name}' failed to build; its fallback '{fallback}' is shown."
 )
+# Translators: a plugin's widget raised an error when its text was set again (for example
+# after a language change); {name} is its widget class.
+_M_TEXT_FAILED = N_("The widget class '{name}' could not show the new text of '{id}'.")
 # Translators: a widget does not accept the handler of an event (runtime.event_unsupported).
 _M_EVENT_UNSUPPORTED = N_("The event '{event}' of '{id}' is not supported by '{name}'.")
 
@@ -82,15 +86,27 @@ def _raw(definition: PropertyDef, prop: Prop | None) -> str | None:
     return definition.default if prop is None else prop.value
 
 
-def _sweep(parent: Tk, before: set[str], outer: Tk, inner: Tk = None) -> None:
-    """Destroy ``outer``, ``inner`` and each new child of ``parent`` (which may be destroyed)."""
-    alive = parent.winfo_exists()  # 0 for a destroyed widget; winfo_children() would raise
-    strays = [c for c in parent.winfo_children() if str(c) not in before] if alive else []
-    if f"{parent}.".startswith(str(inner).rstrip(".") + "."):  # never the parent or an ancestor
-        inner = None
-    for widget in (outer, inner, *strays):
-        with contextlib.suppress(Exception):  # not a widget, or already gone
-            widget.destroy()
+def _paths(widget: Tk) -> set[str]:
+    """The path of every widget of the interpreter (each Tk widget is a ``.``-command)."""
+    return set(widget.tk.splitlist(widget.tk.call("info", "commands", ".*")))
+
+
+def _sweep(parent: Tk, before: set[str]) -> None:
+    """Destroy every widget created since ``before`` (:func:`_paths`), wherever it is (H60).
+
+    Only those: an existing widget a factory returns is never destroyed (H61), and neither
+    are the parent and its ancestors. ``parent`` may itself be destroyed.
+    """
+    new: list[str] = []
+    for path in sorted(_paths(parent) - before):  # an ancestor sorts before its descendants
+        if not any(path.startswith(f"{top}.") for top in new):
+            new.append(path)
+    for path in new:
+        try:
+            parent.nametowidget(path).destroy()
+        except Exception:  # not made by tkinter (no Python object), or already gone
+            with contextlib.suppress(Exception):
+                parent.tk.call("destroy", path)
 
 
 def _call(fn: Callable[[], object], result: str | None = None) -> Callable[..., str | None]:
@@ -121,6 +137,8 @@ class _Slot:
     set: Callable[[str, int], object]  # (display text, underline index)
     mnemonic: bool
     label: str  # the id named in the log when the text is clipped
+    #: A plugin widget's slot: a later set that raises is reported here, never raised (H49).
+    failed: Callable[[BaseException], object] | None = None
 
 
 def apply_slots(
@@ -146,7 +164,13 @@ def apply_slots(
             value, underline = cut
         shown.append((value, underline))
     for slot, (value, underline) in zip(slots, shown, strict=True):
-        slot.set(value, underline)
+        if slot.failed is None:
+            slot.set(value, underline)
+            continue
+        try:
+            slot.set(value, underline)
+        except (Exception, SystemExit) as exc:  # isolation point (D7): the others still apply
+            slot.failed(exc)
 
 
 class TkSession:
@@ -174,6 +198,7 @@ class TkSession:
         self._slots: list[_Slot] = []
         self._images: dict[tuple[str, str], Any] = {}
         self._keep: list[Any] = []  # private variables
+        self._traces: list[tuple[Any, str]] = []  # (variable, trace name): removed on destroy
         self._logged: set[str] = set()
         self._clipped: set[int] = set()  # id() of the slots already logged as clipped
         self._armed = False
@@ -598,6 +623,7 @@ class TkSession:
         var = self._variable(inst, node, fallback.name)
         style = self._style(node, fallback.name)
         before = {str(child) for child in parent.winfo_children()}
+        existing = _paths(parent)
         outer: Any = None
         inner: Any = None
         stage: FactoryStage = "create"
@@ -611,7 +637,7 @@ class TkSession:
                 except (self._tk.TclError, TypeError, ValueError):
                     if style is None:
                         raise
-                    _sweep(parent, before, None)  # then again without the style, as _create
+                    _sweep(parent, existing)  # then again without the style, as _create
                     made, rejected = factory(parent, dict(props), var, None), True
             if style is not None and (rejected or caught):  # ttkbootstrap warns on bad tokens
                 plan.log(_M_BOOTSTYLE, value=style, id=node.id)
@@ -636,10 +662,11 @@ class TkSession:
                 mnemonic = definition.name == "text" and fallback.name in _MNEMONIC
                 setter = self._ext_setter(spec.name, definition.name, outer, inner, mnemonic)
                 setter(texts[definition.name], -1)  # inside the guard; retexted later
-                slots.append(_Slot(TextSlot(inst.doc.key, prop), setter, mnemonic, node.id))
+                failed = partial(self._text_failed, node)
+                slots.append(_Slot(TextSlot(inst.doc.key, prop), setter, mnemonic, node.id, failed))
         except (Exception, SystemExit) as exc:  # isolation point (D7): fall back, never crash
             registry.report_failure(spec.name, self._backend, stage, exc)  # before the sweep
-            _sweep(parent, before, outer, inner)
+            _sweep(parent, existing)
             return self._failed(node, parent, fallback.name, repr(exc), spec.container)
         self._slots += slots
         self._events(node, fallback.name, inner, var)
@@ -673,7 +700,8 @@ class TkSession:
     ) -> Tk:
         """Log a failed plugin widget once per class; the design canvas may show a card."""
         key = "\0" + node.class_name
-        if key not in self._logged:
+        # H62: with a destroyed parent the fallback cannot be shown and the build aborts.
+        if key not in self._logged and parent.winfo_exists():
             self._logged.add(key)
             self._plan.log(_M_PLUGIN_FAILED, name=node.class_name, fallback=fallback)
         embed = self._embed
@@ -711,7 +739,7 @@ class TkSession:
                 except (Exception, SystemExit) as exc:  # a plugin widget without ``command``
                     self._unsupported(node, event.name, exc)
             elif kind == "trace":
-                var.trace_add("write", _call(fn))
+                self._traces.append((var, var.trace_add("write", _call(fn))))
             elif kind == "modified":
                 widget.bind("<<Modified>>", self._modified(widget, fn), add="+")
             elif kind == "virtual":
@@ -723,6 +751,14 @@ class TkSession:
                 )
                 for sequence in sequences:
                     widget.bind(sequence, _call(fn, result), add="+")
+
+    def _text_failed(self, node: Widget, exc: BaseException) -> None:
+        """Log (once per class) and report a plugin text setter raising after the build."""
+        key = "text:" + node.class_name
+        if key not in self._logged:
+            self._logged.add(key)
+            self._plan.log(_M_TEXT_FAILED, name=node.class_name, id=node.id)
+        self._plan.registry.report_failure(node.class_name, self._backend, "wire", exc)
 
     def _unsupported(self, node: Widget, event: str, exc: BaseException) -> None:
         """Log (once per class and event) and report an event a plugin widget refuses."""
@@ -794,6 +830,10 @@ class TkSession:
             with contextlib.suppress(self._tk.TclError):  # the root is already gone
                 self._root.after_cancel(self._after)
             self._after = None
+        for var, name in self._traces:  # H56: a dead session's handlers never fire again
+            with contextlib.suppress(self._tk.TclError):  # the interpreter is gone
+                var.trace_remove("write", name)
+        self._traces.clear()
         for top in reversed(self._created):
             with contextlib.suppress(self._tk.TclError):  # already destroyed elsewhere
                 top.destroy()
