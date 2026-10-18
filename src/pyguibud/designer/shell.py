@@ -19,6 +19,7 @@ from ttkbootstrap.widgets.tooltip import ToolTip
 
 from pyguibud.core.keys import split_mnemonic, tk_shortcut
 from pyguibud.core.model import Include
+from pyguibud.core.text import printable
 from pyguibud.designer.actions import (
     ActionDef,
     ActionRegistry,
@@ -688,7 +689,7 @@ class Shell:
         if self._disposed:
             return
         self._cancel_message_timer()
-        self._message = text
+        self._message = printable(text)  # H81: an id must not forge a line
         self._refresh_status()
         self._message_id = self.root.after(MESSAGE_MS, self.clear_message)
 
@@ -722,7 +723,7 @@ class Shell:
             path = ngettext("{count} element selected", "{count} elements selected", count).format(
                 count=count
             )
-        self._fit_status(self._message or path)
+        self._fit_status(self._message or printable(path))
 
     def _refit_status(self, _event: object = None) -> None:
         if self._status.winfo_width() != self._status_width:  # not on a text change: no loop

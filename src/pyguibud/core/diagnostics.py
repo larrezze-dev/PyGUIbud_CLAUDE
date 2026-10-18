@@ -24,6 +24,7 @@ from pyguibud.core.model import (
     Widget,
     Window,
 )
+from pyguibud.core.text import printable
 
 __all__ = [
     "EMPTY_SOURCE_MAP",
@@ -81,7 +82,8 @@ class Finding:
         return self.severity == "error"
 
     def __str__(self) -> str:
-        return f"{self.location}: {self.message}"
+        # Ids and values come from the file: they must not forge or reorder output lines.
+        return printable(f"{self.location}: {self.message}")
 
 
 class SourceMap:

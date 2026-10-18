@@ -169,7 +169,7 @@ def test_h43_cut_is_greyed_and_refused_on_a_window_but_duplicate_is_not() -> Non
     before = dump_ui(document)
     session.select(_node(session, "dlg"), origin="tree")
     assert not clip.can_cut() and clip.can_duplicate() and clip.can_copy()
-    assert clip.cut_refusal() == "Windows are deleted with Document > Delete window."
+    assert clip.cut_refusal() == "Windows are deleted with Document ▸ Delete window."
     clip.cut()
     assert messages == [clip.cut_refusal()] and store["text"] == "SENTINEL"
     assert dump_ui(document) == before

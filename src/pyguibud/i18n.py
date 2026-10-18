@@ -170,17 +170,20 @@ _PROTECTED = re.compile(
 
 
 def _pseudo(message: str) -> str:
-    if not message:
+    # Leading and trailing newlines stay outside the brackets: a line must still end its line.
+    lead = len(message) - len(message.lstrip("\n"))
+    core = message[lead:].rstrip("\n")
+    if not core:
         return message
     out: list[str] = []
     pos = 0
-    for match in _PROTECTED.finditer(message):
-        out.append(message[pos : match.start()].translate(_ACCENTS))
+    for match in _PROTECTED.finditer(core):
+        out.append(core[pos : match.start()].translate(_ACCENTS))
         out.append(match.group())
         pos = match.end()
-    out.append(message[pos:].translate(_ACCENTS))
-    pad = math.ceil(len(message) * 0.4)
-    return "[" + "".join(out) + " " + "·" * pad + "]"
+    out.append(core[pos:].translate(_ACCENTS))
+    pad = math.ceil(len(core) * 0.4)
+    return f"{message[:lead]}[{''.join(out)} {'·' * pad}]{message[lead + len(core) :]}"
 
 
 class PseudoTranslations(_gettext_module.NullTranslations):

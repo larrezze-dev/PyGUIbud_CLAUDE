@@ -16,6 +16,7 @@ from pyguibud.core import (
     Widget,
     Window,
 )
+from pyguibud.core.text import printable
 from pyguibud.designer.present import clip
 from pyguibud.designer.present.canvas import kind_label
 from pyguibud.i18n import N_, _
@@ -43,14 +44,15 @@ class TreeRow:
 
 
 def _id(value: str) -> str:
-    return clip(value) if value else _(_M_NO_ID)
+    # Escaped for display only (before clipping): a bidi control must not reorder the row.
+    return clip(printable(value)) if value else _(_M_NO_ID)
 
 
 def _describe(node: object) -> tuple[str, str]:
     if isinstance(node, Window):
         return _id(node.id), kind_label(node)
     if isinstance(node, Widget):
-        return _(_M_WIDGET).format(id=_id(node.id), class_name=clip(node.class_name)), ""
+        return _(_M_WIDGET).format(id=_id(node.id), class_name=clip(printable(node.class_name))), ""
     if isinstance(node, Include):
         return _(_M_INCLUDE).format(id=_id(node.id)), ""
     if isinstance(node, Menubar):

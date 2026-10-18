@@ -15,7 +15,7 @@ from pyguibud.backends.base import (
     RootExistsError,
     Session,
 )
-from pyguibud.core.errors import XmlIoError
+from pyguibud.core.errors import XmlIoError, format_message
 from pyguibud.core.files import DiskFiles
 from pyguibud.core.model import Action, Document, Include, Widget, Window
 from pyguibud.core.registry import default_registry
@@ -59,6 +59,9 @@ _M_ROOT = N_(
 )
 _M_DISPLAY = N_("No display is available, so no window can be opened: {reason}")
 _M_BUILD = N_("Building the interface from '{path}' failed: {reason}")
+# Translators: {reason} of the message above when a widget factory broke the toolkit; the raw
+# toolkit text is not shown, but it stays available as the exception's __cause__.
+_M_TOOLKIT = N_("the toolkit reported an error (see the exception's __cause__)")
 
 
 def load_ui(
@@ -107,7 +110,11 @@ def load_ui(
     except NoDisplayError as exc:
         raise UiError("runtime.no_display", _M_DISPLAY, path=shown, reason=_reason(exc)) from exc
     except Exception as exc:
-        raise UiError("runtime.build_failed", _M_BUILD, path=shown, reason=_reason(exc)) from exc
+        # Raw Tcl text (for example "can't invoke ... application has been destroyed") is noise.
+        reason = (
+            format_message(_M_TOOLKIT, {}) if type(exc).__name__ == "TclError" else _reason(exc)
+        )
+        raise UiError("runtime.build_failed", _M_BUILD, path=shown, reason=reason) from exc
     ui._session = session
     return ui
 

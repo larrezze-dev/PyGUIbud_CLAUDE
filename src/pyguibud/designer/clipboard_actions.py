@@ -20,6 +20,7 @@ from pyguibud.core.model import (
     Widget,
     Window,
 )
+from pyguibud.designer.actions import window_delete_hint
 from pyguibud.designer.clipboard import (
     Pasted,
     copy_text,
@@ -29,14 +30,11 @@ from pyguibud.designer.clipboard import (
     pasted_message,
 )
 from pyguibud.designer.session import DesignerSession
-from pyguibud.i18n import N_, _
 
 __all__ = ["ClipboardActions"]
 
 #: Selections that copy, cut and duplicate answer: elements, or menu nodes (with their reason).
 _COPYABLE = (Window, Widget, Include, Menubar, Menu, Action, MenuSeparator, Statusbar)
-# Translators: "Document" and "Delete window" are the menu and the entry named in the app.
-_M_NOT_CUTTABLE = N_("Windows are deleted with Document > Delete window.")
 
 
 class ClipboardActions:
@@ -80,7 +78,7 @@ class ClipboardActions:
     def cut_refusal(self) -> str | None:
         """Why Cut is greyed: a read-only document, or a selected window."""
         reason = self.session.read_only_refusal()
-        return reason or (_(_M_NOT_CUTTABLE) if self._window_selected() else None)
+        return reason or (window_delete_hint() if self._window_selected() else None)
 
     def _editable(self) -> bool:
         return self.session.stack is not None and self.session.read_only_refusal() is None
@@ -115,7 +113,7 @@ class ClipboardActions:
         if document is None or not self.can_copy() or self._refused():
             return
         if self._window_selected():
-            self._message(_(_M_NOT_CUTTABLE))
+            self._message(window_delete_hint())
             return
         built = cut_command(document, nodes, self._origin())
         if isinstance(built, str):

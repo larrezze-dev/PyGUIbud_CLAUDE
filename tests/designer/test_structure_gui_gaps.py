@@ -194,7 +194,7 @@ def test_tree_menu_states_follow_the_selection(shell: DesignerApp, shown: Any) -
     states = _menu_states(shell)
     assert states["Menu"] == "disabled" and states["Action"] == "disabled"
     assert states["Menu bar"] == "disabled"  # the template window already has one
-    assert states["Delete"] == "disabled"  # a window goes through Document > Delete window
+    assert states["Delete"] == "disabled"  # a window goes through Document ▸ Delete window
     assert states["Copy"] == "normal" and states["Paste"] == "normal"
     shell.session.select(window.menubar, origin="tree")
     states = _menu_states(shell)

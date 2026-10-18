@@ -21,6 +21,7 @@ from pyguibud.core.registry import configure_default_registry
 from pyguibud.designer.actions import ActionRegistry
 from pyguibud.designer.clipboard_actions import ClipboardActions
 from pyguibud.designer.dialogs import files as file_dialogs
+from pyguibud.designer.dialogs.about import AboutDialog
 from pyguibud.designer.dialogs.base import ModalDialog
 from pyguibud.designer.dialogs.confirm import ConfirmDialog
 from pyguibud.designer.dialogs.export import ExportController
@@ -196,6 +197,7 @@ class DesignerApp:
                 new_document=self.open_new_file,
                 show_shortcuts=self.open_shortcuts,
                 show_plugins=self.open_plugins,
+                show_about=self.open_about,
                 next_panel=lambda: self.shell.cycle_focus(1),
                 previous_panel=lambda: self.shell.cycle_focus(-1),
                 quit=self.quit,
@@ -438,6 +440,10 @@ class DesignerApp:
         """Help > Keyboard shortcuts...: the cheat-sheet generated from the registry (F1)."""
         self._open_dialog(lambda: ShortcutsDialog(self.root, self.registry))
 
+    def open_about(self) -> None:
+        """Help > About PyGUIbud...: the version, the licence and the author credit."""
+        self._open_dialog(lambda: AboutDialog(self.root))
+
     def open_plugins(self) -> None:
         """Help > Plugins...: the registry's distributions, their status and problems."""
         self._open_dialog(
@@ -512,8 +518,14 @@ class DesignerApp:
         self._select_first()
         self._remember(opened.path)
         report = self.session.report()
-        count = len(opened.result.warnings) + len(report.errors) + len(report.warnings)
-        if count:  # rule C1: after the first window is selected
+        count = len(opened.result.warnings) + len(report.warnings)
+        if report.errors:  # rule C1: after the first window is selected; errors come first
+            # Translators: status bar after opening a file; {count} is the number of errors.
+            text = ngettext(
+                "Opened with {count} error.", "Opened with {count} errors.", len(report.errors)
+            )
+            self.message.emit(text.format(count=len(report.errors)))
+        elif count:
             # Translators: status bar after opening a file; {count} is the number of warnings.
             text = ngettext("Opened with {count} warning.", "Opened with {count} warnings.", count)
             self.message.emit(text.format(count=count))

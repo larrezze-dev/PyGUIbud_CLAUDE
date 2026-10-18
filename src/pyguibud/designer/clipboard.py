@@ -45,6 +45,7 @@ from pyguibud.core.model import (
 )
 from pyguibud.core.registry import Registry
 from pyguibud.core.schema import CURRENT_SCHEMA_VERSION, parse_version
+from pyguibud.core.text import printable
 from pyguibud.core.validate import validate_read
 from pyguibud.core.xml_io import MAX_UI_BYTES, dump_ui, read_ui_bytes, read_ui_string
 from pyguibud.designer.editing import (
@@ -240,7 +241,7 @@ def copy_text(document: Document, nodes: Iterable[object], origin: Path | None) 
     try:
         copy = read_ui_bytes(_snapshot(document), source="<copy>").document
     except PyGUIbudError as error:
-        return error.message
+        return printable(error.message)
     found = [_locate(copy, _path(n)) for n in top]
     clip = Document(namespaces={**copy.namespaces, "clip": CLIP_NS}, meta=copy.meta)
     clip.extra_attrs[_MODE] = "windows" if isinstance(top[0], Window) else "widgets"
@@ -271,7 +272,7 @@ def copy_text(document: Document, nodes: Iterable[object], origin: Path | None) 
     try:
         return Copied(dump_ui(clip).decode("utf-8"), len(found))
     except PyGUIbudError as error:
-        return error.message
+        return printable(error.message)
 
 
 def cut_command(
@@ -318,7 +319,7 @@ def _read_clip(
     report = validate_read(result, registry)
     errors = [e for e in report.errors if e.code not in _TARGET_RULES]
     if errors:
-        return _(_M_INVALID).format(reason=errors[0].message)
+        return _(_M_INVALID).format(reason=printable(errors[0].message))
     warnings = len(result.warnings) + len(report.warnings)
     return clip, "widgets" if mode == "widgets" else "windows", warnings
 
@@ -415,7 +416,7 @@ def _remap(
         if isinstance(node, Include) and node.src == "#":
             node.component = renamed.get(node.component, node.component)
             if node.component not in windows:
-                return _(_M_FOREIGN_INCLUDE).format(id=node.id)
+                return _(_M_FOREIGN_INCLUDE).format(id=printable(node.id))
     return commands
 
 

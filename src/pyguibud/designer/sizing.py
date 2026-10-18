@@ -12,6 +12,7 @@ from dataclasses import dataclass, replace
 from typing import Literal
 
 from pyguibud.core.commands import Command, Macro, RemoveProp, SetField, SetProp
+from pyguibud.core.errors import format_message
 from pyguibud.core.model import GridCell, PackPlacement, PagePlacement, Prop, Widget, WidgetSpec
 from pyguibud.core.model import Window as _Window
 from pyguibud.designer.editing import Edge
@@ -63,11 +64,12 @@ _PROPAGATING = frozenset({"Frame", "LabelFrame"})
 _M_RESIZE = N_("Resize")
 _M_RESIZE_WINDOW = N_("Resize window")
 _M_RESET = (N_("Reset width"), N_("Reset height"))
-# Translators: hover text of a size handle of a grid element ("Ctrl" is the key).
+# Translators: hover text of a size handle of a grid element; {key} is the key Ctrl, inserted
+# as it is (key names are not translated).
 _M_HOVER_GRID = (
-    N_("Drag to change the width. Hold Ctrl to change the cells it spans."),
-    N_("Drag to change the height. Hold Ctrl to change the cells it spans."),
-    N_("Drag to change the size. Hold Ctrl to change the cells it spans."),
+    N_("Drag to change the width. Hold {key} to change the cells it spans."),
+    N_("Drag to change the height. Hold {key} to change the cells it spans."),
+    N_("Drag to change the size. Hold {key} to change the cells it spans."),
 )
 _M_HOVER = (
     N_("Drag to change the width."),
@@ -237,7 +239,9 @@ def hover_text(node: object, spec: WidgetSpec | None, edge: Edge, kind: HandleKi
     across, along = _axes_of(edge)
     if kind == "size":
         which = 2 if across and along else (0 if across else 1)
-        return _((_M_HOVER_GRID if grid_child(node) else _M_HOVER)[which])
+        if grid_child(node):
+            return format_message(_M_HOVER_GRID[which], {"key": "Ctrl"})
+        return _(_M_HOVER[which])
     (_h, h_reason), (_v, v_reason) = sized_axes(node, spec)
     return (h_reason if across else "") or (v_reason if along else "") or _(_M_HOVER_SPAN)
 

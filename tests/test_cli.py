@@ -15,6 +15,7 @@ import pyguibud
 import pyguibud_runtime
 from pyguibud import i18n
 from pyguibud.cli import main
+from pyguibud.credits import credit
 
 
 @pytest.fixture(autouse=True)
@@ -35,7 +36,7 @@ def test_main_version(capsys: pytest.CaptureFixture[str]) -> None:
 
     assert exc_info.value.code == 0
     captured = capsys.readouterr()
-    assert captured.out == f"pyguibud {pyguibud.__version__}\n"
+    assert captured.out == f"pyguibud {pyguibud.__version__}\n{credit()}\n"
 
 
 class _Launch:
@@ -118,7 +119,8 @@ def test_main_via_subprocess() -> None:
     )
 
     assert result.returncode == 0
-    assert result.stdout == f"pyguibud {pyguibud.__version__}\n"
+    first, credit_line = result.stdout.splitlines()
+    assert first == f"pyguibud {pyguibud.__version__}" and "Luciano Arrezze" in credit_line
 
 
 def test_list_languages(capsys: pytest.CaptureFixture[str]) -> None:

@@ -3,105 +3,31 @@
 from __future__ import annotations
 
 import argparse
-import contextlib
 import os
-import sys
 from collections.abc import Callable
 from pathlib import Path
-from typing import Any, NoReturn
+from typing import Any
 
 from .__about__ import __version__
+from ._argparse import (
+    PyGUIbudParser,
+    _make_stdout_safe,
+    _requested_language,
+    _select_initial_language,
+)
+from .credits import credit
 from .i18n import (
-    LANGUAGE_CODE_RE,
     LANGUAGES,
     PSEUDO_LANGUAGE,
     _,
-    detect_language,
     get_language,
-    normalise_language,
     set_language,
 )
 
 
-class _PreParseError(Exception):
-    """Raised by the pre-parser instead of exiting; the real parser reports the problem."""
-
-
-class _QuietParser(argparse.ArgumentParser):
-    def error(self, message: str) -> NoReturn:
-        raise _PreParseError(message)
-
-
-class _Formatter(argparse.HelpFormatter):
-    """Help formatter whose "usage:" prefix is in the interface language."""
-
-    def add_usage(
-        self,
-        usage: str | None,
-        actions: Any,  # noqa: ANN401 - argparse's own iterable of actions
-        groups: Any,  # noqa: ANN401
-        prefix: str | None = None,
-    ) -> None:
-        # Translators: the word before the command-line synopsis in --help; keep the colon and
-        # the trailing space.
-        super().add_usage(usage, actions, groups, _("usage: ") if prefix is None else prefix)
-
-
-class PyGUIbudParser(argparse.ArgumentParser):
-    """An argument parser whose own fixed texts (usage, section titles, -h) are translated.
-
-    argparse translates them with its private catalogue, which has no pyguibud languages. Build
-    the parser only after the language is chosen (``_select_initial_language``).
-    """
-
-    def __init__(self, *args: Any, **kwargs: Any) -> None:  # noqa: ANN401 - argparse's own
-        kwargs.setdefault("formatter_class", _Formatter)
-        kwargs["add_help"] = False
-        super().__init__(*args, **kwargs)
-        # Translators: heading above the list of positional command-line arguments in --help.
-        self._positionals.title = _("positional arguments")
-        # Translators: heading above the list of command-line options in --help.
-        self._optionals.title = _("options")
-        self.add_argument(
-            "-h",
-            "--help",
-            action="help",
-            # Translators: help text of the -h/--help command-line option.
-            help=_("show this help message and exit"),
-        )
-
-
-def _make_stdout_safe() -> None:
-    """Never crash on characters the console encoding cannot represent."""
-    for stream in (sys.stdout, sys.stderr):
-        reconfigure = getattr(stream, "reconfigure", None)
-        if callable(reconfigure):
-            with contextlib.suppress(ValueError, OSError):
-                reconfigure(errors="replace")
-
-
-def _select_initial_language(argv: list[str] | None) -> None:
-    """Set the language before the real parser is built so --help is translated."""
-    pre = _QuietParser(add_help=False, allow_abbrev=False)
-    pre.add_argument("--lang", default=None)
-    requested: str | None = None
-    try:
-        known, _rest = pre.parse_known_args(argv)
-        requested = known.lang
-    except _PreParseError:
-        pass
-    set_language(_requested_language(requested) or detect_language())
-
-
-def _requested_language(value: str | None) -> str | None:
-    """The supported code of a ``--lang`` value, or None.
-
-    Unlike an environment variable (``de_DE.UTF-8``), the option must be a plain language code,
-    so ``de_DE/../x`` or ``en_XA;rm`` is refused instead of being cut down to a language (QA-11-12).
-    """
-    if value is None or LANGUAGE_CODE_RE.fullmatch(value) is None:
-        return None
-    return normalise_language(value)
+def version_text() -> str:
+    """The ``--version`` text: program, version and the author credit (``%`` escaped)."""
+    return "%(prog)s " + f"{__version__}\n{credit()}".replace("%", "%%")
 
 
 def _language_arg(value: str) -> str:
@@ -161,11 +87,12 @@ def main(argv: list[str] | None = None, *, launch: Callable[..., int] | None = N
     parser = PyGUIbudParser(
         prog="pyguibud",
         description=_("PyGUIbud: drag-and-drop GUI builder for Python."),
+        epilog=credit(),
     )
     parser.add_argument(
         "--version",
         action="version",
-        version=f"%(prog)s {__version__}",
+        version=version_text(),
         help=_("show the version number and exit"),
     )
     parser.add_argument(

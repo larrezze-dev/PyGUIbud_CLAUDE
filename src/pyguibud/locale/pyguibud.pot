@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PyGUIbud 0.1.0\n"
 "Report-Msgid-Bugs-To: https://github.com/larrezze/PyGUIbud/issues\n"
-"POT-Creation-Date: 2026-10-18 16:47+0200\n"
+"POT-Creation-Date: 2026-10-18 21:20+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -16,6 +16,114 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.18.0\n"
+
+#: src/pyguibud/_argparse.py:47 src/pyguibud/_argparse.py:126
+#, python-format
+msgid "%(heading)s:"
+msgstr ""
+
+#: src/pyguibud/_argparse.py:48
+#, python-format
+msgid "%(prog)s: error: %(message)s\n"
+msgstr ""
+
+#: src/pyguibud/_argparse.py:49
+#, python-format
+msgid " (default: %(default)s)"
+msgstr ""
+
+#: src/pyguibud/_argparse.py:50
+#, python-format
+msgid "ambiguous option: %(option)s could match %(matches)s"
+msgstr ""
+
+#: src/pyguibud/_argparse.py:51
+#, python-format
+msgid "argument %(argument_name)s: %(message)s"
+msgstr ""
+
+#: src/pyguibud/_argparse.py:52
+msgid "expected at least one argument"
+msgstr ""
+
+#: src/pyguibud/_argparse.py:53
+msgid "expected at most one argument"
+msgstr ""
+
+#: src/pyguibud/_argparse.py:54
+msgid "expected one argument"
+msgstr ""
+
+#: src/pyguibud/_argparse.py:55
+#, python-format
+msgid "expected %s argument"
+msgid_plural "expected %s arguments"
+msgstr[0] ""
+msgstr[1] ""
+
+#: src/pyguibud/_argparse.py:56
+#, python-format
+msgid "ignored explicit argument %r"
+msgstr ""
+
+#: src/pyguibud/_argparse.py:57
+#, python-format
+msgid "invalid %(type)s value: %(value)r"
+msgstr ""
+
+#: src/pyguibud/_argparse.py:58
+#, python-format
+msgid "invalid choice: %(value)r (choose from %(choices)s)"
+msgstr ""
+
+#: src/pyguibud/_argparse.py:59
+#, python-format
+msgid "not allowed with argument %s"
+msgstr ""
+
+#: src/pyguibud/_argparse.py:60
+#, python-format
+msgid "one of the arguments %s is required"
+msgstr ""
+
+#: src/pyguibud/_argparse.py:61
+msgid "optional arguments"
+msgstr ""
+
+#: src/pyguibud/_argparse.py:62
+msgid "options"
+msgstr ""
+
+#: src/pyguibud/_argparse.py:63
+msgid "positional arguments"
+msgstr ""
+
+#: src/pyguibud/_argparse.py:64
+msgid "show program's version number and exit"
+msgstr ""
+
+#: src/pyguibud/_argparse.py:65 src/pyguibud/_argparse.py:151
+msgid "show this help message and exit"
+msgstr ""
+
+#: src/pyguibud/_argparse.py:66
+#, python-format
+msgid "the following arguments are required: %s"
+msgstr ""
+
+#: src/pyguibud/_argparse.py:67
+#, python-format
+msgid "unexpected option string: %s"
+msgstr ""
+
+#: src/pyguibud/_argparse.py:68
+#, python-format
+msgid "unrecognized arguments: %s"
+msgstr ""
+
+#: src/pyguibud/_argparse.py:69
+msgid "usage: "
+msgstr ""
 
 #. Translators: a program shows both Tk (tkinter) and Qt windows.
 #: src/pyguibud/backends/_qt.py:74
@@ -121,27 +229,27 @@ msgstr ""
 
 #. Translators: logged when a .ui uses an extension widget the runtime cannot
 #. render yet.
-#: src/pyguibud/backends/_tkmap.py:70
+#: src/pyguibud/backends/_tkmap.py:71
 #, python-brace-format
 msgid "The widget class '{name}' is shown as its fallback '{fallback}'."
 msgstr ""
 
 #. Translators: a ttkbootstrap style name from a .ui file was not applied.
-#: src/pyguibud/backends/_tkmap.py:72
+#: src/pyguibud/backends/_tkmap.py:73
 #, python-brace-format
 msgid "The bootstyle '{value}' of '{id}' is ignored."
 msgstr ""
 
 #. Translators: {value} is the text of a date property that is not a real
 #. calendar date.
-#: src/pyguibud/backends/_tkmap.py:74
+#: src/pyguibud/backends/_tkmap.py:75
 #, python-brace-format
 msgid "The date '{value}' is not a valid calendar date; it is ignored."
 msgstr ""
 
 #. Translators: {given} and {expected} are numbers; {text} is the ';'-separated
 #. headings text.
-#: src/pyguibud/backends/_tkmap.py:76
+#: src/pyguibud/backends/_tkmap.py:77
 #, python-brace-format
 msgid "{given} column headings for {expected} columns: '{text}'"
 msgstr ""
@@ -192,61 +300,38 @@ msgstr ""
 msgid "The theme '{theme}' is ignored because the application owns the theme."
 msgstr ""
 
-#. Translators: the word before the command-line synopsis in --help; keep the
-#. colon and
-#. the trailing space.
-#: src/pyguibud/cli.py:47
-msgid "usage: "
-msgstr ""
-
-#. Translators: heading above the list of positional command-line arguments in
-#. --help.
-#: src/pyguibud/cli.py:62
-msgid "positional arguments"
-msgstr ""
-
-#. Translators: heading above the list of command-line options in --help.
-#: src/pyguibud/cli.py:64
-msgid "options"
-msgstr ""
-
-#. Translators: help text of the -h/--help command-line option.
-#: src/pyguibud/cli.py:70
-msgid "show this help message and exit"
-msgstr ""
-
 #. Translators: {code} is what the user typed, {valid} a list of language
 #. codes.
-#: src/pyguibud/cli.py:113
+#: src/pyguibud/cli.py:39
 #, python-brace-format
 msgid "unknown language '{code}'; valid codes are: {valid}"
 msgstr ""
 
 #. Translators: heading above the list of selectable interface languages.
-#: src/pyguibud/cli.py:121
+#: src/pyguibud/cli.py:47
 msgid "Available interface languages (* marks the active one):"
 msgstr ""
 
-#: src/pyguibud/cli.py:127
+#: src/pyguibud/cli.py:53
 #, python-brace-format
 msgid ""
 "The pseudo-locale {code} is also accepted; it is meant for testing "
 "layouts."
 msgstr ""
 
-#: src/pyguibud/cli.py:163
+#: src/pyguibud/cli.py:89
 msgid "PyGUIbud: drag-and-drop GUI builder for Python."
 msgstr ""
 
-#: src/pyguibud/cli.py:169 src/pyguibud/uic.py:71
+#: src/pyguibud/cli.py:96 src/pyguibud/uic.py:73
 msgid "show the version number and exit"
 msgstr ""
 
-#: src/pyguibud/cli.py:176 src/pyguibud/uic.py:78
+#: src/pyguibud/cli.py:103 src/pyguibud/uic.py:80
 msgid "interface language code, for example de_DE or en_XA"
 msgstr ""
 
-#: src/pyguibud/cli.py:181
+#: src/pyguibud/cli.py:108
 msgid "list the available interface languages and exit"
 msgstr ""
 
@@ -254,29 +339,29 @@ msgstr ""
 #. inserted as it
 #. is: the option accepts only the untranslated names shown in its list of
 #. choices.
-#: src/pyguibud/cli.py:190
+#: src/pyguibud/cli.py:117
 #, python-brace-format
 msgid "designer colour theme (default: the last one used, else {default})"
 msgstr ""
 
 #. Translators: the safe-mode option; plugins are widget packages installed
 #. separately.
-#: src/pyguibud/cli.py:198
+#: src/pyguibud/cli.py:125
 msgid "start without loading any plugin (safe mode)"
 msgstr ""
 
-#: src/pyguibud/cli.py:205
+#: src/pyguibud/cli.py:132
 msgid "a .ui file to open"
 msgstr ""
 
-#: src/pyguibud/cli.py:223 src/pyguibud/designer/files.py:61
+#: src/pyguibud/cli.py:150 src/pyguibud/designer/files.py:61
 #: src/pyguibud/uic.py:51
 msgid "Network and device paths cannot be opened."
 msgstr ""
 
 #. Translators: {path} is the file named on the command line.
 #. Translators: {path} is the full path of a file.
-#: src/pyguibud/cli.py:226 src/pyguibud/designer/app.py:102
+#: src/pyguibud/cli.py:153 src/pyguibud/designer/app.py:103
 #, python-brace-format
 msgid "The file '{path}' does not exist."
 msgstr ""
@@ -1309,55 +1394,59 @@ msgstr ""
 msgid "'{value}' is not a valid shortcut, for example {example} or {other}."
 msgstr ""
 
-#: src/pyguibud/core/validate.py:397
+#. Translators: {value} is the shortcut as typed in the file; {first} and
+#. {last} are key names
+#. (F1, F24) and {ctrl} and {alt} modifier names (Ctrl, Alt), inserted as they
+#. are.
+#: src/pyguibud/core/validate.py:399
 #, python-brace-format
 msgid ""
-"The shortcut '{value}' needs Ctrl or Alt unless it is a function key "
-"(F1–F24)."
+"The shortcut '{value}' needs {ctrl} or {alt} unless it is a function key "
+"({first}–{last})."
 msgstr ""
 
 #. Translators: {value} is the key sequence as typed in the file; {example} and
 #. {other} are valid
 #. key events (key:Ctrl+S, key:<Control-s>), inserted as they are: a file must
 #. use these names.
-#: src/pyguibud/core/validate.py:401
+#: src/pyguibud/core/validate.py:407
 #, python-brace-format
 msgid "'{value}' is not a valid key, for example {example} or {other}."
 msgstr ""
 
 #. Translators: {shortcut} is a shortcut such as Ctrl+S, {window} a window id.
-#: src/pyguibud/core/validate.py:405
+#: src/pyguibud/core/validate.py:411
 #, python-brace-format
 msgid ""
 "The shortcut '{shortcut}' is used more than once in '{window}'; only the "
 "first one works."
 msgstr ""
 
-#: src/pyguibud/core/validate.py:407
+#: src/pyguibud/core/validate.py:413
 #, python-brace-format
 msgid "'{src}' is not a supported image; use PNG, GIF, PPM or PGM."
 msgstr ""
 
-#: src/pyguibud/core/validate.py:408
+#: src/pyguibud/core/validate.py:414
 #, python-brace-format
 msgid "The image file '{src}' does not exist."
 msgstr ""
 
 #. Translators: {src} is a file path, {reason} says what is wrong with the
 #. file.
-#: src/pyguibud/core/validate.py:410
+#: src/pyguibud/core/validate.py:416
 #, python-brace-format
 msgid "The image file '{src}' cannot be used: {reason}"
 msgstr ""
 
-#: src/pyguibud/core/validate.py:412
+#: src/pyguibud/core/validate.py:418
 #, python-brace-format
 msgid ""
 "The value '{value}' of '{id}' must be a whole number, because it is bound"
 " to the int variable '{bind}'."
 msgstr ""
 
-#: src/pyguibud/core/validate.py:416
+#: src/pyguibud/core/validate.py:422
 #, python-brace-format
 msgid ""
 "'{value}' is not a valid translation domain; use letters, digits, '_', "
@@ -1365,21 +1454,21 @@ msgid ""
 msgstr ""
 
 #. Translators: {value} is the source language attribute of a .ui file.
-#: src/pyguibud/core/validate.py:420
+#: src/pyguibud/core/validate.py:426
 #, python-brace-format
 msgid ""
 "'{value}' is not a valid language code for the source texts; use a code "
 "such as en_GB."
 msgstr ""
 
-#: src/pyguibud/core/validate.py:422
+#: src/pyguibud/core/validate.py:428
 #, python-brace-format
 msgid "The included file '{src}' does not exist or cannot be read."
 msgstr ""
 
 #. Translators: {src} is the path of an included file; {count} is its number of
 #. errors.
-#: src/pyguibud/core/validate.py:425
+#: src/pyguibud/core/validate.py:431
 #, python-brace-format
 msgid "The included file '{src}' has {count} error."
 msgid_plural "The included file '{src}' has {count} errors."
@@ -1388,45 +1477,45 @@ msgstr[1] ""
 
 #. Translators: {reason} is the cause, for example "The file is not valid UTF-8
 #. text".
-#: src/pyguibud/core/validate.py:429
+#: src/pyguibud/core/validate.py:435
 #, python-brace-format
 msgid "The included file '{src}' cannot be read: {reason}"
 msgstr ""
 
-#: src/pyguibud/core/validate.py:430
+#: src/pyguibud/core/validate.py:436
 #, python-brace-format
 msgid "'{src}' has no component window '{component}'."
 msgstr ""
 
-#: src/pyguibud/core/validate.py:431
+#: src/pyguibud/core/validate.py:437
 #, python-brace-format
 msgid "The window '{component}' in '{src}' is not a component."
 msgstr ""
 
 #. Translators: {chain} is a path such as a.ui#x -> b.ui#y -> a.ui#x.
-#: src/pyguibud/core/validate.py:433
+#: src/pyguibud/core/validate.py:439
 #, python-brace-format
 msgid "Including '{component}' from '{src}' creates a cycle: {chain}."
 msgstr ""
 
-#: src/pyguibud/core/validate.py:434
+#: src/pyguibud/core/validate.py:440
 #, python-brace-format
 msgid "Including '{src}' nests includes deeper than {limit} levels."
 msgstr ""
 
-#: src/pyguibud/core/validate.py:435
+#: src/pyguibud/core/validate.py:441
 #, python-brace-format
 msgid "Including '{src}' reads more than {limit} files."
 msgstr ""
 
-#: src/pyguibud/core/validate.py:436
+#: src/pyguibud/core/validate.py:442
 #, python-brace-format
 msgid "Including '{src}' creates more than {limit} widgets."
 msgstr ""
 
 #. Translators: {count} is the number of problems left out of a list that was
 #. cut short.
-#: src/pyguibud/core/validate.py:439
+#: src/pyguibud/core/validate.py:445
 #, python-brace-format
 msgid "{count} more problem was found but not listed."
 msgid_plural "{count} more problems were found but not listed."
@@ -1570,8 +1659,8 @@ msgid "Mode"
 msgstr ""
 
 #: src/pyguibud/core/widgets.py:238
-#: src/pyguibud/designer/present/inspector.py:86
-#: src/pyguibud/designer/present/tree.py:28
+#: src/pyguibud/designer/present/inspector.py:87
+#: src/pyguibud/designer/present/tree.py:29
 msgid "Separator"
 msgstr ""
 
@@ -1595,7 +1684,7 @@ msgstr ""
 msgid "Scrollbar"
 msgstr ""
 
-#: src/pyguibud/core/widgets.py:298 src/pyguibud/designer/panels/canvas.py:100
+#: src/pyguibud/core/widgets.py:298 src/pyguibud/designer/panels/canvas.py:107
 msgid "Canvas"
 msgstr ""
 
@@ -1604,26 +1693,26 @@ msgid "Background colour"
 msgstr ""
 
 #: src/pyguibud/core/widgets.py:311
-#: src/pyguibud/designer/present/inspector.py:75
-#: src/pyguibud/designer/present/tree.py:27
+#: src/pyguibud/designer/present/inspector.py:76
+#: src/pyguibud/designer/present/tree.py:28
 msgid "Menu bar"
 msgstr ""
 
 #: src/pyguibud/core/widgets.py:318 src/pyguibud/designer/editing.py:596
-#: src/pyguibud/designer/present/inspector.py:77
+#: src/pyguibud/designer/present/inspector.py:78
 #: src/pyguibud/designer/properties.py:81
 msgid "Menu"
 msgstr ""
 
 #: src/pyguibud/core/widgets.py:326 src/pyguibud/designer/editing.py:597
-#: src/pyguibud/designer/present/inspector.py:79
+#: src/pyguibud/designer/present/inspector.py:80
 #: src/pyguibud/designer/properties.py:68
 #: src/pyguibud/designer/properties.py:82
 msgid "Action"
 msgstr ""
 
 #: src/pyguibud/core/widgets.py:338
-#: src/pyguibud/designer/present/inspector.py:88
+#: src/pyguibud/designer/present/inspector.py:89
 #: src/pyguibud/designer/properties.py:82
 msgid "Status bar"
 msgstr ""
@@ -2063,6 +2152,13 @@ msgstr ""
 msgid "it contains comments or processing instructions"
 msgstr ""
 
+#. Translators: {author} is a person's name and {tool} a product name; both are
+#. never translated.
+#: src/pyguibud/credits.py:10
+#, python-brace-format
+msgid "Created by {author} and programmed with the support of {tool}"
+msgstr ""
+
 #: src/pyguibud/designer/__init__.py:16
 #, python-brace-format
 msgid "The designer window cannot be opened: {reason}"
@@ -2072,66 +2168,85 @@ msgstr ""
 msgid "Install Tk for your Python (for example the python3-tk package)."
 msgstr ""
 
-#: src/pyguibud/designer/actions.py:28
+#: src/pyguibud/designer/actions.py:29
 #, python-brace-format
 msgid "The action could not be completed: {reason}"
 msgstr ""
 
 #. Translators: {label} is an action ("Delete"); {scope} lists the panels where
 #. its key works.
-#: src/pyguibud/designer/actions.py:30
+#: src/pyguibud/designer/actions.py:31
 #, python-brace-format
 msgid "{label} ({scope})"
 msgstr ""
 
-#: src/pyguibud/designer/actions.py:31
+#. Translators: the menu of the windows (main window, dialogs, components) of
+#. the open file.
+#: src/pyguibud/designer/actions.py:33
+msgid "_Document"
+msgstr ""
+
+#. Translators: the dots mean that a dialog opens; _ marks the access key.
+#: src/pyguibud/designer/actions.py:35
+msgid "_Delete window"
+msgstr ""
+
+#. Translators: {path} is the menu path "Document ▸ Delete window" in the
+#. interface language.
+#: src/pyguibud/designer/actions.py:37
+#, python-brace-format
+msgid "Windows are deleted with {path}."
+msgstr ""
+
+#: src/pyguibud/designer/actions.py:38
 msgid "canvas"
 msgstr ""
 
-#: src/pyguibud/designer/actions.py:31
+#: src/pyguibud/designer/actions.py:38
 msgid "object tree"
 msgstr ""
 
 #. Translators: a toolbar tooltip and hint: {action} is a menu label ("Save"),
 #. {shortcut} its
 #. key ("Ctrl+S").
-#: src/pyguibud/designer/actions.py:34
+#: src/pyguibud/designer/actions.py:41
 #, python-brace-format
 msgid "{action} ({shortcut})"
 msgstr ""
 
-#: src/pyguibud/designer/app.py:88
+#: src/pyguibud/designer/app.py:89
 msgid "PyGUIbud designer"
 msgstr ""
 
-#: src/pyguibud/designer/app.py:89
+#: src/pyguibud/designer/app.py:90
 #, python-brace-format
 msgid "There is no theme called '{theme}'."
 msgstr ""
 
 #. Translators: {name} is a file name such as "main.ui".
-#: src/pyguibud/designer/app.py:91
+#: src/pyguibud/designer/app.py:92
 #, python-brace-format
 msgid "Saved '{name}'."
 msgstr ""
 
 #. Translators: {name} is a file name such as "main.ui".
-#: src/pyguibud/designer/app.py:93
+#: src/pyguibud/designer/app.py:94
 #, python-brace-format
 msgid "'{name}' was changed by another program since it was opened."
 msgstr ""
 
 #. Translators: the answers when the file changed on disk; _ marks the access
 #. key.
-#: src/pyguibud/designer/app.py:95
+#: src/pyguibud/designer/app.py:96
 msgid "_Overwrite"
 msgstr ""
 
-#: src/pyguibud/designer/app.py:96 src/pyguibud/designer/standard_actions.py:97
+#: src/pyguibud/designer/app.py:97
+#: src/pyguibud/designer/standard_actions.py:100
 msgid "Save _as…"
 msgstr ""
 
-#: src/pyguibud/designer/app.py:97 src/pyguibud/designer/dialogs/confirm.py:17
+#: src/pyguibud/designer/app.py:98 src/pyguibud/designer/dialogs/confirm.py:17
 #: src/pyguibud/designer/dialogs/export.py:43
 #: src/pyguibud/designer/dialogs/new_file.py:20
 #: src/pyguibud/designer/dialogs/rename.py:20
@@ -2146,7 +2261,7 @@ msgstr ""
 #. (Alt+letter).
 #. Translators: the buttons of the text dialog; _ marks the access key
 #. (Alt+letter).
-#: src/pyguibud/designer/app.py:98 src/pyguibud/designer/dialogs/message.py:21
+#: src/pyguibud/designer/app.py:99 src/pyguibud/designer/dialogs/message.py:21
 #: src/pyguibud/designer/dialogs/rename.py:19
 #: src/pyguibud/designer/dialogs/text.py:25
 msgid "_OK"
@@ -2156,23 +2271,23 @@ msgstr ""
 #. Save anyway?".
 #. Translators: the buttons of the unsaved-changes question; _ marks the access
 #. key.
-#: src/pyguibud/designer/app.py:100
+#: src/pyguibud/designer/app.py:101
 #: src/pyguibud/designer/dialogs/save_changes.py:16
-#: src/pyguibud/designer/standard_actions.py:96
+#: src/pyguibud/designer/standard_actions.py:99
 msgid "_Save"
 msgstr ""
 
-#: src/pyguibud/designer/app.py:103
+#: src/pyguibud/designer/app.py:104
 msgid "_Clear list"
 msgstr ""
 
-#: src/pyguibud/designer/app.py:104
+#: src/pyguibud/designer/app.py:105
 msgid "Your settings could not be saved."
 msgstr ""
 
 #. Translators: {reason} is an error description from the operating system;
 #. shown when quitting.
-#: src/pyguibud/designer/app.py:107
+#: src/pyguibud/designer/app.py:108
 #, python-brace-format
 msgid ""
 "Your settings could not be saved: {reason} Quit anyway? Your work is not "
@@ -2180,36 +2295,45 @@ msgid ""
 msgstr ""
 
 #. Translators: the {reason} above when the operating system gave none.
-#: src/pyguibud/designer/app.py:110
+#: src/pyguibud/designer/app.py:111
 msgid "The settings file cannot be read or written."
 msgstr ""
 
 #. Translators: the button of "Quit anyway?"; its access key must differ from
 #. "_Cancel".
-#: src/pyguibud/designer/app.py:112
+#: src/pyguibud/designer/app.py:113
 msgctxt "dialog"
 msgid "_Quit"
 msgstr ""
 
-#: src/pyguibud/designer/app.py:113
+#: src/pyguibud/designer/app.py:114
 msgid "There is no unsaved work to recover."
 msgstr ""
 
-#: src/pyguibud/designer/app.py:114
+#: src/pyguibud/designer/app.py:115
 #: src/pyguibud/designer/dialogs/recovery.py:24
 msgid "_Discard"
 msgstr ""
 
 #. Translators: status bar, after a paste into a text field was refused;
 #. {limit} is a number.
-#: src/pyguibud/designer/app.py:116
+#: src/pyguibud/designer/app.py:117
 #, python-brace-format
 msgid "The paste was not made: this field takes at most {limit} characters."
 msgstr ""
 
 #. Translators: status bar after opening a file; {count} is the number of
+#. errors.
+#: src/pyguibud/designer/app.py:525
+#, python-brace-format
+msgid "Opened with {count} error."
+msgid_plural "Opened with {count} errors."
+msgstr[0] ""
+msgstr[1] ""
+
+#. Translators: status bar after opening a file; {count} is the number of
 #. warnings.
-#: src/pyguibud/designer/app.py:518
+#: src/pyguibud/designer/app.py:530
 #, python-brace-format
 msgid "Opened with {count} warning."
 msgid_plural "Opened with {count} warnings."
@@ -2218,7 +2342,7 @@ msgstr[1] ""
 
 #. Translators: asked before saving; {count} is the number of errors in the
 #. document.
-#: src/pyguibud/designer/app.py:623
+#: src/pyguibud/designer/app.py:635
 #, python-brace-format
 msgid "The document has {count} error. Save anyway?"
 msgid_plural "The document has {count} errors. Save anyway?"
@@ -2255,15 +2379,17 @@ msgstr ""
 msgid "Inserted '{id}'."
 msgstr ""
 
-#. Translators: {widget} is a palette item ("Button").
-#: src/pyguibud/designer/canvas/drag.py:66
+#. Translators: {widget} is a palette item ("Button"); {key} is the key Enter,
+#. inserted as it is
+#. (key names are not translated).
+#: src/pyguibud/designer/canvas/drag.py:67
 #, python-brace-format
 msgid ""
-"Drag '{widget}' onto the canvas, or press Enter to insert it into the "
+"Drag '{widget}' onto the canvas, or press {key} to insert it into the "
 "selected container."
 msgstr ""
 
-#: src/pyguibud/designer/canvas/drag.py:68
+#: src/pyguibud/designer/canvas/drag.py:69
 msgid "Menus and actions are edited in the menu editor."
 msgstr ""
 
@@ -2282,28 +2408,28 @@ msgstr ""
 msgid "{name} — the plugin failed"
 msgstr ""
 
-#: src/pyguibud/designer/clipboard.py:78
+#: src/pyguibud/designer/clipboard.py:79
 msgid "Menus and actions cannot be copied yet."
 msgstr ""
 
-#: src/pyguibud/designer/clipboard.py:79
+#: src/pyguibud/designer/clipboard.py:80
 msgid "The clipboard content is too large to paste."
 msgstr ""
 
-#: src/pyguibud/designer/clipboard.py:80
+#: src/pyguibud/designer/clipboard.py:81
 msgid "The clipboard holds no PyGUIbud elements."
 msgstr ""
 
 #. Translators: {reason} is the first validation error of the clipboard
 #. content.
-#: src/pyguibud/designer/clipboard.py:82
+#: src/pyguibud/designer/clipboard.py:83
 #, python-brace-format
 msgid "The clipboard content is not valid: {reason}"
 msgstr ""
 
 #. Translators: {id} is a pasted include whose component exists only in the
 #. file it came from.
-#: src/pyguibud/designer/clipboard.py:85
+#: src/pyguibud/designer/clipboard.py:86
 #, python-brace-format
 msgid ""
 "'{id}' includes a component of its original file; paste that component "
@@ -2311,40 +2437,40 @@ msgid ""
 msgstr ""
 
 #. Translators: {limit} is the largest number of widgets one paste may add.
-#: src/pyguibud/designer/clipboard.py:88
+#: src/pyguibud/designer/clipboard.py:89
 #, python-brace-format
 msgid "Paste refused: more than {limit} widgets."
 msgstr ""
 
 #. Translators: {limit} is the largest number of widgets one duplicate may add.
-#: src/pyguibud/designer/clipboard.py:90
+#: src/pyguibud/designer/clipboard.py:91
 #, python-brace-format
 msgid "Duplicate refused: more than {limit} widgets."
 msgstr ""
 
 #. Translators: {version} and {current} are schema versions such as 1.1 and
 #. 1.0.
-#: src/pyguibud/designer/clipboard.py:93
+#: src/pyguibud/designer/clipboard.py:94
 #, python-brace-format
 msgid ""
 "The clipboard content uses schema version {version}, newer than "
 "{current}; it cannot be pasted."
 msgstr ""
 
-#: src/pyguibud/designer/clipboard.py:101
+#: src/pyguibud/designer/clipboard.py:102
 msgid "Paste"
 msgstr ""
 
-#: src/pyguibud/designer/clipboard.py:102
+#: src/pyguibud/designer/clipboard.py:103
 msgid "Cut"
 msgstr ""
 
-#: src/pyguibud/designer/clipboard.py:103
+#: src/pyguibud/designer/clipboard.py:104
 msgid "Duplicate"
 msgstr ""
 
 #. Translators: {count} is the number of pasted top-level elements.
-#: src/pyguibud/designer/clipboard.py:133
+#: src/pyguibud/designer/clipboard.py:134
 #, python-brace-format
 msgid "Pasted {count} element."
 msgid_plural "Pasted {count} elements."
@@ -2354,18 +2480,23 @@ msgstr[1] ""
 #. Translators: after "Pasted N elements."; {count} is the number of warnings
 #. about the
 #. pasted content (unknown content is kept, as when a file is opened).
-#: src/pyguibud/designer/clipboard.py:141
+#: src/pyguibud/designer/clipboard.py:142
 #, python-brace-format
 msgid "The clipboard content had {count} warning."
 msgid_plural "The clipboard content had {count} warnings."
 msgstr[0] ""
 msgstr[1] ""
 
-#. Translators: "Document" and "Delete window" are the menu and the entry named
-#. in the app.
-#: src/pyguibud/designer/clipboard_actions.py:39
-#: src/pyguibud/designer/edit.py:43
-msgid "Windows are deleted with Document > Delete window."
+#. Translators: the title of the About dialog.
+#: src/pyguibud/designer/dialogs/about.py:17
+msgid "About PyGUIbud"
+msgstr ""
+
+#. Translators: {version} is a version number such as 0.1.0; {licence} is the
+#. licence name (MIT).
+#: src/pyguibud/designer/dialogs/about.py:21
+#, python-brace-format
+msgid "Version {version} • Licence: {licence}"
 msgstr ""
 
 #: src/pyguibud/designer/dialogs/confirm.py:14
@@ -2594,18 +2725,21 @@ msgstr ""
 msgid "_Don't save"
 msgstr ""
 
-#: src/pyguibud/designer/dialogs/shortcuts.py:15
+#: src/pyguibud/designer/dialogs/shortcuts.py:16
 msgid "Keyboard shortcuts"
 msgstr ""
 
-#: src/pyguibud/designer/dialogs/shortcuts.py:18
+#: src/pyguibud/designer/dialogs/shortcuts.py:19
 msgid "There are no keyboard shortcuts."
 msgstr ""
 
-#. Translators: a note under the shortcut list (spec preview-export 3).
-#: src/pyguibud/designer/dialogs/shortcuts.py:21
+#. Translators: a note under the shortcut list (spec preview-export 3). {key}
+#. is the key Ctrl+E,
+#. inserted as it is (key names are not translated).
+#: src/pyguibud/designer/dialogs/shortcuts.py:23
+#, python-brace-format
 msgid ""
-"Ctrl+E exports from anywhere in the main window, also from a text field "
+"{key} exports from anywhere in the main window, also from a text field "
 "(where some systems also move the cursor to the end of the line)."
 msgstr ""
 
@@ -2631,7 +2765,7 @@ msgstr ""
 #. Translators: {id} is the identifier of the selected element and {count} the
 #. number
 #. of elements inside it.
-#: src/pyguibud/designer/edit.py:179
+#: src/pyguibud/designer/edit.py:178
 #, python-brace-format
 msgid "Delete '{id}' and its {count} element?"
 msgid_plural "Delete '{id}' and its {count} elements?"
@@ -2639,7 +2773,7 @@ msgstr[0] ""
 msgstr[1] ""
 
 #. Translators: several selected elements are deleted with what they contain.
-#: src/pyguibud/designer/edit.py:186
+#: src/pyguibud/designer/edit.py:185
 #, python-brace-format
 msgid "Delete {count} element and the elements inside it?"
 msgid_plural "Delete {count} elements and the elements inside them?"
@@ -2741,30 +2875,30 @@ msgstr ""
 msgid "Files that include this component from outside were not updated."
 msgstr ""
 
-#: src/pyguibud/designer/export.py:51
+#: src/pyguibud/designer/export.py:52
 msgid "Save the document before exporting it."
 msgstr ""
 
-#: src/pyguibud/designer/export.py:52
+#: src/pyguibud/designer/export.py:53
 msgid "The file changed on disk since it was opened. Save or reopen it first."
 msgstr ""
 
-#: src/pyguibud/designer/export.py:53
+#: src/pyguibud/designer/export.py:54
 msgid "Choose a file name."
 msgstr ""
 
 #. Translators: {output} is the file name the user typed.
-#: src/pyguibud/designer/export.py:55
+#: src/pyguibud/designer/export.py:56
 #, python-brace-format
 msgid "'{output}' is a folder. Choose a file name."
 msgstr ""
 
-#: src/pyguibud/designer/export.py:56
+#: src/pyguibud/designer/export.py:57
 msgid "The file name must end in .py."
 msgstr ""
 
 #. Translators: {name} is a Python module name such as "tkinter".
-#: src/pyguibud/designer/export.py:59
+#: src/pyguibud/designer/export.py:60
 #, python-brace-format
 msgid ""
 "A file named '{name}' would hide the Python module of the same name. "
@@ -2773,24 +2907,24 @@ msgstr ""
 
 #. Translators: {name} is a file name such as "my-form.py"; "import" is
 #. Python's keyword.
-#: src/pyguibud/designer/export.py:62
+#: src/pyguibud/designer/export.py:63
 #, python-brace-format
 msgid "'{name}' cannot be imported with import; it can still be run."
 msgstr ""
 
-#: src/pyguibud/designer/export.py:63
+#: src/pyguibud/designer/export.py:64
 #, python-brace-format
 msgid "The folder '{folder}' cannot be written to."
 msgstr ""
 
-#: src/pyguibud/designer/export.py:64
+#: src/pyguibud/designer/export.py:65
 #, python-brace-format
 msgid "The folder '{folder}' does not exist."
 msgstr ""
 
 #. Translators: {name} is what the user typed; the characters are the ones
 #. Windows forbids.
-#: src/pyguibud/designer/export.py:67
+#: src/pyguibud/designer/export.py:68
 #, python-brace-format
 msgid ""
 "'{name}' contains a character that file names cannot have, such as < > : "
@@ -2799,7 +2933,7 @@ msgstr ""
 
 #. Translators: {name} is a file name; .pot is the extension of translation
 #. templates.
-#: src/pyguibud/designer/export.py:71
+#: src/pyguibud/designer/export.py:72
 #, python-brace-format
 msgid ""
 "The template '{name}' does not end in .pot, so translation tools may skip"
@@ -2808,7 +2942,7 @@ msgstr ""
 
 #. Translators: the quoted text is the label of the check box in the Export
 #. dialog.
-#: src/pyguibud/designer/export.py:74
+#: src/pyguibud/designer/export.py:75
 #, python-brace-format
 msgid ""
 "The path '{src}' used by '{path}' is absolute or outside the folder of "
@@ -2817,51 +2951,51 @@ msgid ""
 msgstr ""
 
 #. Translators: {output} is a file path.
-#: src/pyguibud/designer/export.py:81
+#: src/pyguibud/designer/export.py:82
 #, python-brace-format
 msgid ""
 "'{output}' was not written by PyGUIbud, so it is not replaced. Choose "
 "another name."
 msgstr ""
 
-#: src/pyguibud/designer/export.py:83
+#: src/pyguibud/designer/export.py:84
 #, python-brace-format
 msgid "'{output}' holds translations, so it is not replaced. Choose another name."
 msgstr ""
 
 #. Translators: {output} is the Python file of this export, also chosen as the
 #. .pot file.
-#: src/pyguibud/designer/export.py:86
+#: src/pyguibud/designer/export.py:87
 #, python-brace-format
 msgid ""
 "'{output}' is the Python file of this export. Choose another name for the"
 " template."
 msgstr ""
 
-#: src/pyguibud/designer/export.py:89
+#: src/pyguibud/designer/export.py:90
 #, python-brace-format
 msgid "Exported {output}."
 msgstr ""
 
 #. Translators: {pot} is the translation template (.pot) written with the
 #. module {output}.
-#: src/pyguibud/designer/export.py:91
+#: src/pyguibud/designer/export.py:92
 #, python-brace-format
 msgid "Exported {output} and {pot}."
 msgstr ""
 
-#: src/pyguibud/designer/export.py:92
+#: src/pyguibud/designer/export.py:93
 msgid "The exported module cannot show the pseudo-locale."
 msgstr ""
 
-#: src/pyguibud/designer/export.py:93
+#: src/pyguibud/designer/export.py:94
 #, python-brace-format
 msgid "The exported module stopped with exit code {code}."
 msgstr ""
 
 #. Translators: closes a list that was cut short; {count} is the number of
 #. items left out.
-#: src/pyguibud/designer/export.py:103
+#: src/pyguibud/designer/export.py:104
 #, python-brace-format
 msgid "… and {count} more"
 msgid_plural "… and {count} more"
@@ -2884,7 +3018,7 @@ msgstr ""
 #. write-protected".
 #. Translators: {reason} says why, e.g. "the file is write-protected".
 #: src/pyguibud/designer/files.py:69
-#: src/pyguibud/designer/panels/inspector.py:66
+#: src/pyguibud/designer/panels/inspector.py:67
 #, python-brace-format
 msgid "This document is read-only: {reason}"
 msgstr ""
@@ -2929,15 +3063,18 @@ msgid "This window cannot be drawn on the canvas: {reason}"
 msgstr ""
 
 #. Translators: shown in the status bar when the canvas gets the keyboard
-#. focus.
-#: src/pyguibud/designer/panels/canvas.py:64
-msgid "Tab selects the next widget; F6 moves to the next panel."
+#. focus. {next} and
+#. {panel} are the keys Tab and F6, inserted as they are (key names are not
+#. translated).
+#: src/pyguibud/designer/panels/canvas.py:65
+#, python-brace-format
+msgid "{next} selects the next widget; {panel} moves to the next panel."
 msgstr ""
 
 #. Translators: status bar after a large multi-selection; {count} is the number
 #. of
 #. selected elements, {shown} how many of them the canvas outlines (fewer).
-#: src/pyguibud/designer/panels/canvas.py:217
+#: src/pyguibud/designer/panels/canvas.py:224
 #, python-brace-format
 msgid "{count} element selected; only {shown} are outlined."
 msgid_plural "{count} elements selected; only {shown} are outlined."
@@ -2948,7 +3085,7 @@ msgstr[1] ""
 #. the number
 #. of errors.
 #. Translators: part of the problem summary; {count} is a number of errors.
-#: src/pyguibud/designer/panels/canvas.py:621
+#: src/pyguibud/designer/panels/canvas.py:628
 #: src/pyguibud/designer/present/status.py:32
 #, python-brace-format
 msgid "{count} error"
@@ -3025,39 +3162,39 @@ msgstr ""
 msgid "Key"
 msgstr ""
 
-#: src/pyguibud/designer/panels/inspector.py:59
+#: src/pyguibud/designer/panels/inspector.py:60
 msgid "Events"
 msgstr ""
 
-#: src/pyguibud/designer/panels/inspector.py:60
-#: src/pyguibud/designer/present/inspector.py:35
+#: src/pyguibud/designer/panels/inspector.py:61
+#: src/pyguibud/designer/present/inspector.py:36
 msgid "Findings"
 msgstr ""
 
 #. Translators: the button that resets one field of the inspector to its
 #. default value.
-#: src/pyguibud/designer/panels/inspector.py:62
+#: src/pyguibud/designer/panels/inspector.py:63
 msgid "Reset to default"
 msgstr ""
 
-#: src/pyguibud/designer/panels/inspector.py:63
+#: src/pyguibud/designer/panels/inspector.py:64
 msgid "(mixed)"
 msgstr ""
 
-#: src/pyguibud/designer/panels/inspector.py:64
+#: src/pyguibud/designer/panels/inspector.py:65
 #, python-brace-format
 msgid "{count} elements selected; editing shared properties."
 msgstr ""
 
-#: src/pyguibud/designer/panels/inspector.py:67
+#: src/pyguibud/designer/panels/inspector.py:68
 msgid "Bind to a new variable"
 msgstr ""
 
-#: src/pyguibud/designer/panels/inspector.py:68
+#: src/pyguibud/designer/panels/inspector.py:69
 msgid "Add image"
 msgstr ""
 
-#: src/pyguibud/designer/panels/inspector.py:81
+#: src/pyguibud/designer/panels/inspector.py:82
 msgid "Inspector"
 msgstr ""
 
@@ -3150,7 +3287,7 @@ msgid "No layout"
 msgstr ""
 
 #: src/pyguibud/designer/present/canvas.py:20
-#: src/pyguibud/designer/present/tree.py:30
+#: src/pyguibud/designer/present/tree.py:31
 msgid "(no id)"
 msgstr ""
 
@@ -3163,25 +3300,25 @@ msgid_plural "{count} widgets"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/pyguibud/designer/present/inspector.py:36
+#: src/pyguibud/designer/present/inspector.py:37
 #, python-brace-format
 msgid "variable {name}"
 msgstr ""
 
-#: src/pyguibud/designer/present/inspector.py:37
+#: src/pyguibud/designer/present/inspector.py:38
 #, python-brace-format
 msgid "{value} (default)"
 msgstr ""
 
-#: src/pyguibud/designer/present/inspector.py:38
+#: src/pyguibud/designer/present/inspector.py:39
 msgid "Yes"
 msgstr ""
 
-#: src/pyguibud/designer/present/inspector.py:39
+#: src/pyguibud/designer/present/inspector.py:40
 msgid "No"
 msgstr ""
 
-#: src/pyguibud/designer/present/inspector.py:66
+#: src/pyguibud/designer/present/inspector.py:67
 msgid "Plugin"
 msgstr ""
 
@@ -3266,17 +3403,17 @@ msgid_plural "{count} warnings"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/pyguibud/designer/present/tree.py:25
+#: src/pyguibud/designer/present/tree.py:26
 #, python-brace-format
 msgid "{id} ({class_name})"
 msgstr ""
 
-#: src/pyguibud/designer/present/tree.py:26
+#: src/pyguibud/designer/present/tree.py:27
 #, python-brace-format
 msgid "{id} (include)"
 msgstr ""
 
-#: src/pyguibud/designer/present/tree.py:29
+#: src/pyguibud/designer/present/tree.py:30
 #, python-brace-format
 msgid "Status bar: {id}"
 msgstr ""
@@ -3420,29 +3557,29 @@ msgid_plural "The document has {count} errors. Fix them to preview."
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/pyguibud/designer/present/inspector.py:32
+#: src/pyguibud/designer/present/inspector.py:33
 #: src/pyguibud/designer/properties.py:63
 msgid "General"
 msgstr ""
 
-#: src/pyguibud/designer/panels/inspector.py:58
-#: src/pyguibud/designer/present/inspector.py:33
+#: src/pyguibud/designer/panels/inspector.py:59
+#: src/pyguibud/designer/present/inspector.py:34
 #: src/pyguibud/designer/properties.py:64
 msgid "Properties"
 msgstr ""
 
-#: src/pyguibud/designer/present/inspector.py:123
+#: src/pyguibud/designer/present/inspector.py:124
 #: src/pyguibud/designer/properties.py:65
 #: src/pyguibud/designer/properties.py:192
 msgid "Layout"
 msgstr ""
 
-#: src/pyguibud/designer/present/inspector.py:34
+#: src/pyguibud/designer/present/inspector.py:35
 #: src/pyguibud/designer/properties.py:66
 msgid "Placement"
 msgstr ""
 
-#: src/pyguibud/designer/present/inspector.py:63
+#: src/pyguibud/designer/present/inspector.py:64
 #: src/pyguibud/designer/properties.py:67
 #: src/pyguibud/designer/properties.py:81
 msgid "Window"
@@ -3479,42 +3616,42 @@ msgid_plural "Set '{name}' on {count} elements"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/pyguibud/designer/present/inspector.py:69
+#: src/pyguibud/designer/present/inspector.py:70
 #: src/pyguibud/designer/properties.py:81
 msgid "Include"
 msgstr ""
 
-#: src/pyguibud/designer/present/inspector.py:63
-#: src/pyguibud/designer/present/inspector.py:65
-#: src/pyguibud/designer/present/inspector.py:69
-#: src/pyguibud/designer/present/inspector.py:75
-#: src/pyguibud/designer/present/inspector.py:77
-#: src/pyguibud/designer/present/inspector.py:79
-#: src/pyguibud/designer/present/inspector.py:86
-#: src/pyguibud/designer/present/inspector.py:88
+#: src/pyguibud/designer/present/inspector.py:64
+#: src/pyguibud/designer/present/inspector.py:66
+#: src/pyguibud/designer/present/inspector.py:70
+#: src/pyguibud/designer/present/inspector.py:76
+#: src/pyguibud/designer/present/inspector.py:78
+#: src/pyguibud/designer/present/inspector.py:80
+#: src/pyguibud/designer/present/inspector.py:87
+#: src/pyguibud/designer/present/inspector.py:89
 #: src/pyguibud/designer/properties.py:159
 msgid "Class"
 msgstr ""
 
 #: src/pyguibud/designer/dialogs/rename.py:17
 #: src/pyguibud/designer/panels/variables.py:33
-#: src/pyguibud/designer/present/inspector.py:63
-#: src/pyguibud/designer/present/inspector.py:65
-#: src/pyguibud/designer/present/inspector.py:70
-#: src/pyguibud/designer/present/inspector.py:77
-#: src/pyguibud/designer/present/inspector.py:79
-#: src/pyguibud/designer/present/inspector.py:88
+#: src/pyguibud/designer/present/inspector.py:64
+#: src/pyguibud/designer/present/inspector.py:66
+#: src/pyguibud/designer/present/inspector.py:71
+#: src/pyguibud/designer/present/inspector.py:78
+#: src/pyguibud/designer/present/inspector.py:80
+#: src/pyguibud/designer/present/inspector.py:89
 #: src/pyguibud/designer/properties.py:161
 msgid "Id"
 msgstr ""
 
-#: src/pyguibud/designer/present/inspector.py:71
+#: src/pyguibud/designer/present/inspector.py:72
 #: src/pyguibud/designer/properties.py:163
 msgid "Source"
 msgstr ""
 
 #: src/pyguibud/designer/present/canvas.py:16
-#: src/pyguibud/designer/present/inspector.py:72
+#: src/pyguibud/designer/present/inspector.py:73
 #: src/pyguibud/designer/properties.py:164
 msgid "Component"
 msgstr ""
@@ -3523,17 +3660,17 @@ msgstr ""
 msgid "Variable"
 msgstr ""
 
-#: src/pyguibud/designer/present/inspector.py:81
+#: src/pyguibud/designer/present/inspector.py:82
 #: src/pyguibud/designer/properties.py:170
 msgid "Handler"
 msgstr ""
 
-#: src/pyguibud/designer/present/inspector.py:83
+#: src/pyguibud/designer/present/inspector.py:84
 #: src/pyguibud/designer/properties.py:171
 msgid "Shortcut"
 msgstr ""
 
-#: src/pyguibud/designer/present/inspector.py:63
+#: src/pyguibud/designer/present/inspector.py:64
 #: src/pyguibud/designer/properties.py:174
 msgid "Kind"
 msgstr ""
@@ -3562,12 +3699,12 @@ msgstr ""
 msgid "Buttons"
 msgstr ""
 
-#: src/pyguibud/designer/present/inspector.py:124
+#: src/pyguibud/designer/present/inspector.py:125
 #: src/pyguibud/designer/properties.py:195
 msgid "Padding"
 msgstr ""
 
-#: src/pyguibud/designer/present/inspector.py:125
+#: src/pyguibud/designer/present/inspector.py:126
 #: src/pyguibud/designer/properties.py:196
 msgid "Gap"
 msgstr ""
@@ -3588,27 +3725,27 @@ msgstr ""
 msgid "Row minimum size"
 msgstr ""
 
-#: src/pyguibud/designer/present/inspector.py:130
+#: src/pyguibud/designer/present/inspector.py:131
 #: src/pyguibud/designer/properties.py:218
 msgid "Row"
 msgstr ""
 
-#: src/pyguibud/designer/present/inspector.py:131
+#: src/pyguibud/designer/present/inspector.py:132
 #: src/pyguibud/designer/properties.py:219
 msgid "Column"
 msgstr ""
 
-#: src/pyguibud/designer/present/inspector.py:132
+#: src/pyguibud/designer/present/inspector.py:133
 #: src/pyguibud/designer/properties.py:220
 msgid "Row span"
 msgstr ""
 
-#: src/pyguibud/designer/present/inspector.py:133
+#: src/pyguibud/designer/present/inspector.py:134
 #: src/pyguibud/designer/properties.py:221
 msgid "Column span"
 msgstr ""
 
-#: src/pyguibud/designer/present/inspector.py:134
+#: src/pyguibud/designer/present/inspector.py:135
 #: src/pyguibud/designer/properties.py:222
 msgid "Sticky"
 msgstr ""
@@ -3623,17 +3760,17 @@ msgstr ""
 msgid "Vertical padding"
 msgstr ""
 
-#: src/pyguibud/designer/present/inspector.py:137
+#: src/pyguibud/designer/present/inspector.py:138
 #: src/pyguibud/designer/properties.py:236
 msgid "Fill"
 msgstr ""
 
-#: src/pyguibud/designer/present/inspector.py:137
+#: src/pyguibud/designer/present/inspector.py:138
 #: src/pyguibud/designer/properties.py:238
 msgid "Expand"
 msgstr ""
 
-#: src/pyguibud/designer/present/inspector.py:139
+#: src/pyguibud/designer/present/inspector.py:140
 #: src/pyguibud/designer/properties.py:245
 msgid "Page title"
 msgstr ""
@@ -3728,120 +3865,123 @@ msgid "Your settings could not be read and were reset."
 msgstr ""
 
 #. Translators: status bar; {count} is the number of selected elements.
-#: src/pyguibud/designer/shell.py:722
+#: src/pyguibud/designer/shell.py:723
 #, python-brace-format
 msgid "{count} element selected"
 msgid_plural "{count} elements selected"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/pyguibud/designer/sizing.py:63
+#: src/pyguibud/designer/sizing.py:64
 msgid "Resize"
 msgstr ""
 
-#: src/pyguibud/designer/sizing.py:64
+#: src/pyguibud/designer/sizing.py:65
 msgid "Resize window"
 msgstr ""
 
-#: src/pyguibud/designer/sizing.py:65
+#: src/pyguibud/designer/sizing.py:66
 msgid "Reset width"
 msgstr ""
 
-#: src/pyguibud/designer/sizing.py:65
+#: src/pyguibud/designer/sizing.py:66
 msgid "Reset height"
 msgstr ""
 
-#: src/pyguibud/designer/sizing.py:68
-msgid "Drag to change the width. Hold Ctrl to change the cells it spans."
-msgstr ""
-
-#: src/pyguibud/designer/sizing.py:69
-msgid "Drag to change the height. Hold Ctrl to change the cells it spans."
-msgstr ""
-
 #: src/pyguibud/designer/sizing.py:70
-msgid "Drag to change the size. Hold Ctrl to change the cells it spans."
+#, python-brace-format
+msgid "Drag to change the width. Hold {key} to change the cells it spans."
 msgstr ""
 
-#: src/pyguibud/designer/sizing.py:73
-msgid "Drag to change the width."
+#: src/pyguibud/designer/sizing.py:71
+#, python-brace-format
+msgid "Drag to change the height. Hold {key} to change the cells it spans."
 msgstr ""
 
-#: src/pyguibud/designer/sizing.py:74
-msgid "Drag to change the height."
+#: src/pyguibud/designer/sizing.py:72
+#, python-brace-format
+msgid "Drag to change the size. Hold {key} to change the cells it spans."
 msgstr ""
 
 #: src/pyguibud/designer/sizing.py:75
-msgid "Drag to change the size."
+msgid "Drag to change the width."
+msgstr ""
+
+#: src/pyguibud/designer/sizing.py:76
+msgid "Drag to change the height."
 msgstr ""
 
 #: src/pyguibud/designer/sizing.py:77
+msgid "Drag to change the size."
+msgstr ""
+
+#: src/pyguibud/designer/sizing.py:79
 msgid "Drag to change the cells it spans."
 msgstr ""
 
-#: src/pyguibud/designer/sizing.py:80
+#: src/pyguibud/designer/sizing.py:82
 #, python-brace-format
 msgid ""
 "'{id}' fills its cell horizontally (Sticky): drag to change the cells it "
 "spans."
 msgstr ""
 
-#: src/pyguibud/designer/sizing.py:81
+#: src/pyguibud/designer/sizing.py:83
 #, python-brace-format
 msgid ""
 "'{id}' fills its cell vertically (Sticky): drag to change the cells it "
 "spans."
 msgstr ""
 
-#: src/pyguibud/designer/sizing.py:85
+#: src/pyguibud/designer/sizing.py:87
 #, python-brace-format
 msgid "'{id}' fills its space (Fill), so its width follows the container."
 msgstr ""
 
-#: src/pyguibud/designer/sizing.py:86
+#: src/pyguibud/designer/sizing.py:88
 #, python-brace-format
 msgid "'{id}' fills its space (Fill), so its height follows the container."
 msgstr ""
 
-#: src/pyguibud/designer/sizing.py:89
+#: src/pyguibud/designer/sizing.py:91
 msgid ""
 "A frame with contents takes the size of its contents. Use the column and "
 "row weights, Sticky or Fill to make it larger."
 msgstr ""
 
-#: src/pyguibud/designer/sizing.py:94
+#: src/pyguibud/designer/sizing.py:96
 #, python-brace-format
 msgid "'{id}' has no width that can be changed."
 msgstr ""
 
-#: src/pyguibud/designer/sizing.py:95
+#: src/pyguibud/designer/sizing.py:97
 #, python-brace-format
 msgid "'{id}' has no height that can be changed."
 msgstr ""
 
-#: src/pyguibud/designer/sizing.py:97
+#: src/pyguibud/designer/sizing.py:99
 #, python-brace-format
 msgid "'{id}' cannot be narrower."
 msgstr ""
 
-#: src/pyguibud/designer/sizing.py:97
+#: src/pyguibud/designer/sizing.py:99
 #, python-brace-format
 msgid "'{id}' cannot be shorter."
 msgstr ""
 
-#: src/pyguibud/designer/sizing.py:100
+#: src/pyguibud/designer/sizing.py:102
 #, python-brace-format
 msgid "Release to set the width of '{id}' to {value}."
 msgstr ""
 
-#: src/pyguibud/designer/sizing.py:101
+#: src/pyguibud/designer/sizing.py:103
 #, python-brace-format
 msgid "Release to set the height of '{id}' to {value}."
 msgstr ""
 
 #. Translators: {width} and {height} are sizes such as "14 characters" or "3
 #. lines".
-#: src/pyguibud/designer/sizing.py:104
+#: src/pyguibud/designer/sizing.py:106
 #, python-brace-format
 msgid "Release to set the size of '{id}' to {width} × {height}."
 msgstr ""
@@ -3849,57 +3989,57 @@ msgstr ""
 #. Translators: off the canvas tab; {value} is a size such as "14 characters"
 #. (or width and
 #. height), what a release back on the canvas would set (QA-14b1-01).
-#: src/pyguibud/designer/sizing.py:107
+#: src/pyguibud/designer/sizing.py:109
 #, python-brace-format
 msgid "Release here to cancel. On the canvas, '{id}' would be set to {value}."
 msgstr ""
 
 #. Translators: {id} is an element whose canvas drawing failed, so nothing
 #. could be measured.
-#: src/pyguibud/designer/sizing.py:109
+#: src/pyguibud/designer/sizing.py:111
 #, python-brace-format
 msgid "'{id}' could not be measured on the canvas; set its size in the inspector."
 msgstr ""
 
 #. Translators: {id} is a window; {width} and {height} are numbers of pixels.
-#: src/pyguibud/designer/sizing.py:112
+#: src/pyguibud/designer/sizing.py:114
 #, python-brace-format
 msgid "Release to set the minimum size of '{id}' to {width} × {height} px."
 msgstr ""
 
-#: src/pyguibud/designer/sizing.py:116
+#: src/pyguibud/designer/sizing.py:118
 #, python-brace-format
 msgid "'{id}' is as small as its contents allow; the minimum width was cleared."
 msgstr ""
 
-#: src/pyguibud/designer/sizing.py:117
+#: src/pyguibud/designer/sizing.py:119
 #, python-brace-format
 msgid "'{id}' is as small as its contents allow; the minimum height was cleared."
 msgstr ""
 
-#: src/pyguibud/designer/sizing.py:118
+#: src/pyguibud/designer/sizing.py:120
 #, python-brace-format
 msgid "'{id}' is as small as its contents allow; the minimum size was cleared."
 msgstr ""
 
-#: src/pyguibud/designer/sizing.py:120
+#: src/pyguibud/designer/sizing.py:122
 #, python-brace-format
 msgid "'{id}' keeps its natural size."
 msgstr ""
 
-#: src/pyguibud/designer/sizing.py:121
+#: src/pyguibud/designer/sizing.py:123
 #, python-brace-format
 msgid "Resized '{id}'."
 msgstr ""
 
-#: src/pyguibud/designer/sizing.py:123
+#: src/pyguibud/designer/sizing.py:125
 msgid ""
 "A component takes its size from the window that includes it; this size is"
 " for the canvas only."
 msgstr ""
 
 #. Translators: {count} is a size in characters.
-#: src/pyguibud/designer/sizing.py:152
+#: src/pyguibud/designer/sizing.py:154
 #, python-brace-format
 msgid "{count} character"
 msgid_plural "{count} characters"
@@ -3907,7 +4047,7 @@ msgstr[0] ""
 msgstr[1] ""
 
 #. Translators: {count} is a size in text lines.
-#: src/pyguibud/designer/sizing.py:155
+#: src/pyguibud/designer/sizing.py:157
 #, python-brace-format
 msgid "{count} line"
 msgid_plural "{count} lines"
@@ -3915,7 +4055,7 @@ msgstr[0] ""
 msgstr[1] ""
 
 #. Translators: {count} is a size in list rows.
-#: src/pyguibud/designer/sizing.py:158
+#: src/pyguibud/designer/sizing.py:160
 #, python-brace-format
 msgid "{count} row"
 msgid_plural "{count} rows"
@@ -3923,38 +4063,38 @@ msgstr[0] ""
 msgstr[1] ""
 
 #. Translators: {count} is a size in screen pixels.
-#: src/pyguibud/designer/sizing.py:161
+#: src/pyguibud/designer/sizing.py:163
 #, python-brace-format
 msgid "{count} pixel"
 msgid_plural "{count} pixels"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/pyguibud/designer/standard_actions.py:29
+#: src/pyguibud/designer/standard_actions.py:35
 msgid "_File"
 msgstr ""
 
-#: src/pyguibud/designer/standard_actions.py:30
+#: src/pyguibud/designer/standard_actions.py:36
 msgid "_Edit"
 msgstr ""
 
-#: src/pyguibud/designer/standard_actions.py:31
+#: src/pyguibud/designer/standard_actions.py:37
 msgid "_Undo"
 msgstr ""
 
 #. Translators: {action} is the step that is undone, e.g. "Add element"; _
 #. marks the access key.
-#: src/pyguibud/designer/standard_actions.py:33
+#: src/pyguibud/designer/standard_actions.py:39
 #, python-brace-format
 msgid "_Undo {action}"
 msgstr ""
 
-#: src/pyguibud/designer/standard_actions.py:34
+#: src/pyguibud/designer/standard_actions.py:40
 msgid "_Redo"
 msgstr ""
 
 #. Translators: {action} is the step that is redone, e.g. "Add element".
-#: src/pyguibud/designer/standard_actions.py:36
+#: src/pyguibud/designer/standard_actions.py:42
 #, python-brace-format
 msgid "_Redo {action}"
 msgstr ""
@@ -3962,286 +4102,289 @@ msgstr ""
 #. Translators: _ marks the access key (Alt+letter); keep it unique within the
 #. dialog.
 #: src/pyguibud/designer/dialogs/confirm.py:16
-#: src/pyguibud/designer/standard_actions.py:37
+#: src/pyguibud/designer/standard_actions.py:43
 msgid "_Delete"
 msgstr ""
 
-#: src/pyguibud/designer/standard_actions.py:38
+#: src/pyguibud/designer/standard_actions.py:44
 msgid "Select _next widget"
 msgstr ""
 
-#: src/pyguibud/designer/standard_actions.py:39
+#: src/pyguibud/designer/standard_actions.py:45
 msgid "Select prev_ious widget"
 msgstr ""
 
-#: src/pyguibud/designer/standard_actions.py:40
+#: src/pyguibud/designer/standard_actions.py:46
 msgid "Select _first child"
 msgstr ""
 
-#: src/pyguibud/designer/standard_actions.py:41
+#: src/pyguibud/designer/standard_actions.py:47
 msgid "Select _parent"
 msgstr ""
 
-#: src/pyguibud/designer/standard_actions.py:42
+#: src/pyguibud/designer/standard_actions.py:48
 msgid "Select all in _container"
 msgstr ""
 
 #. Translators: the clipboard verbs of the Edit menu (cut, copy, paste,
 #. duplicate the selection).
-#: src/pyguibud/designer/standard_actions.py:44
+#: src/pyguibud/designer/standard_actions.py:50
 msgid "Cu_t"
 msgstr ""
 
-#: src/pyguibud/designer/standard_actions.py:45
+#: src/pyguibud/designer/standard_actions.py:51
 msgid "C_opy"
 msgstr ""
 
-#: src/pyguibud/designer/standard_actions.py:46
+#: src/pyguibud/designer/standard_actions.py:52
 msgid "Pa_ste"
 msgstr ""
 
-#: src/pyguibud/designer/standard_actions.py:47
+#: src/pyguibud/designer/standard_actions.py:53
 msgid "Dup_licate"
 msgstr ""
 
 #. Translators: a sub-menu of Edit that adds menu bars, menus, actions and
 #. status bars.
-#: src/pyguibud/designer/standard_actions.py:49
+#: src/pyguibud/designer/standard_actions.py:55
 msgid "Ins_ert"
 msgstr ""
 
-#: src/pyguibud/designer/standard_actions.py:50
+#: src/pyguibud/designer/standard_actions.py:56
 msgid "_Menu bar"
 msgstr ""
 
-#: src/pyguibud/designer/standard_actions.py:51
+#: src/pyguibud/designer/standard_actions.py:57
 msgid "M_enu"
 msgstr ""
 
-#: src/pyguibud/designer/standard_actions.py:52
+#: src/pyguibud/designer/standard_actions.py:58
 msgid "_Action"
 msgstr ""
 
-#: src/pyguibud/designer/standard_actions.py:53
+#: src/pyguibud/designer/standard_actions.py:59
 msgid "_Separator"
 msgstr ""
 
-#: src/pyguibud/designer/standard_actions.py:54
+#: src/pyguibud/designer/standard_actions.py:60
 msgid "Status _bar"
 msgstr ""
 
-#. Translators: the menu of the windows (main window, dialogs, components) of
-#. the open file.
-#: src/pyguibud/designer/standard_actions.py:56
-msgid "_Document"
-msgstr ""
-
-#: src/pyguibud/designer/standard_actions.py:57
+#: src/pyguibud/designer/standard_actions.py:61
 msgid "Add _main window"
 msgstr ""
 
-#: src/pyguibud/designer/standard_actions.py:58
+#: src/pyguibud/designer/standard_actions.py:62
 msgid "Add d_ialog"
 msgstr ""
 
-#: src/pyguibud/designer/standard_actions.py:59
+#: src/pyguibud/designer/standard_actions.py:63
 msgid "Add _component"
 msgstr ""
 
 #. Translators: the dots mean that a dialog opens; _ marks the access key.
-#: src/pyguibud/designer/standard_actions.py:61
+#: src/pyguibud/designer/standard_actions.py:65
 msgid "_Rename window…"
 msgstr ""
 
-#: src/pyguibud/designer/standard_actions.py:62
-msgid "_Delete window"
-msgstr ""
-
-#: src/pyguibud/designer/standard_actions.py:63
+#: src/pyguibud/designer/standard_actions.py:66
 msgid "_Next window"
 msgstr ""
 
-#: src/pyguibud/designer/standard_actions.py:64
+#: src/pyguibud/designer/standard_actions.py:67
 msgid "_Previous window"
 msgstr ""
 
 #. Translators: a sub-menu of Edit: moving and sizing the selected elements on
 #. the canvas.
-#: src/pyguibud/designer/standard_actions.py:66
+#: src/pyguibud/designer/standard_actions.py:69
 msgid "_Move"
 msgstr ""
 
-#: src/pyguibud/designer/standard_actions.py:67
+#: src/pyguibud/designer/standard_actions.py:70
 msgid "Move _left"
 msgstr ""
 
-#: src/pyguibud/designer/standard_actions.py:68
+#: src/pyguibud/designer/standard_actions.py:71
 msgid "Move _right"
 msgstr ""
 
-#: src/pyguibud/designer/standard_actions.py:69
+#: src/pyguibud/designer/standard_actions.py:72
 msgid "Move _up"
 msgstr ""
 
-#: src/pyguibud/designer/standard_actions.py:70
+#: src/pyguibud/designer/standard_actions.py:73
 msgid "Move _down"
 msgstr ""
 
 #. Translators: "Wider" to "Shorter" make a grid element span one more or one
 #. less column/row.
-#: src/pyguibud/designer/standard_actions.py:72
+#: src/pyguibud/designer/standard_actions.py:75
 msgid "_Wider"
 msgstr ""
 
-#: src/pyguibud/designer/standard_actions.py:73
+#: src/pyguibud/designer/standard_actions.py:76
 msgid "_Narrower"
 msgstr ""
 
-#: src/pyguibud/designer/standard_actions.py:74
+#: src/pyguibud/designer/standard_actions.py:77
 msgid "_Taller"
 msgstr ""
 
-#: src/pyguibud/designer/standard_actions.py:75
+#: src/pyguibud/designer/standard_actions.py:78
 msgid "_Shorter"
 msgstr ""
 
 #. Translators: change the width/height property of the selected element by one
 #. unit
 #. (a character, a line or 4 pixels), or the minimum size of a selected window.
-#: src/pyguibud/designer/standard_actions.py:78
+#: src/pyguibud/designer/standard_actions.py:81
 msgid "_Increase width"
 msgstr ""
 
-#: src/pyguibud/designer/standard_actions.py:79
+#: src/pyguibud/designer/standard_actions.py:82
 msgid "De_crease width"
 msgstr ""
 
-#: src/pyguibud/designer/standard_actions.py:80
+#: src/pyguibud/designer/standard_actions.py:83
 msgid "Increase _height"
 msgstr ""
 
-#: src/pyguibud/designer/standard_actions.py:81
+#: src/pyguibud/designer/standard_actions.py:84
 msgid "Decrease hei_ght"
 msgstr ""
 
 #. Translators: "Move earlier/later" change the order of an element among its
 #. siblings.
-#: src/pyguibud/designer/standard_actions.py:83
+#: src/pyguibud/designer/standard_actions.py:86
 msgid "Move _earlier"
 msgstr ""
 
-#: src/pyguibud/designer/standard_actions.py:84
+#: src/pyguibud/designer/standard_actions.py:87
 msgid "Move l_ater"
 msgstr ""
 
-#: src/pyguibud/designer/standard_actions.py:85
+#: src/pyguibud/designer/standard_actions.py:88
 msgid "_View"
 msgstr ""
 
-#: src/pyguibud/designer/standard_actions.py:86
+#: src/pyguibud/designer/standard_actions.py:89
 msgid "_Theme"
 msgstr ""
 
-#: src/pyguibud/designer/standard_actions.py:87
+#: src/pyguibud/designer/standard_actions.py:90
 msgid "_Language"
 msgstr ""
 
 #. Translators: the dots mean that a dialog opens; _ marks the access key.
-#: src/pyguibud/designer/standard_actions.py:89
+#: src/pyguibud/designer/standard_actions.py:92
 msgid "_New from template…"
 msgstr ""
 
-#: src/pyguibud/designer/standard_actions.py:90
+#: src/pyguibud/designer/standard_actions.py:93
 msgid "_Quit"
 msgstr ""
 
-#: src/pyguibud/designer/standard_actions.py:91
+#: src/pyguibud/designer/standard_actions.py:94
 msgid "_Open…"
 msgstr ""
 
 #. Translators: a sub-menu listing the files opened last.
-#: src/pyguibud/designer/standard_actions.py:93
+#: src/pyguibud/designer/standard_actions.py:96
 msgid "Open _recent"
 msgstr ""
 
 #. Translators: reopen unsaved work kept after a crash; _ marks the access key
 #. (R is taken).
-#: src/pyguibud/designer/standard_actions.py:95
+#: src/pyguibud/designer/standard_actions.py:98
 msgid "Reco_ver…"
 msgstr ""
 
+#. Translators: the Close button of the About dialog; _ marks the access key
+#. (Alt+letter).
 #. Translators: the Close button of the shortcuts sheet; _ marks the access key
 #. (Alt+letter).
-#: src/pyguibud/designer/dialogs/shortcuts.py:17
-#: src/pyguibud/designer/standard_actions.py:98
+#: src/pyguibud/designer/dialogs/about.py:19
+#: src/pyguibud/designer/dialogs/shortcuts.py:18
+#: src/pyguibud/designer/standard_actions.py:101
 msgid "_Close"
 msgstr ""
 
 #. Translators: File menu; writes the .py module of the saved .ui file
 #. (Ctrl+E).
-#: src/pyguibud/designer/standard_actions.py:100
+#: src/pyguibud/designer/standard_actions.py:103
 msgid "_Export Python code…"
 msgstr ""
 
-#: src/pyguibud/designer/standard_actions.py:101
+#: src/pyguibud/designer/standard_actions.py:104
 msgid "_Help"
 msgstr ""
 
-#: src/pyguibud/designer/standard_actions.py:102
+#: src/pyguibud/designer/standard_actions.py:105
 msgid "_Keyboard shortcuts…"
 msgstr ""
 
-#: src/pyguibud/designer/standard_actions.py:103
+#: src/pyguibud/designer/standard_actions.py:106
 msgid "_Plugins…"
 msgstr ""
 
-#: src/pyguibud/designer/standard_actions.py:104
+#: src/pyguibud/designer/standard_actions.py:107
+msgid "A_bout PyGUIbud…"
+msgstr ""
+
+#: src/pyguibud/designer/standard_actions.py:108
 msgid "Next _panel"
 msgstr ""
 
-#: src/pyguibud/designer/standard_actions.py:105
+#: src/pyguibud/designer/standard_actions.py:109
 msgid "Previous pa_nel"
 msgstr ""
 
-#: src/pyguibud/designer/standard_actions.py:106
+#: src/pyguibud/designer/standard_actions.py:110
 msgid "Pseudo-locale (layout test)"
 msgstr ""
 
 #. Translators: the menu, and its action, that runs the document in a separate
 #. window (F5).
-#: src/pyguibud/designer/standard_actions.py:108
+#: src/pyguibud/designer/standard_actions.py:112
+msgctxt "menu"
 msgid "_Preview"
 msgstr ""
 
-#: src/pyguibud/designer/standard_actions.py:109
+#: src/pyguibud/designer/standard_actions.py:113
+msgctxt "action"
+msgid "_Preview"
+msgstr ""
+
+#: src/pyguibud/designer/standard_actions.py:114
 msgid "_Close preview"
 msgstr ""
 
 #. Translators: Preview > Language: show the texts as written in the document
 #. (no translation).
-#: src/pyguibud/designer/standard_actions.py:111
+#: src/pyguibud/designer/standard_actions.py:116
 msgid "Document language"
 msgstr ""
 
-#: src/pyguibud/designer/standard_actions.py:112
+#: src/pyguibud/designer/standard_actions.py:117
 msgid "_Use this theme in the document"
 msgstr ""
 
 #. Translators: Preview > Toolkit: the sub-menu that chooses the GUI toolkit of
 #. the preview.
-#: src/pyguibud/designer/standard_actions.py:114
+#: src/pyguibud/designer/standard_actions.py:119
 msgid "Tool_kit"
 msgstr ""
 
-#: src/pyguibud/designer/standard_actions.py:118
+#: src/pyguibud/designer/standard_actions.py:123
 msgid "_Light"
 msgstr ""
 
-#: src/pyguibud/designer/standard_actions.py:119
+#: src/pyguibud/designer/standard_actions.py:124
 msgid "_Dark"
 msgstr ""
 
-#: src/pyguibud/designer/standard_actions.py:120
+#: src/pyguibud/designer/standard_actions.py:125
 msgid "_High contrast"
 msgstr ""
 
@@ -4301,7 +4444,7 @@ msgstr ""
 
 #. Translators: shown while dragging; {count} is the number of elements being
 #. moved.
-#: src/pyguibud/designer/canvas/drag.py:634
+#: src/pyguibud/designer/canvas/drag.py:637
 #: src/pyguibud/designer/tree_dnd.py:156
 #, python-brace-format
 msgid "Release to move {count} element."
@@ -4314,21 +4457,21 @@ msgstr[1] ""
 msgid "Delete the window '{id}' and everything in it?"
 msgstr ""
 
-#: src/pyguibud/i18n.py:230
+#: src/pyguibud/i18n.py:233
 #, python-brace-format
 msgid "Unknown language '{code}'. Valid codes: {valid}."
 msgstr ""
 
 #. Translators: {domain} is a catalogue name, {lang} a language code and
 #. {directory} a folder.
-#: src/pyguibud/i18n.py:370
+#: src/pyguibud/i18n.py:373
 #, python-brace-format
 msgid ""
 "No usable translations '{domain}' for '{lang}' in '{directory}'; the "
 "source texts are shown."
 msgstr ""
 
-#: src/pyguibud/preview/__init__.py:40
+#: src/pyguibud/preview/__init__.py:42
 msgid "Show a .ui file in a separate preview window (used by the designer)."
 msgstr ""
 
@@ -4378,11 +4521,11 @@ msgid ""
 " runs their code; only check files with plugins you trust."
 msgstr ""
 
-#: src/pyguibud/uic.py:84
+#: src/pyguibud/uic.py:86
 msgid "read and validate each file and report errors and warnings"
 msgstr ""
 
-#: src/pyguibud/uic.py:89
+#: src/pyguibud/uic.py:91
 msgid ""
 "write a translation template (.pot) with the translatable texts of the "
 "files"
@@ -4391,7 +4534,7 @@ msgstr ""
 #. Translators: {pattern} is a file name pattern and {extract} a command-line
 #. option; both
 #. are never translated.
-#: src/pyguibud/uic.py:99
+#: src/pyguibud/uic.py:101
 #, python-brace-format
 msgid ""
 "output file (generate: default {pattern} next to the .ui file; {extract}:"
@@ -4399,37 +4542,37 @@ msgid ""
 msgstr ""
 
 #. Translators: {program} is the name of this command; it is never translated.
-#: src/pyguibud/uic.py:108
+#: src/pyguibud/uic.py:110
 #, python-brace-format
 msgid ""
 "replace an output file even if {program} did not generate it, and "
 "generate code from images and includes outside the folder of the .ui file"
 msgstr ""
 
-#: src/pyguibud/uic.py:112
+#: src/pyguibud/uic.py:114
 msgid ".ui file to process"
 msgstr ""
 
 #. Translators: {path} is a file name as typed by the user.
-#: src/pyguibud/uic.py:156
+#: src/pyguibud/uic.py:163
 #, python-brace-format
 msgid "{path}: no errors found"
 msgstr ""
 
 #. Translators: {path} is the .ui file, {output} the Python file written from
 #. it.
-#: src/pyguibud/uic.py:202
+#: src/pyguibud/uic.py:209
 #, python-brace-format
 msgid "{path}: wrote {output}"
 msgstr ""
 
 #. Translators: {output} is the translation template (.pot) that was written.
-#: src/pyguibud/uic.py:244
+#: src/pyguibud/uic.py:251
 #, python-brace-format
 msgid "wrote {output}"
 msgstr ""
 
-#: src/pyguibud/uic.py:283
+#: src/pyguibud/uic.py:290
 msgid "no file matches this pattern"
 msgstr ""
 
@@ -4489,6 +4632,22 @@ msgstr ""
 msgid "Building the interface from '{path}' failed: {reason}"
 msgstr ""
 
+#. Translators: {reason} of the message above when a widget factory broke the
+#. toolkit; the raw
+#. toolkit text is not shown, but it stays available as the exception's
+#. __cause__.
+#: src/pyguibud_runtime/_load.py:64
+msgid "the toolkit reported an error (see the exception's __cause__)"
+msgstr ""
+
+#. Translators: {value} is the rejected argument as Python shows it; {example}
+#. is a language
+#. code that is never translated.
+#: src/pyguibud_runtime/_texts.py:29
+#, python-brace-format
+msgid "lang must be a language code such as '{example}', not {value}"
+msgstr ""
+
 #: src/pyguibud_runtime/_ui.py:19
 msgid "This interface has been destroyed."
 msgstr ""
@@ -4499,7 +4658,7 @@ msgid "'{id}' is not a main or dialog window of this interface."
 msgstr ""
 
 #. Translators: closes a list of problems that was cut after 20 lines.
-#: src/pyguibud_runtime/errors.py:13
+#: src/pyguibud_runtime/errors.py:14
 #, python-brace-format
 msgid "… and {count} more problem."
 msgid_plural "… and {count} more problems."

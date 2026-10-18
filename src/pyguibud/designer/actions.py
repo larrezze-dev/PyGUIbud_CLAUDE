@@ -22,12 +22,19 @@ __all__ = [
     "Separator",
     "action_hint",
     "label_of",
+    "window_delete_hint",
 ]
 
 _log = logging.getLogger(__name__)
 _M_FAILED = N_("The action could not be completed: {reason}")
 # Translators: {label} is an action ("Delete"); {scope} lists the panels where its key works.
 _M_SCOPED = N_("{label} ({scope})")
+# Translators: the menu of the windows (main window, dialogs, components) of the open file.
+M_DOCUMENT = N_("_Document")
+# Translators: the dots mean that a dialog opens; _ marks the access key.
+M_DELETE_WINDOW = N_("_Delete window")
+# Translators: {path} is the menu path "Document ▸ Delete window" in the interface language.
+_M_WINDOW_DELETE_HINT = N_("Windows are deleted with {path}.")
 SCOPE_LABELS = {"canvas": N_("canvas"), "tree": N_("object tree")}
 # Translators: a toolbar tooltip and hint: {action} is a menu label ("Save"), {shortcut} its
 # key ("Ctrl+S").
@@ -258,3 +265,9 @@ class ActionRegistry:
                 )
             )
         return rows
+
+
+def window_delete_hint() -> str:
+    """Why a window cannot be cut or deleted like an element, citing the real menu labels."""
+    menu, item = (split_mnemonic(_(m))[0] for m in (M_DOCUMENT, M_DELETE_WINDOW))
+    return _(_M_WINDOW_DELETE_HINT).format(path=f"{menu} ▸ {item}")

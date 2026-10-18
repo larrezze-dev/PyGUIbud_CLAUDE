@@ -111,6 +111,16 @@ def test_tree_rows_flag_findings_without_using_ids_as_keys() -> None:
     assert len({row.key for row in rows}) == len(rows)  # duplicate ids: keys stay unique
 
 
+def test_tree_rows_escape_a_bidi_id_for_display_only() -> None:
+    """QA-19e-08: the row shows U+202E escaped; the model keeps the id as read."""
+    document = read_ui(EXAMPLES.parent / "tests" / "data" / "hardening" / "bidi_id.ui").document
+    rows = tree_rows(document, validate(document, default_registry()))
+    (row,) = [r for r in rows if isinstance(r.node, Widget)]
+    assert isinstance(row.node, Widget)
+    assert row.text.startswith("btn_\\u202egnp.exe") and "‮" not in row.text
+    assert row.node.id == "btn_‮gnp.exe"
+
+
 @pytest.mark.budget
 def test_tree_rows_large_document_is_fast_and_iterative() -> None:
     document = Document()

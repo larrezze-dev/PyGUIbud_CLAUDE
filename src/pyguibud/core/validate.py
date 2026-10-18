@@ -393,8 +393,14 @@ _M_BAD_BUTTONS: Final = N_(
 # shortcuts (Ctrl+S, Ctrl+Shift+F5), inserted as they are: a file must use these key names.
 _M_BAD_SHORTCUT: Final = N_("'{value}' is not a valid shortcut, for example {example} or {other}.")
 _SHORTCUT_EXAMPLES: Final = MappingProxyType({"example": "Ctrl+S", "other": "Ctrl+Shift+F5"})
+# Translators: {value} is the shortcut as typed in the file; {first} and {last} are key names
+# (F1, F24) and {ctrl} and {alt} modifier names (Ctrl, Alt), inserted as they are.
 _M_SHORTCUT_MODIFIER: Final = N_(
-    "The shortcut '{value}' needs Ctrl or Alt unless it is a function key (F1\u2013F24)."
+    "The shortcut '{value}' needs {ctrl} or {alt} unless it is a function key "
+    "({first}\u2013{last})."
+)
+_MODIFIER_NAMES: Final = MappingProxyType(
+    {"ctrl": "Ctrl", "alt": "Alt", "first": "F1", "last": "F24"}
 )
 # Translators: {value} is the key sequence as typed in the file; {example} and {other} are valid
 # key events (key:Ctrl+S, key:<Control-s>), inserted as they are: a file must use these names.
@@ -1965,7 +1971,7 @@ class _Validator:
         if problem is not None:
             syntax = problem == "syntax"
             msgid = _M_BAD_SHORTCUT if syntax else _M_SHORTCUT_MODIFIER
-            examples = _SHORTCUT_EXAMPLES if syntax else {}
+            examples = _SHORTCUT_EXAMPLES if syntax else _MODIFIER_NAMES
             self.sink.error(
                 "validate.bad_shortcut", msgid, action, "", value=_clip(shortcut), **examples
             )

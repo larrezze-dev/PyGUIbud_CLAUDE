@@ -105,7 +105,7 @@ code generation,export to Python,code generation,generación de código,geraçã
 form,the GUI being designed (a .ui document),form,formulario,formulário,formulário,Formular,modulo,formulier,formulaire
 project,set of files edited together,project,proyecto,projeto,projeto,Projekt,progetto,project,projet
 settings,preferences dialog,settings,configuración,definições,configurações,Einstellungen,impostazioni,instellingen,paramètres
-about,help menu command,about,acerca de,acerca de,sobre,Info,informazioni su,over,à propos
+about,help menu command,about,acerca de,sobre,sobre,über,informazioni su,over,à propos
 Meter,ttkbootstrap widget class (kept untranslated),Meter,Meter,Meter,Meter,Meter,Meter,Meter,Meter
 Floodgauge,ttkbootstrap widget class (kept untranslated),Floodgauge,Floodgauge,Floodgauge,Floodgauge,Floodgauge,Floodgauge,Floodgauge,Floodgauge
 DateEntry,ttkbootstrap widget class (kept untranslated),DateEntry,DateEntry,DateEntry,DateEntry,DateEntry,DateEntry,DateEntry,DateEntry
@@ -117,13 +117,13 @@ PySide6,library name (kept untranslated),PySide6,PySide6,PySide6,PySide6,PySide6
 Qt,toolkit name (kept untranslated),Qt,Qt,Qt,Qt,Qt,Qt,Qt,Qt
 panel,main area of the designer window (palette; canvas; inspector),panel,panel,painel,painel,Bereich,pannello,paneel,panneau
 sticky,grid option: which cell edges a widget sticks to,sticky,anclaje,Sticky,Sticky,Sticky,aderenza,sticky,sticky
-fill,pack option: stretch to the free space,fill,rellenar,Fill,preencher,füllen,riempimento,vullen,remplissage
-expand,pack option: take extra space,expand,expandir,Expand,expandir,erweitern,espansione,uitbreiden,expansion
+fill,pack option: stretch to the free space,fill,rellenar,Preencher,preencher,füllen,riempimento,vullen,remplissage
+expand,pack option: take extra space,expand,expandir,Expandir,expandir,erweitern,espansione,uitbreiden,expansion
 gap,space between grid cells,gap,espaciado,intervalo,espaçamento,Abstand,distanza,tussenruimte,espacement
 weight,grid option: share of the extra space of a row or column,weight,peso,peso,peso,Gewicht,peso,gewicht,poids
-row span,number of grid rows a widget covers,row span,filas que abarca,extensão de linhas,linhas ocupadas,Zeilenspanne,righe occupate,rijen overspannen,étendue en lignes
-column span,number of grid columns a widget covers,column span,columnas que abarca,extensão de colunas,colunas ocupadas,Spaltenspanne,colonne occupate,kolommen overspannen,étendue en colonnes
-include,a component of another .ui file used inside a form,include,incluir / inclusión,incluir / inclusão,incluir / inclusão,einbinden / Einbindung,includere / inclusione,insluiten / insluiting,inclure / inclusion
+row span,number of grid rows a widget covers,row span,filas que abarca,linhas ocupadas,linhas ocupadas,belegte Zeilen,righe occupate,rijen overspannen,lignes couvertes
+column span,number of grid columns a widget covers,column span,columnas que abarca,colunas ocupadas,colunas ocupadas,belegte Spalten,colonne occupate,kolommen overspannen,colonnes couvertes
+include,a component of another .ui file used inside a form,include,incluir / inclusión,incluir / inclusão,incluir / inclusão,einbinden / Einbindung / eingebunden,includere / inclusione,insluiten / insluiting / ingesloten,inclure / inclusion
 component,reusable window of a .ui file that other files include,component,componente,componente,componente,Komponente,componente,component,composant
 template,starting point for a new document or catalogue,template,plantilla,modelo,modelo,Vorlage,modello,sjabloon,modèle
 clipboard,system store used by cut; copy and paste,clipboard,portapapeles,área de transferência,área de transferência,Zwischenablage,Appunti,klembord,presse-papiers

@@ -238,10 +238,6 @@ def test_plural_sentences_render_their_number(code: str, count: int) -> None:
     assert f"{help_menu} ▸ {plugins_item}" in text  # the cited path matches the real menu
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="QA-18-04: argparse's own errors stay English (unrecognized arguments, invalid choice)",
-)
 @pytest.mark.parametrize("argv", [["--bogus"], ["--theme", "hell"], ["--lang"]])
 def test_qa18_04_argparse_errors_are_translated(
     argv: list[str], capsys: pytest.CaptureFixture[str], monkeypatch: pytest.MonkeyPatch
@@ -409,11 +405,6 @@ def _help(capsys: pytest.CaptureFixture[str], tool: str, code: str) -> str:
     return capsys.readouterr().out
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="QA-18-13: argparse appends ':' to the section titles, so French shows "
-    "'arguments positionnels:' and 'options:' without the non-breaking space",
-)
 @pytest.mark.parametrize("tool", ["pyguibud", "uic"])
 def test_qa18_13_french_help_section_titles_space_their_colon(
     tool: str, capsys: pytest.CaptureFixture[str]

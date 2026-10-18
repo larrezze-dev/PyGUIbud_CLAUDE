@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from pyguibud.core.diagnostics import Finding
 from pyguibud.core.errors import PyGUIbudError, format_message
+from pyguibud.core.text import printable
 from pyguibud.i18n import NP_
 
 __all__ = ["UiError"]
@@ -39,7 +40,7 @@ class UiError(PyGUIbudError):
         self.names = names
 
     def __str__(self) -> str:
-        lines = [self.message, *(str(finding) for finding in self.findings[:_SHOWN])]
+        lines = [printable(self.message), *(str(finding) for finding in self.findings[:_SHOWN])]
         hidden = len(self.findings) - _SHOWN
         if hidden > 0:
             lines.append(format_message(_MORE, {"count": hidden}))

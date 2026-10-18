@@ -30,7 +30,7 @@ from pyguibud.backends._tkmap import (
     TB_EXT,
     TbExt,
     event_wiring,
-    iso_date,
+    parse_date,
     toggle_style,
 )
 from pyguibud.codegen._errors import M_UNSAFE, CodegenError
@@ -395,7 +395,7 @@ class Emitter:
         options: list[tuple[str, str]] = []
         for prop_name, raw, kind in props:
             text = str(raw)
-            date = iso_date(text) if (name, prop_name) == ("tb:DateEntry", "value") else None
+            date = parse_date(text) if (name, prop_name) == ("tb:DateEntry", "value") else None
             if ext is not None and prop_name not in ext.options:
                 continue
             if date is None and (name, prop_name) == ("tb:DateEntry", "value"):

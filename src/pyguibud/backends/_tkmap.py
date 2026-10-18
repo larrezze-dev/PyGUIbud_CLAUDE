@@ -25,6 +25,7 @@ __all__ = [
     "clip_text",
     "event_wiring",
     "iso_date",
+    "parse_date",
     "split_headings",
     "toggle_style",
 ]
@@ -171,13 +172,20 @@ def _warn(msgid: str, **params: object) -> None:
     _logger.warning("%s", format_message(msgid, params))
 
 
-def iso_date(value: str) -> datetime.date | None:
-    """A ``YYYY-MM-DD`` value as a date; a calendar-invalid one is logged and gives None."""
+def parse_date(value: str) -> datetime.date | None:
+    """A ``YYYY-MM-DD`` value as a date, or None for a calendar-invalid one (nothing logged)."""
     try:
         return datetime.date.fromisoformat(value)
     except ValueError:
-        _warn(_M_BAD_DATE, value=value)
         return None
+
+
+def iso_date(value: str) -> datetime.date | None:
+    """:func:`parse_date`, logging a calendar-invalid value (the runtime's warning)."""
+    date = parse_date(value)
+    if date is None:
+        _warn(_M_BAD_DATE, value=value)
+    return date
 
 
 def split_headings(text: str, count: int) -> list[str]:

@@ -5,9 +5,10 @@ from __future__ import annotations
 from tkinter import ttk
 from typing import Any
 
+from pyguibud.core.errors import format_message
 from pyguibud.designer.actions import ActionRegistry
 from pyguibud.designer.dialogs.base import ModalDialog
-from pyguibud.designer.panels.canvas import FOCUS_HINT
+from pyguibud.designer.panels.canvas import focus_hint
 from pyguibud.i18n import N_, _
 
 __all__ = ["ShortcutsDialog"]
@@ -16,9 +17,10 @@ _M_TITLE = N_("Keyboard shortcuts")
 # Translators: the Close button of the shortcuts sheet; _ marks the access key (Alt+letter).
 _M_CLOSE = N_("_Close")
 _M_EMPTY = N_("There are no keyboard shortcuts.")
-# Translators: a note under the shortcut list (spec preview-export 3).
+# Translators: a note under the shortcut list (spec preview-export 3). {key} is the key Ctrl+E,
+# inserted as it is (key names are not translated).
 _M_EXPORT_NOTE = N_(
-    "Ctrl+E exports from anywhere in the main window, also from a text field (where some "
+    "{key} exports from anywhere in the main window, also from a text field (where some "
     "systems also move the cursor to the end of the line)."
 )
 
@@ -67,11 +69,16 @@ class ShortcutsDialog(ModalDialog):
             )
             row += 1
         # The canvas keeps Tab for itself; F6 is the way out (spec 7.4, no keyboard trap).
-        ttk.Label(self.rows, text=_(FOCUS_HINT), anchor="w").grid(
+        ttk.Label(self.rows, text=focus_hint(), anchor="w").grid(
             row=row, column=0, columnspan=2, sticky="w", pady=(12, 0)
         )
         if any(entry.accelerator == "Ctrl+E" for entry in sheet):
-            note = ttk.Label(self.rows, text=_(_M_EXPORT_NOTE), anchor="w", justify="left",
-                             wraplength=self.root.winfo_fpixels("4i"))  # fmt: skip
+            note = ttk.Label(
+                self.rows,
+                text=format_message(_M_EXPORT_NOTE, {"key": "Ctrl+E"}),
+                anchor="w",
+                justify="left",
+                wraplength=self.root.winfo_fpixels("4i"),
+            )
             note.grid(row=row + 1, column=0, columnspan=2, sticky="w", pady=(4, 0))
         super().retranslate()

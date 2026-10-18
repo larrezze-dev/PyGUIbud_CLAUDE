@@ -493,7 +493,7 @@ def test_a_drop_on_the_caption_menubar_strip_or_status_bar_inserts_nothing(
 
 
 # ---------------------------------------------------------------- delete, undo and redo abuse
-_NOT_DELETABLE = "Windows are deleted with Document > Delete window."
+_NOT_DELETABLE = "Windows are deleted with Document ▸ Delete window."
 
 
 def _has_statusbar(window: Any) -> bool:

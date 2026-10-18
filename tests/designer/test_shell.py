@@ -65,7 +65,7 @@ def test_shell_has_menus_toolbar_four_panels_and_status_bar(shell: DesignerApp) 
 
 def test_nothing_unimplemented_in_the_menus(shell: DesignerApp) -> None:
     ids = {action.id for action in shell.registry.actions()}
-    assert ids.isdisjoint({"help.about"})
+    assert "help.about" in ids  # Step 19e: the author credit (CLAUDE.md)
     assert {"file.open", "file.save", "file.save_as", "file.close", "file.quit"} <= ids
     assert {"edit.cut", "edit.paste", "edit.insert.menu", "document.rename"} <= ids  # 14a.2
 

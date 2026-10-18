@@ -10,13 +10,19 @@ import functools
 from collections.abc import Callable
 from dataclasses import dataclass
 
-from pyguibud.designer.actions import ActionDef, ActionRegistry, MenuDef
+from pyguibud.designer.actions import (
+    M_DELETE_WINDOW,
+    M_DOCUMENT,
+    ActionDef,
+    ActionRegistry,
+    MenuDef,
+)
 from pyguibud.designer.clipboard_actions import ClipboardActions
 from pyguibud.designer.edit import EditActions
 from pyguibud.designer.editing import MenuItem
 from pyguibud.designer.preview import M_NOT_INSTALLED, toolkit_label
 from pyguibud.designer.windows import WindowActions, WindowKind
-from pyguibud.i18n import LANGUAGES, N_, PSEUDO_LANGUAGE
+from pyguibud.i18n import LANGUAGES, N_, NC_, PSEUDO_LANGUAGE
 
 __all__ = [
     "THEME_ROLES",
@@ -52,14 +58,11 @@ _M_MENU = N_("M_enu")
 _M_ACTION = N_("_Action")
 _M_SEPARATOR = N_("_Separator")
 _M_STATUSBAR = N_("Status _bar")
-# Translators: the menu of the windows (main window, dialogs, components) of the open file.
-_M_DOCUMENT = N_("_Document")
 _M_ADD_MAIN = N_("Add _main window")
 _M_ADD_DIALOG = N_("Add d_ialog")
 _M_ADD_COMPONENT = N_("Add _component")
 # Translators: the dots mean that a dialog opens; _ marks the access key.
 _M_RENAME_WINDOW = N_("_Rename window…")
-_M_DELETE_WINDOW = N_("_Delete window")
 _M_NEXT_WINDOW = N_("_Next window")
 _M_PREVIOUS_WINDOW = N_("_Previous window")
 # Translators: a sub-menu of Edit: moving and sizing the selected elements on the canvas.
@@ -101,11 +104,13 @@ _M_EXPORT = N_("_Export Python code…")
 _M_HELP = N_("_Help")
 _M_SHORTCUTS = N_("_Keyboard shortcuts…")
 _M_PLUGINS = N_("_Plugins…")
+_M_ABOUT = N_("A_bout PyGUIbud…")
 _M_NEXT_PANEL = N_("Next _panel")
 _M_PREVIOUS_PANEL = N_("Previous pa_nel")
 _M_PSEUDO = N_("Pseudo-locale (layout test)")
 # Translators: the menu, and its action, that runs the document in a separate window (F5).
-_M_PREVIEW = N_("_Preview")
+_M_PREVIEW_MENU = NC_("menu", "_Preview")
+_M_PREVIEW_RUN = NC_("action", "_Preview")
 _M_CLOSE_PREVIEW = N_("_Close preview")
 # Translators: Preview > Language: show the texts as written in the document (no translation).
 _M_DOCUMENT_LANGUAGE = N_("Document language")
@@ -153,6 +158,7 @@ class ShellCallbacks:
     files: FileCallbacks | None = None  # Open, Open recent, Save, Close, Recover
     preview: PreviewCallbacks | None = None  # the Preview menu (Step 15a)
     show_plugins: Callable[[], None] | None = None  # Help > Plugins (Step 17c)
+    show_about: Callable[[], None] | None = None  # Help > About (Step 19e)
 
 
 @dataclass(frozen=True, slots=True)
@@ -237,6 +243,8 @@ def register_standard_actions(registry: ActionRegistry, callbacks: ShellCallback
     )
     if callbacks.show_plugins is not None:
         registry.add(ActionDef("help.plugins", "help", _M_PLUGINS, callbacks.show_plugins))
+    if callbacks.show_about is not None:
+        registry.add(ActionDef("help.about", "help", _M_ABOUT, callbacks.show_about))
 
 
 def _register_files(registry: ActionRegistry, files: FileCallbacks) -> None:
@@ -408,7 +416,7 @@ def _register_insert(registry: ActionRegistry, edit: EditActions) -> None:
 
 def _register_document(registry: ActionRegistry, windows: WindowActions) -> None:
     """The Document menu (spec 7): add, rename, delete and switch windows."""
-    registry.add_menu(MenuDef("document", _M_DOCUMENT))
+    registry.add_menu(MenuDef("document", M_DOCUMENT))
     adds: tuple[tuple[WindowKind, str], ...] = (
         ("main", _M_ADD_MAIN),
         ("dialog", _M_ADD_DIALOG),
@@ -442,7 +450,7 @@ def _register_document(registry: ActionRegistry, windows: WindowActions) -> None
         ActionDef(
             "document.delete",
             "document",
-            _M_DELETE_WINDOW,
+            M_DELETE_WINDOW,
             windows.delete,
             None,
             windows.can_change,
@@ -468,9 +476,9 @@ def _register_document(registry: ActionRegistry, windows: WindowActions) -> None
 
 def _register_preview(registry: ActionRegistry, preview: PreviewCallbacks) -> None:
     """Preview: run (F5), close (Shift+F5), Language and Theme (live), use the theme."""
-    registry.add_menu(MenuDef("preview", _M_PREVIEW))
+    registry.add_menu(MenuDef("preview", _M_PREVIEW_MENU))
     registry.add(
-        ActionDef("preview.run", "preview", _M_PREVIEW, preview.run, "F5", preview.has_document,
+        ActionDef("preview.run", "preview", _M_PREVIEW_RUN, preview.run, "F5", preview.has_document,
                   toolbar=True, icon="preview")
     )  # fmt: skip
     registry.add(

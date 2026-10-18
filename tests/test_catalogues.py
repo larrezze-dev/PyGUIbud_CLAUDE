@@ -130,11 +130,16 @@ _BRACE = re.compile(r"\{[^{}]*\}")
 _PERCENT = re.compile(r"%\([^)]*\)[#0\- +]*\d*(?:\.\d+)?[a-zA-Z]")
 #: Sources whose underscores are literal (language codes, identifiers), not access keys.
 _NOT_MNEMONIC = re.compile(r"[a-z]{2}_[A-Z]{2}|'_'|\w\.\w")
+# CLDR one/other rules in gettext form; fr and pt_BR use n > 1 (0 is singular), by convention.
 _PLURAL_FORMS = {
-    "fr_FR": "nplurals=2; plural=(n > 1);",
+    "es_ES": "nplurals=2; plural=(n != 1);",
+    "pt_PT": "nplurals=2; plural=(n != 1);",
     "pt_BR": "nplurals=2; plural=(n > 1);",
+    "de_DE": "nplurals=2; plural=(n != 1);",
+    "it_IT": "nplurals=2; plural=(n != 1);",
+    "nl_NL": "nplurals=2; plural=(n != 1);",
+    "fr_FR": "nplurals=2; plural=(n > 1);",
 }
-_DEFAULT_PLURAL_FORMS = "nplurals=2; plural=(n != 1);"
 _FORBIDDEN = {
     "pt_PT": re.compile(r"\barquivo|\btela\b|\bsalvar|\busuário|\bconfigurações", re.IGNORECASE),
     "pt_BR": re.compile(r"\bficheiro|\becrã|\bguardar\b|\butilizador", re.IGNORECASE),
@@ -224,7 +229,7 @@ def test_plural_forms_header_matches_the_locale(code: str) -> None:
     text = _po_path(code).read_text("utf-8")
     found = re.search(r'^"Plural-Forms: ([^"\\]*)\\n"$', text, re.MULTILINE)
     assert found is not None
-    assert found.group(1).strip() == _PLURAL_FORMS.get(code, _DEFAULT_PLURAL_FORMS)
+    assert re.sub(r"\s+", "", found.group(1)) == re.sub(r"\s+", "", _PLURAL_FORMS[code])
 
 
 @pytest.mark.parametrize("code", TARGETS)
@@ -235,7 +240,7 @@ def test_compiled_catalogue_picks_the_right_plural_form(code: str) -> None:
     one = "{count} more problem was found but not listed."
     many = "{count} more problems were found but not listed."
     forms = _forms(next(m for m in _messages(code) if isinstance(m.id, tuple) and m.id[0] == one))
-    zero_form = 0 if code in _PLURAL_FORMS else 1
+    zero_form = 0 if "n > 1" in _PLURAL_FORMS[code] else 1
     assert translations.ngettext(one, many, 0) == forms[zero_form]
     assert translations.ngettext(one, many, 1) == forms[0]
     assert translations.ngettext(one, many, 2) == forms[1]

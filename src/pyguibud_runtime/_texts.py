@@ -13,6 +13,7 @@ from pyguibud.core.errors import format_message
 from pyguibud.i18n import (
     LANGUAGE_CODE_RE,
     LOCALE_DIR,
+    N_,
     PSEUDO_LANGUAGE,
     PseudoTranslations,
     UnusableCatalogue,
@@ -23,6 +24,9 @@ from pyguibud.i18n import M_CATALOGUE as _M_CATALOGUE
 __all__ = ["DocumentTexts", "Texts", "Translator", "check_lang", "check_translator", "log"]
 
 logger = logging.getLogger("pyguibud_runtime")
+# Translators: {value} is the rejected argument as Python shows it; {example} is a language
+# code that is never translated.
+_M_LANG = N_("lang must be a language code such as '{example}', not {value}")
 
 
 class Translator(Protocol):
@@ -40,7 +44,7 @@ def log(msgid: str, **params: object) -> None:
 def check_lang(lang: str | None) -> str | None:
     """Reject anything but a language code (blocks path traversal through ``languages=``)."""
     if lang is not None and (not isinstance(lang, str) or not LANGUAGE_CODE_RE.fullmatch(lang)):
-        raise ValueError(f"lang must be a language code such as 'de_DE', not {lang!r}")
+        raise ValueError(format_message(_M_LANG, {"value": repr(lang), "example": "de_DE"}))
     return lang
 
 

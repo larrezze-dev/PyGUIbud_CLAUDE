@@ -265,7 +265,7 @@ _NEW_13B = (
     "Move elements",
     "Resize element",
     "Delete elements",
-    "Tab selects the next widget; F6 moves to the next panel.",
+    "{next} selects the next widget; {panel} moves to the next panel.",  # key names: 19e H79
     # "{count} elements selected; showing '{id}'." was replaced in 14a (spec 3.4).
     "{count} element selected",
     "Select _next widget",

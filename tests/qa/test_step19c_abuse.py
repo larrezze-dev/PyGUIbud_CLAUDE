@@ -64,7 +64,7 @@ FORM = (
 )
 LONG = "W" * 100_000
 EMOJI = "\U0001f600"  # outside the BMP: two UTF-16 units, so two Tk 8.6 indices on Windows
-CUT_REFUSAL = "Windows are deleted with Document > Delete window."
+CUT_REFUSAL = "Windows are deleted with Document ▸ Delete window."
 UNDO_FAILED = "Undo or redo failed; the document was left as it was."
 
 
@@ -1220,7 +1220,12 @@ def test_qa_19c_03_a_revert_that_raises_after_changing_the_model_clears_the_hist
 def test_h37_the_new_msgids_are_in_the_catalogue_template() -> None:
     """Read-only: the translator owns the catalogues; the template must hold the new texts."""
     pot = (ROOT / "src" / "pyguibud" / "locale" / "pyguibud.pot").read_text("utf-8")
-    for msgid in (UNDO_FAILED, CUT_REFUSAL, "This text has {length} characters"):
+    # 19e H77: the cited menu path became a placeholder filled from the real menu labels.
+    for msgid in (
+        UNDO_FAILED,
+        "Windows are deleted with {path}.",
+        "This text has {length} characters",
+    ):
         assert msgid in pot, msgid
 
 

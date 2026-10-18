@@ -157,7 +157,7 @@ def test_delete_explains_why_a_window_stays_and_allows_bars_and_menus() -> None:
     assert isinstance(window, Window) and window.menubar is not None
     assert window.statusbar is not None
     edit = EditActions(session, lambda *_a: None, lambda _m: None)
-    reason = "Windows are deleted with Document > Delete window."
+    reason = "Windows are deleted with Document ▸ Delete window."
     menu = window.menubar.children[0]
     cases: list[tuple[object, str | None]] = [(window, reason), (window.menubar, None)]
     cases += [(window.statusbar, None), (menu, None), (menu.children[0], None), (frame, None)]

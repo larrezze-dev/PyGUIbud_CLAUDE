@@ -2,8 +2,9 @@
 
 It shows a ``.ui`` file with ``pyguibud_runtime.load_ui``, the path users ship, with no-op
 handlers (D8). It may import the runtime, ``pyguibud.core``, ``pyguibud.i18n`` and
-``pyguibud.backends``, never the designer, the CLI, ``uic`` or codegen; the toolkit is imported
-only inside :func:`run`. The designer controls it through stdin (``lang CODE|-``, ``raise``,
+``pyguibud.backends`` and ``pyguibud._argparse`` (the translated parser shared with the CLI);
+never the designer, the CLI, ``uic`` or codegen; the toolkit is imported only inside
+:func:`run`. The designer controls it through stdin (``lang CODE|-``, ``raise``,
 ``quit``; end of input = quit; trim T4: a theme change restarts the child) and reads
 ``ready.json`` and ``result.json``, which are written atomically into the current folder.
 """
@@ -22,6 +23,7 @@ from collections.abc import Callable, Iterator, Mapping
 from pathlib import Path
 from typing import Any
 
+from pyguibud._argparse import PyGUIbudParser, _select_initial_language
 from pyguibud.backends import BACKEND_NAME
 from pyguibud.i18n import LANGUAGE_CODE_RE, N_, _, set_language
 
@@ -64,13 +66,17 @@ class NoHandlers(Mapping[str, Callable[[], None]]):
 
 
 def _code(value: str) -> str:
-    if not LANGUAGE_CODE_RE.fullmatch(value):
-        raise argparse.ArgumentTypeError(value)
+    from pyguibud_runtime._texts import check_lang
+
+    try:  # the runtime's own check and translated reason: --lang is load_ui's lang
+        check_lang(value)
+    except ValueError as exc:
+        raise argparse.ArgumentTypeError(str(exc)) from None
     return value
 
 
 def _parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(prog="pyguibud.preview", description=_(_M_DESCRIPTION))
+    parser = PyGUIbudParser(prog="pyguibud.preview", description=_(_M_DESCRIPTION))
     parser.add_argument("--ui-lang", type=_code, metavar="CODE")
     parser.add_argument("--lang", type=_code, metavar="CODE")
     parser.add_argument("--theme", metavar="NAME")
@@ -236,6 +242,7 @@ def run(argv: list[str] | None = None) -> int:
     """Run the child; 0 = closed, 1 = a ``UiError``, 2 = usage, 3 = a crash (spec 4.2)."""
     from pyguibud_runtime import UiError
 
+    _select_initial_language(argv, "--ui-lang")  # usage errors in the interface language
     args = _parser().parse_args(argv)
     _configure_plugins(args)
     if args.ui_lang:

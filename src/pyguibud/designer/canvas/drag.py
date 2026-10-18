@@ -61,9 +61,10 @@ _M_RELEASE_CANCEL = N_("Release to cancel.")
 _M_CANCELLED = N_("Drag cancelled.")
 # Translators: {id} is the id of the element that was just added.
 _M_INSERTED = N_("Inserted '{id}'.")
-# Translators: {widget} is a palette item ("Button").
+# Translators: {widget} is a palette item ("Button"); {key} is the key Enter, inserted as it is
+# (key names are not translated).
 _M_HINT = N_(
-    "Drag '{widget}' onto the canvas, or press Enter to insert it into the selected container."
+    "Drag '{widget}' onto the canvas, or press {key} to insert it into the selected container."
 )
 _M_MENU_EDITOR = N_("Menus and actions are edited in the menu editor.")
 _THRESHOLD = 4  # px at 96 dpi before a press becomes a drag
@@ -385,7 +386,9 @@ class DragController:
         spec = self.session.registry.get(spec_name)
         if spec is not None and not self.busy:  # a resize keeps its size text (Q12)
             menu = NewWidget.of(spec).role == "menu"
-            self._status(_(_M_MENU_EDITOR) if menu else _(_M_HINT).format(widget=spec.label()))
+            self._status(
+                _(_M_MENU_EDITOR) if menu else _(_M_HINT).format(widget=spec.label(), key="Enter")
+            )
 
     def cancel(self) -> None:
         """Esc, focus loss or a new document: drop the drag; nothing changes."""

@@ -196,7 +196,7 @@ def test_delete_still_refuses_a_window_and_says_where_to_delete_it(
     assert not _enabled(shell, "edit.delete")
     _tree(shell).focus_force()
     _tree(shell).event_generate("<Delete>")
-    assert shell.shell._message == "Windows are deleted with Document > Delete window."
+    assert shell.shell._message == "Windows are deleted with Document ▸ Delete window."
     assert _document(shell).children
 
 

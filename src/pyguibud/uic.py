@@ -8,12 +8,13 @@ are translated. The generated module never depends on the CLI language (spec ``c
 from __future__ import annotations
 
 import argparse
+import dataclasses
 import glob
 import os
 import sys
 
-from .__about__ import __version__
-from .cli import PyGUIbudParser, _language_arg, _make_stdout_safe, _select_initial_language
+from ._argparse import PyGUIbudParser, _make_stdout_safe, _select_initial_language
+from .cli import _language_arg, version_text
 from .codegen import (
     CodegenError,
     default_output,
@@ -34,14 +35,13 @@ from .core.diagnostics import Finding
 from .core.errors import XmlIoError, format_message
 from .core.files import DiskFiles, is_network_or_device_path
 from .core.registry import WIDGETS_GROUP, default_registry
+from .core.text import printable
 from .core.validate import validate_read
 from .core.xml_io import ReadResult, read_ui
+from .credits import credit
 from .i18n import N_, _, get_language, set_language
 
 _GLOB_CHARS = frozenset("*?[")
-# Control and bidi characters from a .ui value could forge or reorder diagnostic lines.
-_UNSAFE = [*range(0x20), *range(0x7F, 0xA0), *range(0x202A, 0x202F), *range(0x2066, 0x206A)]
-_ESCAPES = {code: repr(chr(code))[1:-1] for code in _UNSAFE}  # "\n", "\x85", "\u202e"
 # Usage errors go through argparse, so the msgids are marked here and translated when used.
 # Translators: {option} and {other} are command-line options such as "-o" and "--check"; they
 # are never translated.
@@ -62,12 +62,14 @@ def _build_parser() -> argparse.ArgumentParser:
         epilog=_(
             "The check loads the installed widget plugins (entry point {group}), which "
             "runs their code; only check files with plugins you trust."
-        ).format(group=WIDGETS_GROUP),
+        ).format(group=WIDGETS_GROUP)
+        + "\n\n"
+        + credit(),
     )
     parser.add_argument(
         "--version",
         action="version",
-        version=f"%(prog)s {__version__}",
+        version=version_text(),
         help=_("show the version number and exit"),
     )
     parser.add_argument(
@@ -120,13 +122,18 @@ def _expand(argument: str) -> list[str]:
     return [argument]
 
 
-def _report(finding: Finding) -> None:
-    """Print one finding in GCC style; the severity token stays in English."""
+def _report(finding: Finding, source: str = "") -> None:
+    """Print one finding in GCC style; the severity token stays in English.
+
+    ``source`` names the file for findings that carry none (the code generator's warnings).
+    """
+    if source and not finding.source:
+        finding = dataclasses.replace(finding, source=source)
     if finding.line is None and finding.path:
         where = f"{finding.source}: {finding.severity}: {finding.path}"
     else:
         where = f"{finding.location}: {finding.severity}"
-    print(f"{where}: {finding.message}".translate(_ESCAPES), file=sys.stderr)
+    print(printable(f"{where}: {finding.message}"), file=sys.stderr)
 
 
 def _read(path: str) -> ReadResult | None:
@@ -134,7 +141,7 @@ def _read(path: str) -> ReadResult | None:
     try:
         result = read_ui(path)
     except XmlIoError as exc:
-        print(f"{exc.location}: error: {exc.message}".translate(_ESCAPES), file=sys.stderr)
+        print(printable(f"{exc.location}: error: {exc.message}"), file=sys.stderr)
         return None
     for warning in result.warnings:
         _report(warning)
@@ -185,7 +192,7 @@ def _generate(
     except CodegenError as exc:
         for finding in exc.findings:
             _report(finding)
-        print(f"{path}: error: {exc.message}".translate(_ESCAPES), file=sys.stderr)
+        print(printable(f"{path}: error: {exc.message}"), file=sys.stderr)
         return False
     if any(same_file(output, source) for source in module.sources):
         return _refuse(output, M_SAME_FILE)
@@ -197,7 +204,7 @@ def _generate(
         return _refuse(output, M_WRITE_FAILED, reason=exc.strerror or str(exc))
     written.append(output)
     for finding in module.warnings:
-        _report(finding)
+        _report(finding, path)
     # Translators: {path} is the .ui file, {output} the Python file written from it.
     print(_("{path}: wrote {output}").format(path=path, output=output))
     return True
@@ -275,7 +282,7 @@ def main(argv: list[str] | None = None) -> int:
     paths: list[str] = []
     for argument in args.files:
         if is_network_or_device_path(argument):  # never contacted, not even to test it (R82)
-            print(f"{argument}: error: ".translate(_ESCAPES) + _(_M_NETWORK), file=sys.stderr)
+            print(printable(f"{argument}: error: ") + _(_M_NETWORK), file=sys.stderr)
             ok = False
             continue
         found = _expand(argument)

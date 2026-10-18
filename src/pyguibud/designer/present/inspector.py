@@ -22,6 +22,7 @@ from pyguibud.core import (
     Widget,
     Window,
 )
+from pyguibud.core.text import printable
 from pyguibud.core.validate import WINDOW_PROPERTIES
 from pyguibud.designer.present import clip, severity_label
 from pyguibud.designer.present.canvas import kind_label
@@ -158,7 +159,9 @@ def inspector_rows(
     rows += _placement_rows(node)
     findings = _(_S_FINDINGS)
     rows += [
-        InspectorRow(findings, severity_label(finding.severity), clip(finding.message, 200))
+        InspectorRow(
+            findings, severity_label(finding.severity), clip(printable(finding.message), 200)
+        )
         for finding in report.findings
         if finding.anchor is node
     ]

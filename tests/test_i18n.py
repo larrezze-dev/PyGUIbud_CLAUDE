@@ -176,6 +176,10 @@ def test_pseudo_keeps_the_mnemonic_key_unaccented(message: str, expected_key: st
 
 def test_pseudo_empty_and_formatting() -> None:
     assert _PSEUDO.gettext("") == ""
+    assert _PSEUDO.gettext("\n") == "\n"
+    # QA-19e-01: newlines at either end stay outside the brackets.
+    shown = _PSEUDO.gettext("\nerror: %s\n")
+    assert shown.startswith("\n[") and shown.endswith("]\n") and "%s" in shown
     assert _PSEUDO.gettext("Hello {name}").format(name="Ann").startswith("[")
     assert _PSEUDO.gettext("%(n)d files") % {"n": 3} != ""
 

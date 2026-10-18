@@ -24,7 +24,9 @@ from tests.core.test_plugins_17a import _EP, _builtins, _Dist
 ACME_SRC = Path(__file__).resolve().parents[2] / "examples" / "acme_plugin" / "src"
 
 
-def test_h65_a_calendar_invalid_date_is_reported_at_export(tmp_path: Path) -> None:
+def test_h65_a_calendar_invalid_date_is_reported_at_export(
+    tmp_path: Path, caplog: pytest.LogCaptureFixture
+) -> None:
     path = write_ui(
         tmp_path / "dates.ui",
         '<window id="main" kind="main"><layout type="grid"/>'
@@ -36,6 +38,8 @@ def test_h65_a_calendar_invalid_date_is_reported_at_export(tmp_path: Path) -> No
     assert finding.params == {"value": "2023-02-30"} and finding.anchor is not None
     assert "2023" not in generated.text.partition("class ")[2]  # still left out of the module
     assert finding.message  # a translated msgid, rendered without error
+    # QA-19e-05: reported once, as a finding; never also logged (uic printed it twice).
+    assert not [r for r in caplog.records if "2023-02-30" in r.getMessage()]
 
 
 @pytest.mark.gui

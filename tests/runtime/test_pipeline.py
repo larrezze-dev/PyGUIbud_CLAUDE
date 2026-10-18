@@ -298,6 +298,40 @@ def test_backend_failures_are_wrapped(stage: str, exc: BaseException, code: str)
     assert FakeBackend.calls == (["prepare"] if stage == "prepare" else ["prepare", "build"])
 
 
+def test_a_tcl_error_gets_a_generic_reason_and_stays_chained() -> None:
+    from tkinter import TclError
+
+    exc = TclError('can\'t invoke "frame" command: application has been destroyed')
+    FakeBackend.fail_build = exc
+    with pytest.raises(UiError) as info:
+        load_ui(HELLO, Hello())
+    assert info.value.__cause__ is exc
+    assert "can't invoke" not in str(info.value)
+    assert "__cause__" in str(info.value)
+
+
+def test_forged_lines_in_a_ui_error_message_are_escaped() -> None:
+    FakeBackend.fail_build = RuntimeError("one\ntwo‮")
+    with pytest.raises(UiError) as info:
+        load_ui(HELLO, Hello())
+    assert len(str(info.value).splitlines()) == 1
+    assert "\\n" in str(info.value)
+
+
+def test_check_lang_message_is_translated() -> None:
+    from pyguibud.i18n import get_language, set_language
+
+    before = get_language()
+    set_language("en_XA")
+    try:
+        with pytest.raises(ValueError, match=r"[éáóíúèà]") as info:
+            load_ui(HELLO, Hello(), lang="../x")
+    finally:
+        set_language(before)
+    assert "'../x'" in str(info.value)
+    assert "lang must be" not in str(info.value)
+
+
 def test_unknown_backend_is_unavailable(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(load_module, "load_backend", load_backend)
     with pytest.raises(UiError) as info:

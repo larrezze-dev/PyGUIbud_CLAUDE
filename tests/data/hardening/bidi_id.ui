@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<pyguibud-ui schema_version="1.0" xmlns="urn:pyguibud:ui:1">
+  <meta generator="pyguibud" source_locale="en_GB"/>
+  <window id="main" kind="main">
+    <prop name="title">Bidi id</prop>
+    <layout type="grid" padding="12" gap="6">
+      <column index="0" weight="1"/>
+      <row index="0" weight="1"/>
+    </layout>
+    <widget class="Button" id="btn_‮gnp.exe">
+      <cell row="0" column="0"/>
+      <prop name="text">Click me</prop>
+    </widget>
+  </window>
+</pyguibud-ui>

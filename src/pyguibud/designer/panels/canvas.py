@@ -60,8 +60,15 @@ _M_UNEXPECTED = N_("an unexpected error occurred; see the log")
 # technical cause (usually in English).
 _M_CANNOT_DRAW = N_("This window cannot be drawn on the canvas: {reason}")
 _STAGE_PAD = 12  # px at 96 dpi around the window on its stage
-# Translators: shown in the status bar when the canvas gets the keyboard focus.
-FOCUS_HINT = N_("Tab selects the next widget; F6 moves to the next panel.")
+# Translators: shown in the status bar when the canvas gets the keyboard focus. {next} and
+# {panel} are the keys Tab and F6, inserted as they are (key names are not translated).
+FOCUS_HINT = N_("{next} selects the next widget; {panel} moves to the next panel.")
+_FOCUS_KEYS = {"next": "Tab", "panel": "F6"}
+
+
+def focus_hint() -> str:
+    """The canvas focus hint in the interface language."""
+    return format_message(FOCUS_HINT, _FOCUS_KEYS)
 
 
 def _includes(window: Window, *, external: bool = False) -> bool:
@@ -510,7 +517,7 @@ class CanvasPanel(PanelBase):
         # Esc cancels a move or band first ("break"); only then is it Select parent.
         for sequence in ("<Escape>", "<FocusOut>"):
             scroll.bind(sequence, self._cancel_move, add="+")
-        scroll.bind("<FocusIn>", lambda _e: self.status(_(FOCUS_HINT)), add="+")
+        scroll.bind("<FocusIn>", lambda _e: self.status(focus_hint()), add="+")
         for sequence, handler in self._keys:
             scroll.bind(sequence, handler, add="+")
         vbar = ttk.Scrollbar(page, orient="vertical", command=scroll.yview)

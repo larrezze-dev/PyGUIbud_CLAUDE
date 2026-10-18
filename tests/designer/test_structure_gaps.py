@@ -923,7 +923,7 @@ def test_a13_a_refused_cut_leaves_the_clipboard_and_the_document_alone() -> None
     session.select(part, origin="tree")
     actions.cut()  # a window, even an included component, is never cut (H43, Step 19c)
     assert store["text"] == "SENTINEL"
-    assert messages == ["Windows are deleted with Document > Delete window."]
+    assert messages == ["Windows are deleted with Document ▸ Delete window."]
     assert dump_ui(document) == before and session.stack is not None and not session.stack.can_undo
     session.select_many(list(document.children), origin="tree")
     assert len(session.selection.nodes) == 1  # windows never form a multi-selection
@@ -931,7 +931,7 @@ def test_a13_a_refused_cut_leaves_the_clipboard_and_the_document_alone() -> None
     assert not actions.can_cut()  # a window is not cut, as it is not deleted (H43, Step 19c)
     actions.cut()
     assert store["text"] == "SENTINEL" and messages[-1] == actions.cut_refusal()
-    assert messages[-1] == "Windows are deleted with Document > Delete window."
+    assert messages[-1] == "Windows are deleted with Document ▸ Delete window."
     assert dump_ui(document) == before and not session.stack.can_undo
     # a menu node cannot be copied, so cutting it leaves the clipboard alone as well
     session.select(node(document, "free"), origin="tree")

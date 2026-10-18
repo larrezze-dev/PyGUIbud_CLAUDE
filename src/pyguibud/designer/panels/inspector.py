@@ -22,6 +22,7 @@ from pyguibud.core import ValidationReport
 from pyguibud.core.commands import Macro, Outcome, SetField, SetResource
 from pyguibud.core.diagnostics import Finding
 from pyguibud.core.model import ImageResource, Prop, Widget, Window
+from pyguibud.core.text import printable
 from pyguibud.core.validate import BIND_TYPES
 from pyguibud.designer.canvas.design import unbind_tag
 from pyguibud.designer.dialogs import files
@@ -280,7 +281,7 @@ class InspectorPanel(PanelBase):
             title.grid(row=row, column=0, columnspan=3, sticky="w", pady=(6, 2))
             self._findings.append(title)
         for k, finding in enumerate(findings[:50], start=row + 1):
-            text = f"{severity_label(finding.severity)}: {clip(finding.message, 200)}"
+            text = f"{severity_label(finding.severity)}: {clip(printable(finding.message), 200)}"
             line = ttk.Label(self.form, text=text, wraplength=260, justify="left")
             line.grid(row=k, column=0, columnspan=3, sticky="w")
             self._findings.append(line)

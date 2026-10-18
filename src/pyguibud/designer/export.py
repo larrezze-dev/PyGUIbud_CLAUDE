@@ -29,6 +29,7 @@ from pyguibud.codegen.output import (
 from pyguibud.core.diagnostics import Finding
 from pyguibud.core.errors import XmlIoError, format_message
 from pyguibud.core.files import is_network_or_device_path
+from pyguibud.core.text import printable
 from pyguibud.core.xml_io import read_ui
 from pyguibud.designer.files import M_NETWORK, FileStamp
 from pyguibud.i18n import N_, PSEUDO_LANGUAGE, ngettext
@@ -115,12 +116,14 @@ class Refusal:
     findings: tuple[Finding, ...] = ()
     outside: tuple[str, ...] = ()
 
-    def text(self) -> str:
-        lines = [format_message(self.msgid, self.params)]
-        lines += [f"• {finding.message}" for finding in self.findings[:_MAX_LISTED]]
+    def text(self, sep: str = "\n") -> str:
+        """The message and its findings; user-supplied parts are escaped (H81)."""
+        params = {k: printable(v) if isinstance(v, str) else v for k, v in self.params.items()}
+        lines = [format_message(self.msgid, params)]
+        lines += [f"• {printable(finding.message)}" for finding in self.findings[:_MAX_LISTED]]
         if len(self.findings) > _MAX_LISTED:
             lines.append(more_text(len(self.findings) - _MAX_LISTED))
-        return "\n".join(lines)
+        return sep.join(lines)
 
 
 @dataclass(frozen=True, slots=True)
@@ -167,12 +170,12 @@ class ExportOutcome:
         """The status-bar text (spec 6.2): what was written, then the failure and the notes."""
         parts = []
         if len(self.written) == 2:
-            parts.append(format_message(M_EXPORTED_POT, {"output": self.written[0],
-                                                         "pot": self.written[1]}))  # fmt: skip
+            names = {"output": printable(self.written[0]), "pot": printable(self.written[1])}
+            parts.append(format_message(M_EXPORTED_POT, names))
         elif self.written:
-            parts.append(format_message(M_EXPORTED, {"output": self.written[0]}))
+            parts.append(format_message(M_EXPORTED, {"output": printable(self.written[0])}))
         failure = (self.failure,) if self.failure is not None else ()
-        parts += [note.text() for note in (*failure, *self.plan.notes)]
+        parts += [note.text(" ") for note in (*failure, *self.plan.notes)]
         return " ".join(parts)
 
 

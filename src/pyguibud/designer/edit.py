@@ -22,6 +22,7 @@ from pyguibud.core.model import (
     Widget,
     Window,
 )
+from pyguibud.designer.actions import window_delete_hint
 from pyguibud.designer.editing import (
     MenuItem,
     delete_command,
@@ -35,12 +36,10 @@ from pyguibud.designer.editing import (
 from pyguibud.designer.present.tree import node_label
 from pyguibud.designer.session import DesignerSession
 from pyguibud.designer.sizing import Measured, step_command
-from pyguibud.i18n import N_, _, ngettext
+from pyguibud.i18n import ngettext
 
 __all__ = ["EditActions", "count_descendants", "tab_order"]
 
-# Translators: "Document" and "Delete window" are the menu and the entry named in the app.
-_M_NOT_DELETABLE = N_("Windows are deleted with Document > Delete window.")
 #: What Edit > Delete (and the Delete key) removes: elements and the menu nodes.
 _DELETABLE = (Widget, Include, Menu, Action, MenuSeparator, Menubar, Statusbar)
 
@@ -161,7 +160,7 @@ class EditActions:
             return None
         if reason := self.session.read_only_refusal():
             return reason
-        return _(_M_NOT_DELETABLE) if isinstance(node, Window) else None
+        return window_delete_hint() if isinstance(node, Window) else None
 
     def delete(self) -> None:
         """Delete the selected nodes as one step; any of them with children asks first."""
