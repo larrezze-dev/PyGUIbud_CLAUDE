@@ -507,7 +507,9 @@ class InspectorPanel(PanelBase):
         self.canvas.configure(scrollregion=self.canvas.bbox("all"))
 
     def _see(self, widget: Any) -> None:  # noqa: ANN401 - a Tk widget
-        self.form.update_idletasks()
+        self.form.update_idletasks()  # may run a pending rebuild that destroys ``widget``
+        if not widget.winfo_exists():  # a late FocusIn for a row that is already gone
+            return
         height = max(1, self.form.winfo_height())
         top, bottom = widget.winfo_y() / height, (widget.winfo_y() + widget.winfo_height()) / height
         first, last = self.canvas.yview()

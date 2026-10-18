@@ -458,3 +458,15 @@ def test_rebuild_and_multi_edit_budgets(
         lambda: stack.execute(commit_commands(tuple(labels), field, next(values))), repeat=3
     )
     assert took <= 0.150  # spec 17: one guard run for 50 widgets
+
+
+def test_a_late_focus_in_for_a_destroyed_row_is_ignored(
+    app: DesignerApp,  # noqa: F811
+    designer_root: Any,
+) -> None:
+    """UAT 19d: a FocusIn queued for a row that a rebuild destroyed raised a TclError."""
+    _open(app, designer_root, "lbl_username")
+    inspector = app.shell.inspector
+    editor = _editor(inspector, "prop:width")
+    editor.frame.destroy()
+    inspector.focus_in(editor)  # used to raise "bad window path name"
