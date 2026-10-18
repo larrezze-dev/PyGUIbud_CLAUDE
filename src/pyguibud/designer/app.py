@@ -41,9 +41,11 @@ from pyguibud.designer.files import (
     open_document,
     save_plan,
 )
+from pyguibud.designer.panels.editors import guard_pastes
 from pyguibud.designer.present.plugins import plugin_note
 from pyguibud.designer.preview_tk import PreviewController, sweep_stale
 from pyguibud.designer.recovery import RecoveryEntry, RecoverySession
+from pyguibud.designer.render_plan import CANVAS_TEXT_LIMIT
 from pyguibud.designer.screen import desktop_bounds
 from pyguibud.designer.session import DesignerSession, TemplateError
 from pyguibud.designer.settings import (
@@ -110,6 +112,8 @@ _M_SETTINGS_FILE_FAILED = N_("The settings file cannot be read or written.")
 _M_QUIT = NC_("dialog", "_Quit")
 _M_NOTHING_TO_RECOVER = N_("There is no unsaved work to recover.")
 _M_DISCARD = N_("_Discard")
+# Translators: status bar, after a paste into a text field was refused; {limit} is a number.
+_M_LONG_PASTE = N_("The paste was not made: this field takes at most {limit} characters.")
 # Tk writes a position left of or above the primary monitor as "+-1500"; a bare "-N" is kept as
 # a negative position too (a hand edit), and "--N" is refused.
 _GEOMETRY = re.compile(r"(\d+)x(\d+)(\+-?\d+|-\d+)(\+-?\d+|-\d+)")
@@ -246,6 +250,7 @@ class DesignerApp:
         )
         self.message.connect(self.shell.show_message)
         self.registry.message.connect(self.shell.show_message)
+        self._unguard = guard_pastes(root, self._refuse_paste)  # QA-19c-01
         self.shell.inspector.open_dialog = self._show_built
         self.shell.variables.confirm = self._confirm
         self.shell.restyle(first)
@@ -414,6 +419,10 @@ class DesignerApp:
 
     def _ask(self, text: Callable[[], str], buttons: list[tuple[str, Answer]]) -> None:
         self._open_dialog(lambda: ChoiceDialog(self.root, text, buttons))
+
+    def _refuse_paste(self) -> None:
+        self.root.bell()
+        self.message.emit(_(_M_LONG_PASTE).format(limit=CANVAS_TEXT_LIMIT))
 
     def _tell(self, text: Callable[[], str]) -> None:
         """An error or information message with one OK button."""
@@ -634,11 +643,13 @@ class DesignerApp:
         try:
             write_ui(document, target, backup=True)
         except XmlIoError as exc:  # still dirty; the recovery snapshot stays (A1, A2)
-            if rebased:
-                stack.undo()
+            failure = stack.failure if rebased and stack.undo() is False else None
+            reason = text = _lazy(exc)
+            if failure is not None:  # still rebased and dirty: say so in the dialog (H37)
+                text = lambda: f"{reason()}\n\n{failure.message}"  # noqa: E731 - two sentences
             # Spec 9.3 step 4: the OS reason, and Save as... to put the work somewhere else.
             save_as = functools.partial(self.save, as_new=True, then=then)
-            self._ask(_lazy(exc), [(_M_OK, None), (_M_SAVE_AS, save_as)])
+            self._ask(text, [(_M_OK, None), (_M_SAVE_AS, save_as)])
             return
         self.session.mark_saved(target)
         self._remember(target)
@@ -878,6 +889,8 @@ class DesignerApp:
             self._autosave_id = None
         self.preview.dispose()
         self.exporter.dispose()
+        with contextlib.suppress(tkinter.TclError):
+            self._unguard()
         self.shell.dispose()
 
 

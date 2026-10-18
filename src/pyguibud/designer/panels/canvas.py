@@ -305,6 +305,9 @@ class CanvasPanel(PanelBase):
         stage = self._stage_at(event.widget)
         if stage is None or stage.view is None:
             return
+        held = isinstance(event.state, int) and bool(event.state & 0x100)  # Button-1 still down
+        if self.drag is not None and self.drag.busy and held:
+            return  # Q12 (H40): a second pointer never ends the running drag; a lost release does
         stage.scroll.focus_set()  # design widgets take no focus: the keys go to the proxy
         node = stage.view.node_of(event.widget)
         if node is None:

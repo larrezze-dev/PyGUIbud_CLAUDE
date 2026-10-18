@@ -125,12 +125,20 @@ class EditActions:
         return self.session.stack is not None and self.session.stack.can_redo
 
     def undo(self) -> None:
-        if self.session.stack is not None:
-            self.session.stack.undo()
+        stack = self.session.stack
+        if stack is not None and stack.can_undo and stack.undo() is False:
+            self._tell_failure()
 
     def redo(self) -> None:
-        if self.session.stack is not None:
-            self.session.stack.redo()
+        stack = self.session.stack
+        if stack is not None and stack.can_redo and stack.redo() is False:
+            self._tell_failure()
+
+    def _tell_failure(self) -> None:
+        """A step that could not be reverted or re-applied (H37): the stack restored it."""
+        stack = self.session.stack
+        if stack is not None and (failure := stack.failure) is not None:
+            self._message(failure.message)
 
     # ------------------------------------------------------------ delete
     def can_delete(self) -> bool:

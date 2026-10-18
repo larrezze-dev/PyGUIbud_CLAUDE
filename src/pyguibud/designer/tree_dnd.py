@@ -91,7 +91,7 @@ def _grid_slot(parent: Window | Widget, sibling: Widget | Include, moving: Seque
     if not after and last and len(grid) == len(moving) and _past(last, columns) == spot:
         spot = (min(c.row for c in grid), min(c.column for c in grid))
     index = next(k for k, child in enumerate(parent.children) if child is sibling) + after
-    return Target(parent, "grid", index, *spot)
+    return Target(parent, "grid", index, *spot, after=after)
 
 
 def _aim(found: Target | str, nodes: Sequence[object]) -> Target | str:

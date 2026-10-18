@@ -380,7 +380,8 @@ class InspectorPanel(PanelBase):
             return
         if what == "text":
             before = dialog_prop(nodes, field)  # the typed (pending) text is what it shows
-            dialog = TextDialog(self.frame.winfo_toplevel(), replace(before, value=editor.text()),
+            shown = before if editor.long else replace(before, value=editor.text())  # QA-19c-05
+            dialog = TextDialog(self.frame.winfo_toplevel(), shown,
                                 lambda p: self._from_dialog(editor, before, p),
                                 translatable=field.translatable,
                                 check=lambda p: self._refusal(editor, before, p))  # fmt: skip
@@ -418,8 +419,7 @@ class InspectorPanel(PanelBase):
         if command is None or stack is None or self.read_only or not self._nodes:
             return
         if self.report(editor, stack.execute(command)) and after.value != before.value:
-            editor.var.set(after.value)
-            editor.shown = after.value
+            editor.load(replace(editor.field, value=after.value))  # a long text: the preview
 
     def _src(self, path: str) -> str:
         """``path`` relative to the document's folder when it has one (else as given)."""

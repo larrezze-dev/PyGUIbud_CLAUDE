@@ -279,14 +279,24 @@ def _grid_cells(block: list[_Movable], anchor: _Movable, target: Target) -> list
 
 
 def _make_room(
-    container: Window | Widget, block: list[_Movable], cells: list[GridCell]
+    container: Window | Widget, block: list[_Movable], cells: list[GridCell], after: bool
 ) -> list[Command] | str:
     """Push the other children down, nearest first, off the cells a tree drop before or after
     a grid sibling takes; each push stops at the first free row, a moved node's old cell
-    included (ruling QA-14b2-12, spec direct-manipulation 5)."""
+    included (ruling QA-14b2-12, spec direct-manipulation 5). A block dropped after a taller
+    sibling moves below it instead: ``cells`` is then rewritten in place (D10 a); a block
+    dropped before one keeps its cells (QA-19c-04)."""
     claimed = set[tuple[int, int]]().union(*map(_area, cells))
     moving = {id(n) for n in block}
     others = [c for c in container.children if id(c) not in moving and c.placement is not None]
+    top = min(c.row for c in cells)
+    above = [_cell(c) for c in others if after and _cell(c).row < top and _area(_cell(c)) & claimed]
+    if above:  # a taller sibling is never pushed below the block: the block goes under it (D10)
+        shift = max(c.row + max(c.rowspan, 1) for c in above) - top
+        cells[:] = [replace(c, row=c.row + shift) for c in cells]
+        if any(c.row + max(c.rowspan, 1) - 1 > MAX_INDEX for c in cells):
+            return _(_M_OFF_GRID)
+        claimed = set[tuple[int, int]]().union(*map(_area, cells))
     commands: list[Command] = []
     for child in sorted(others, key=lambda c: (_cell(c).row, _cell(c).column)):
         cell = new = _cell(child)
@@ -343,7 +353,7 @@ def move_command(nodes: Sequence[object], target: Target) -> Built:
         cells = _grid_cells(block, anchor, target)
         if isinstance(cells, str):
             return cells
-        room = [] if target.index is None else _make_room(container, block, cells)
+        room = [] if target.index is None else _make_room(container, block, cells, target.after)
         if isinstance(room, str):
             return room
         gap = len(container.children) if target.index is None else target.index

@@ -95,7 +95,11 @@ _M_FOREIGN: Final = N_("This element does not belong to the open document.")
 _M_UNSAVEABLE: Final = N_(
     "This change would make the document impossible to save, so it was not applied: {detail}"
 )
+_M_UNDO_FAILED: Final = N_("Undo or redo failed; the document was left as it was.")
 # Translators: {id} is a variable id; {user} the id of an element that is bound to it.
+_M_HISTORY_CLEARED: Final = N_(
+    "Undo or redo failed and the document may have changed; the undo history was cleared."
+)
 _M_VARIABLE_IN_USE: Final = N_("The variable '{id}' is still used by '{user}'; unbind it first.")
 # Translators: {id} is an image resource id; {user} the id of an element that shows it.
 _M_RESOURCE_IN_USE: Final = N_(
@@ -337,11 +341,11 @@ class InsertNode(Command):
     def revert(self) -> None:
         self._begin_revert()
         node = self.node
+        cast("_AnyParent", self.parent).remove_child(node)
         if isinstance(node, Window):
             node.menubar = cast("Menubar | None", self._bars[0])
             node.statusbar = cast("Statusbar | None", self._bars[1])
             self._bars = (None, None)
-        cast("_AnyParent", self.parent).remove_child(self.node)
         self._applied = False
 
 
@@ -443,8 +447,12 @@ class MoveNode(Command):
         elif old_parent is new_parent:
             new_parent.move_child(self.node, self._old_index)
         else:
-            new_parent.remove_child(self.node)
-            old_parent.insert_child(self._old_index, self.node)
+            new_index = new_parent.remove_child(self.node)
+            try:
+                old_parent.insert_child(self._old_index, self.node)
+            except BaseException:
+                new_parent.insert_child(new_index, self.node)  # stay applied
+                raise
         self._old_parent = None
         self._applied = False
 
@@ -856,8 +864,20 @@ class Macro(Command):
 
     def revert(self) -> None:
         self._begin_revert()
-        for command in reversed(self.commands):
-            command.revert()
+        done: list[Command] = []
+        try:
+            for command in reversed(self.commands):
+                command.revert()
+                done.append(command)
+        except BaseException:
+            # Mirror of apply(): put back what was already reverted, in forward order, so the
+            # macro is still fully applied (leaf commands restore themselves when they raise).
+            for command in reversed(done):
+                try:
+                    command.apply()
+                except Exception:
+                    _log.exception("re-applying %r after a failed revert also failed", command)
+            raise
         self._applied = False
 
 
@@ -981,6 +1001,7 @@ class CommandStack:
         self._merge_open = False
         self._listeners: list[Callable[[StackEvent], None]] = []
         self._busy = False
+        self._failure: Finding | None = None
 
     # ------------------------------------------------------------ properties
     @property
@@ -1027,6 +1048,11 @@ class CommandStack:
         return self._history[self._index].text() if self.can_redo else None
 
     @property
+    def failure(self) -> Finding | None:
+        """The finding of the last failed undo/redo (``command.undo_failed``), else None."""
+        return self._failure
+
+    @property
     def is_dirty(self) -> bool:
         """True when the document differs from the last saved (or loaded) state."""
         return self._saved_index != self._index
@@ -1043,24 +1069,29 @@ class CommandStack:
             return self._run(command, commit=False)
 
     def undo(self) -> bool:
-        """Revert the last step; False when there is nothing to undo."""
+        """Revert the last step; False when there is nothing to undo or the revert failed.
+
+        A failed revert leaves the document and the history as they were; see :attr:`failure`.
+        """
         with _Busy(self):
             if not self.can_undo:
                 return False
             command = self._history[self._index - 1]
-            command.revert()
+            if not self._step(command.revert):
+                return False
             self._index -= 1
             self._after_move()
             self._notify("undo", command)
             return True
 
     def redo(self) -> bool:
-        """Re-apply the next step; False when there is nothing to redo."""
+        """Re-apply the next step; False when there is nothing to redo or the apply failed."""
         with _Busy(self):
             if not self.can_redo:
                 return False
             command = self._history[self._index]
-            command.apply()
+            if not self._step(command.apply):
+                return False
             self._index += 1
             self._after_move()
             self._notify("redo", command)
@@ -1084,6 +1115,7 @@ class CommandStack:
             self._index = 0
             self._saved_index = None if dirty else 0
             self._merge_open = False
+            self._failure = None
             self._notify("clear", None)
 
     def report(self) -> ValidationReport:
@@ -1112,8 +1144,8 @@ class CommandStack:
     def _after_move(self) -> None:
         self._merge_open = False
 
-    def _reject(self, code: str, msgid: str, anchor: object = None, **params: object) -> Outcome:
-        finding = Finding(
+    def _finding(self, code: str, msgid: str, anchor: object = None, **params: object) -> Finding:
+        return Finding(
             code=code,
             msgid=msgid,
             params=params,
@@ -1121,7 +1153,33 @@ class CommandStack:
             severity="error",
             anchor=anchor,
         )
-        return Outcome(accepted=False, changed=False, findings=(finding,))
+
+    def _reject(self, code: str, msgid: str, anchor: object = None, **params: object) -> Outcome:
+        return Outcome(
+            accepted=False, changed=False, findings=(self._finding(code, msgid, anchor, **params),)
+        )
+
+    def _step(self, action: Callable[[], None]) -> bool:
+        """Run one revert/apply; on failure say no, or drop the history if the model changed."""
+        before = _dump_text(self._document)
+        try:
+            action()
+        except Exception:
+            _log.exception("undo or redo failed")
+            if _dump_text(self._document) == before is not None:
+                self._failure = self._finding("command.undo_failed", _M_UNDO_FAILED)
+                return False
+            # The command mutated the model and then raised: the history can no longer be
+            # trusted, so drop it but keep the document dirty (it must still be saveable).
+            self._history.clear()
+            self._index = 0
+            self._saved_index = None
+            self._merge_open = False
+            self._notify("clear", None)
+            self._failure = self._finding("command.history_cleared", _M_HISTORY_CLEARED)
+            return False
+        self._failure = None
+        return True
 
     def _run(self, command: Command, *, commit: bool) -> Outcome:
         if not isinstance(command, Command):
@@ -1175,6 +1233,7 @@ class CommandStack:
                 except Exception:
                     _log.exception("reverting %r after a failure also failed", command)
             raise
+        self._failure = None
         merged = self._push(command)
         self._notify("merge" if merged else "execute", command)
         return Outcome(accepted=True, changed=True, merged=merged, findings=warnings)
@@ -1233,6 +1292,14 @@ class CommandStack:
                 listener(event)
             except Exception:
                 _log.exception("a command stack listener failed")
+
+
+def _dump_text(document: Document) -> bytes | None:
+    """The saved form of ``document``, or None when it cannot be written."""
+    try:
+        return dump_ui(document)
+    except Exception:
+        return None
 
 
 def _dump_problem(document: Document) -> object | None:

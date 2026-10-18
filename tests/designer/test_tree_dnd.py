@@ -110,7 +110,8 @@ def test_into_is_the_canvas_keyboard_target_and_reparents() -> None:
 
 def test_before_takes_the_siblings_cell_and_after_the_next_one_in_reading_order() -> None:
     document, n = _doc()
-    assert target(n["lbl"], "after", [n["btn"]], REGISTRY) == Target(n["frm"], "grid", 1, 0, 1)
+    after = Target(n["frm"], "grid", 1, 0, 1, after=True)  # QA-19c-04: only "after" shifts
+    assert target(n["lbl"], "after", [n["btn"]], REGISTRY) == after
     found = target(n["far"], "before", [n["btn"]], REGISTRY)
     assert found == Target(n["frm"], "grid", 1, 0, 2)
     # Ruling QA-14b2-12: what is in the way moves down its column (no new-row fallback).

@@ -7,9 +7,12 @@ model, so an untouched editor never commits (no phantom edits of defaults or mix
 
 from __future__ import annotations
 
+import bisect
 import contextlib
+import itertools
 import tkinter
 from collections.abc import Callable
+from dataclasses import replace
 from tkinter import ttk
 from typing import Any, Protocol
 
@@ -17,10 +20,20 @@ from pyguibud.core.keys import tk_shortcut
 from pyguibud.core.model import Prop
 from pyguibud.designer.icons_tk import icons
 from pyguibud.designer.properties import Field
+from pyguibud.designer.render_plan import CANVAS_TEXT_LIMIT, clip_text
 from pyguibud.designer.theme_tk import INVALID_PREFIX
 from pyguibud.i18n import N_, _
 
-__all__ = ["INVALID", "Editor", "EditorHost", "bind_history", "history_action", "make_editor"]
+__all__ = [
+    "INVALID",
+    "Editor",
+    "EditorHost",
+    "after_paste",
+    "bind_history",
+    "guard_pastes",
+    "history_action",
+    "make_editor",
+]
 
 #: Style prefix of an editor whose text was refused (configured with the other Designer styles).
 INVALID = INVALID_PREFIX
@@ -31,6 +44,11 @@ _M_NEW_VARIABLE = N_("New variable…")
 _M_ADD_IMAGE = N_("Add image…")
 _M_CHOOSE = N_("Choose…")
 _M_EDIT_TEXT = N_("Edit text…")
+# Translators: under a read-only preview of a very long text; {length} is its number of
+# characters. "Reset" is the ↺ button at the end of the row, which clears the text.
+_M_TOO_LONG = N_(
+    "This text has {length} characters: too long to edit here. Reset it to type a shorter one."
+)
 # Translators: the sticky sides of a grid cell: North, East, South, West (one letter each).
 # Keep the letters N, E, S, W: they are the values stored in the .ui file and named in messages.
 _STICKY = (("n", N_("N")), ("e", N_("E")), ("s", N_("S")), ("w", N_("W")))
@@ -52,6 +70,7 @@ class Editor:
     """Base editor: ``widget`` is the focusable part, placed in ``frame`` by the subclass."""
 
     text_input = False  # True: Ctrl+Z reverts typed text first (spec 3.3)
+    long = False  # a read-only preview of a text too long for an Entry (H41)
 
     def __init__(self, parent: Any, field: Field, host: EditorHost) -> None:  # noqa: ANN401
         self.field, self.host = field, host
@@ -137,6 +156,7 @@ class _Text(Editor):
     """Entry for strings, ids, handlers, shortcuts, numbers and colours."""
 
     text_input = True
+    note: ttk.Label | None = None
 
     def __init__(self, parent: Any, field: Field, host: EditorHost) -> None:  # noqa: ANN401
         super().__init__(parent, field, host)
@@ -155,6 +175,7 @@ class _Text(Editor):
         else:
             self.style = STYLE_ENTRY
             self.widget = ttk.Entry(self.frame, textvariable=self.var, width=12, style=self.style)
+            self.widget.bind("<<Paste>>", lambda _e: self._paste())
         self.widget.grid(row=0, column=0, sticky="ew")
         self._bind(self.widget)
         for sequence in ("<Return>", "<KP_Enter>"):
@@ -176,7 +197,23 @@ class _Text(Editor):
         self.button, self.button_msgid = button, msgid if glyph is None else None
 
     def load(self, field: Field) -> None:
-        super().load(field)
+        # Tk takes seconds to lay out a 100,000-character Entry: show the canvas clip read-only.
+        # ``field`` keeps the full value and an untouched preview is never pending (H41).
+        length = len(field.value or "")
+        texts = field.key.startswith("prop:") or field.key == "place:page:text"  # QA-19c-06
+        long = texts and length > CANVAS_TEXT_LIMIT
+        super().load(replace(field, value=clip_text(field.value or "")) if long else field)
+        self.field = field
+        if long != self.long:
+            self.long = long
+            self.set_enabled(not long)
+        if long and self.note is None:
+            self.note = ttk.Label(self.frame, wraplength=self.frame.winfo_fpixels("2.2i"))
+        if self.note is not None and long:
+            self.note.configure(text=_(_M_TOO_LONG).format(length=length))
+            self.note.grid(row=1, column=0, columnspan=3, sticky="w")
+        elif self.note is not None:
+            self.note.grid_remove()
         swatch = getattr(self, "swatch", None)
         if swatch is not None:
             # A colour Tk does not know leaves the swatch as it is (the guard judges the text).
@@ -192,6 +229,20 @@ class _Text(Editor):
 
     def _escape(self) -> str:
         self.revert()
+        return "break"
+
+    def commit_pending(self) -> bool:
+        # The preview is read-only, so nothing was typed; its text is the clip, never the model
+        # value, so it must not be committed, even after a refusal marked it (QA-19c-05).
+        return self.long or super().commit_pending()
+
+    def _paste(self) -> str | None:
+        """A paste that makes the text too long for the Entry is committed without landing in
+        it (H41); ``guard_pastes`` refuses one in any other entry."""
+        text = None if self.widget.instate(["readonly"]) else after_paste(self.widget)
+        if text is None or len(text) <= CANVAS_TEXT_LIMIT:
+            return None
+        self.host.commit(self, text)
         return "break"
 
     def _arrow(self) -> None:
@@ -311,6 +362,55 @@ def make_editor(parent: Any, field: Field, host: EditorHost) -> Editor:  # noqa:
     return editor
 
 
+def after_paste(widget: Any) -> str | None:  # noqa: ANN401 - a ttk entry, spinbox or combobox
+    """The text of ``widget`` once the clipboard is pasted at its cursor, over its selection
+    (None: nothing to paste). Tk 8.6 counts a character outside the BMP as two indices
+    (UTF-16), the Python string as one: the indices are converted (QA-19c-02)."""
+    try:
+        pasted, text = str(widget.clipboard_get()), str(widget.get())
+        first = last = int(widget.index("insert"))
+        if widget.selection_present():  # the paste replaces the selection
+            first, last = int(widget.index("sel.first")), int(widget.index("sel.last"))
+    except tkinter.TclError:
+        return None
+    if int(widget.tk.call("string", "length", "\U0001f600")) > 1:  # Tk 8.6: UTF-16 indices
+        units = list(itertools.accumulate((1 + (ord(c) > 0xFFFF) for c in text), initial=0))
+        first, last = bisect.bisect_left(units, first), bisect.bisect_left(units, last)
+    return text[:first] + pasted + text[last:]
+
+
+def guard_pastes(root: tkinter.Misc, refuse: Callable[[], None]) -> Callable[[], None]:
+    """Refuse, in every ttk entry, spinbox and combobox, a paste that would leave more than
+    :data:`CANVAS_TEXT_LIMIT` characters: Tk lays a long Entry out for seconds, per key press
+    too (QA-19c-01). A class binding, so a ``_Text`` editor's own binding runs first (and
+    commits a long text). ``refuse()`` says why; the returned function removes the guard."""
+
+    def check(path: str) -> str:
+        widget = root.nametowidget(path)
+        if widget.instate(["readonly"]) or widget.instate(["disabled"]):
+            return ""  # ttk pastes nothing there
+        text = after_paste(widget)
+        if text is None or len(text) <= CANVAS_TEXT_LIMIT:
+            return ""
+        refuse()
+        return "break"
+
+    name, mark, scripts = root.register(check), ";# pyguibud paste guard\n", {}
+    for cls in ("TEntry", "TSpinbox", "TCombobox"):
+        scripts[cls] = str(root.bind_class(cls, "<<Paste>>")).split(mark)[-1]  # a second app
+        root.tk.call(
+            "bind", cls, "<<Paste>>", f'if {{"[{name} %W]" == "break"}} break {mark}{scripts[cls]}'
+        )
+
+    def remove() -> None:
+        for cls, script in scripts.items():
+            if name in str(root.bind_class(cls, "<<Paste>>")):  # not a later app's guard
+                root.tk.call("bind", cls, "<<Paste>>", script)
+        root.deletecommand(name)
+
+    return remove
+
+
 def bind_history(widget: Any, handler: Callable[[bool], str]) -> None:  # noqa: ANN401
     """Bind the shell's Undo/Redo chords on a text editor (``handler(redo)``; spec 3.3)."""
     aqua = str(widget.tk.call("tk", "windowingsystem")) == "aqua"
@@ -345,5 +445,5 @@ def retranslate(editor: Editor) -> None:
         editor.button.configure(text=_(msgid))  # type: ignore[attr-defined]
     if isinstance(editor, _Flags):
         editor.retranslate()
-    elif isinstance(editor, _Choice):
+    elif isinstance(editor, _Choice) or (isinstance(editor, _Text) and editor.long):
         editor.load(editor.field)

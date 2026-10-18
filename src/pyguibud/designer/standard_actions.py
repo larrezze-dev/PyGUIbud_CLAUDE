@@ -361,10 +361,10 @@ def _register_clipboard(registry: ActionRegistry, clip: ClipboardActions) -> Non
     both = ("canvas", "tree")
     read_only = clip.read_only_refusal  # Copy still works in a read-only document
     for name, label, chord, handler, enabled, refusal in (
-        ("cut", _M_CUT, "Ctrl+X", clip.cut, clip.can_cut, read_only),
+        ("cut", _M_CUT, "Ctrl+X", clip.cut, clip.can_cut, clip.cut_refusal),
         ("copy", _M_COPY, "Ctrl+C", clip.copy, clip.can_copy, None),
         ("paste", _M_PASTE, "Ctrl+V", clip.paste, clip.can_paste, read_only),
-        ("duplicate", _M_DUPLICATE, "Ctrl+D", clip.duplicate, clip.can_cut, read_only),
+        ("duplicate", _M_DUPLICATE, "Ctrl+D", clip.duplicate, clip.can_duplicate, read_only),
     ):
         registry.add(
             ActionDef(

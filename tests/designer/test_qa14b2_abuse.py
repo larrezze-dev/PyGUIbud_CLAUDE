@@ -930,12 +930,12 @@ def test_tree_drops_next_to_a_grid_sibling_never_overlap_and_undo_exactly() -> N
     assert accepted > 200
 
 
-@pytest.mark.xfail(strict=True, reason="QA-14b2-14 accepted 2026-10-11; revisit in Step 19")
 def test_qa_14b2_14_a_wide_block_dropped_after_a_tall_sibling_lands_above_it() -> None:
     """x spans rows 0-1 in column 1; w spans columns 0-1 in row 3. Dropping w "after" x puts
     w on (1, 0) (the next cell in reading order), which overlaps x's lower half, so x is pushed
     down to rows 2-3: w ends up visually above x although the tree says "after x".
-    Expected: w lands below/right of x's whole area (or x is not pushed above-to-below)."""
+    Expected: w lands below/right of x's whole area (or x is not pushed above-to-below).
+    Fixed in Step 19c (H38, ruling D10 a): the block goes under the taller sibling."""
     from pyguibud.core import CommandStack
     from pyguibud.designer.editing import move_command
 

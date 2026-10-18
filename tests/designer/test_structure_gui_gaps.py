@@ -509,11 +509,11 @@ def test_cutting_a_widget_or_a_window_raises_no_slot_error(
     designer_root.update()
     shell.session.select(second, origin="tree")
     designer_root.update()
-    _invoke(shell, "edit.cut")  # a window: the selection moves to the first kept window
-    assert _sel(shell) is first and second.parent is None
+    assert not shell.shell._invoke("edit.cut")  # a window is not cut (H43, Step 19c) ...
+    assert second.parent is not None and _sel(shell) is second  # ... and nothing changes
     designer_root.update()
     _no_failures(failures, caplog)
-    assert [s.window for s in shell.shell.canvas.stages] == [first]
+    assert [s.window for s in shell.shell.canvas.stages] == [first, second]
     stage = shell.shell.canvas.stage_of(first)
     assert stage is not None and stage.view is not None and not stage.stale
 

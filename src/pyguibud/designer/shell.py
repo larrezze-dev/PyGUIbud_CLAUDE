@@ -174,6 +174,7 @@ class Shell:
         self._in_command = False  # a command's own selection change keeps its message
         self._message_id: str | None = None
         self._clamp_id: str | None = None
+        self._settled: dict[str, tuple[int, list[int], list[int]]] = {}  # paned -> last clamp
         self._disposed = False
 
         root.columnconfigure(0, weight=1)
@@ -645,6 +646,8 @@ class Shell:
             return
         minimum = [self._minimum(pane, horizontal) for pane in panes]
         positions = [int(paned.sashpos(index)) for index in range(len(panes) - 1)]
+        if self._settled.get(str(paned)) == (size, minimum, positions):
+            return  # what the last clamp left (Tk may refuse a position): never write it again
         start = panes[1].winfo_x() if horizontal else panes[1].winfo_y()
         sash = max(1, start - positions[0]) if start > positions[0] else 5
         wanted = list(positions)
@@ -654,9 +657,14 @@ class Shell:
         for index in reversed(range(len(wanted))):  # ... and the next pane on its near side
             after = wanted[index + 1] if index + 1 < len(wanted) else size + sash
             wanted[index] = min(wanted[index], after - sash - minimum[index + 1])
+        # Compare the position Tk will actually take: re-writing an unchanged sash (a too-small
+        # window asks for a negative one, clipped to 0) fires <Configure>, which schedules the
+        # next clamp, and so on for ever (the H03 livelock in update_idletasks).
         for index, (old, new) in enumerate(zip(positions, wanted, strict=True)):
-            if new != old:
+            if max(0, new) != old:
                 paned.sashpos(index, max(0, new))
+        moved = [int(paned.sashpos(index)) for index in range(len(panes) - 1)]
+        self._settled[str(paned)] = (size, minimum, moved)
 
     # ------------------------------------------------------------ status bar
     def _build_statusbar(self) -> ttk.Frame:

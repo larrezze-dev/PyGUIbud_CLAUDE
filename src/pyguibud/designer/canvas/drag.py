@@ -168,11 +168,12 @@ class DragController:
         box = next((c for c in snapshot.containers if c.node is node.parent), None)
         if box is None or box.kind != "grid":
             return
-        self.state, self._resize, self._stage, self._snapshot = (
+        self.state, self._resize, self._stage, self._snapshot, self._view = (
             "resizing",
             (node, edge, box),
             stage,
             snapshot,
+            stage.view,
         )
         self._cursor, self._ok_cursor = handle, str(handle.cget("cursor"))
         stage.overlay.show_grid(box)
@@ -248,6 +249,11 @@ class DragController:
         self._band, self._click = (container, base), click
 
     @property
+    def busy(self) -> bool:
+        """True while any drag, resize or rubber band runs: no palette insert then (H40)."""
+        return self.state in ("dragging", "resizing", "banding") or self.moving
+
+    @property
     def moving(self) -> bool:
         """True while a canvas move or rubber band is armed or dragging, or a resize runs."""
         return isinstance(self._payload, Moving) or self.state == "resizing" or bool(self._band)
@@ -297,6 +303,8 @@ class DragController:
             return
         if self.state == "resizing" and self._resize is not None:
             self._resize_hover(x_root, y_root)
+            if self._stage is None:  # cancelled by a rebuild (H39)
+                return
             resized, area = self._resize[0], self._area
             self._end()
             if area is not None and area[0] != _area_of(resized):  # a no-op is never recorded
@@ -362,7 +370,7 @@ class DragController:
     def insert_widget(self, spec_name: str) -> None:
         """Palette Enter or double-click: insert into the selected container (spec 9)."""
         stage, spec = self.canvas.current_stage(), self.session.registry.get(spec_name)
-        if stage is None or spec is None or self.session.document is None:
+        if stage is None or spec is None or self.session.document is None or self.busy:
             return
         registry = self.session.registry
         payload = NewWidget.of(spec)
@@ -375,7 +383,7 @@ class DragController:
     def hint(self, spec_name: str) -> None:
         """The status-bar hint of a palette item that was just picked (QA-12-13)."""
         spec = self.session.registry.get(spec_name)
-        if spec is not None:
+        if spec is not None and not self.busy:  # a resize keeps its size text (Q12)
             menu = NewWidget.of(spec).role == "menu"
             self._status(_(_M_MENU_EDITOR) if menu else _(_M_HINT).format(widget=spec.label()))
 
@@ -530,6 +538,9 @@ class DragController:
     def _resize_hover(self, x_root: int, y_root: int) -> None:
         """Snap the dragged edge to the pointer; check the new area after a rest."""
         if self._resize is None or self._stage is None:
+            return
+        if self._stage.view is not self._view:  # rebuilt mid-resize: its grid is stale (H39)
+            self.cancel()
             return
         node, edge, box = self._resize
         stage, pitch = self._stage.stage, scaled(self._source, _PITCH)

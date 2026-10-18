@@ -921,21 +921,22 @@ def test_a13_a_refused_cut_leaves_the_clipboard_and_the_document_alone() -> None
     part = node(document, "part")
     before = dump_ui(document)
     session.select(part, origin="tree")
-    actions.cut()
-    assert store["text"] == "SENTINEL" and messages == ["'part' is still included by 'main'."]
+    actions.cut()  # a window, even an included component, is never cut (H43, Step 19c)
+    assert store["text"] == "SENTINEL"
+    assert messages == ["Windows are deleted with Document > Delete window."]
     assert dump_ui(document) == before and session.stack is not None and not session.stack.can_undo
     session.select_many(list(document.children), origin="tree")
     assert len(session.selection.nodes) == 1  # windows never form a multi-selection
     session.select(node(document, "main"), origin="tree")
-    actions.cut()  # 'main' is the only window that includes 'part', not included itself: allowed
-    assert "clip:mode" in store["text"] and store["text"] != "SENTINEL"
-    store["text"] = "SENTINEL"
-    session.stack.undo()
-    assert dump_ui(document) == before
+    assert not actions.can_cut()  # a window is not cut, as it is not deleted (H43, Step 19c)
+    actions.cut()
+    assert store["text"] == "SENTINEL" and messages[-1] == actions.cut_refusal()
+    assert messages[-1] == "Windows are deleted with Document > Delete window."
+    assert dump_ui(document) == before and not session.stack.can_undo
     # a menu node cannot be copied, so cutting it leaves the clipboard alone as well
     session.select(node(document, "free"), origin="tree")
     actions.cut()
-    assert "clip:mode" in store["text"]
+    assert store["text"] == "SENTINEL"
 
 
 def test_cut_copy_paste_duplicate_through_the_actions_are_single_undo_steps() -> None:

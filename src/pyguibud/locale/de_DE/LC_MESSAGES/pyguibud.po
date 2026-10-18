@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PyGUIbud 0.1.0\n"
 "Report-Msgid-Bugs-To: https://github.com/larrezze/PyGUIbud/issues\n"
-"POT-Creation-Date: 2026-10-17 21:43+0200\n"
+"POT-Creation-Date: 2026-10-18 08:35+0200\n"
 "PO-Revision-Date: 2026-10-05 17:46+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: de_DE\n"
@@ -299,7 +299,7 @@ msgstr "Netzwerk- und Gerätepfade können nicht geöffnet werden."
 
 #. Translators: {path} is the file named on the command line.
 #. Translators: {path} is the full path of a file.
-#: src/pyguibud/cli.py:226 src/pyguibud/designer/app.py:100
+#: src/pyguibud/cli.py:226 src/pyguibud/designer/app.py:102
 #, python-brace-format
 msgid "The file '{path}' does not exist."
 msgstr "Die Datei '{path}' existiert nicht."
@@ -474,9 +474,23 @@ msgstr ""
 "Diese Änderung würde das Speichern des Dokuments unmöglich machen und "
 "wurde daher nicht angewendet: {detail}"
 
+#: src/pyguibud/core/commands.py:98
+msgid "Undo or redo failed; the document was left as it was."
+msgstr ""
+"Rückgängig machen oder Wiederholen ist fehlgeschlagen; das Dokument blieb"
+" unverändert."
+
 #. Translators: {id} is a variable id; {user} the id of an element that is
 #. bound to it.
-#: src/pyguibud/core/commands.py:99
+#: src/pyguibud/core/commands.py:101
+msgid ""
+"Undo or redo failed and the document may have changed; the undo history "
+"was cleared."
+msgstr ""
+"Rückgängig machen oder Wiederholen ist fehlgeschlagen und das Dokument "
+"wurde möglicherweise geändert; der Verlauf wurde gelöscht."
+
+#: src/pyguibud/core/commands.py:103
 #, python-brace-format
 msgid "The variable '{id}' is still used by '{user}'; unbind it first."
 msgstr ""
@@ -485,7 +499,7 @@ msgstr ""
 
 #. Translators: {id} is an image resource id; {user} the id of an element that
 #. shows it.
-#: src/pyguibud/core/commands.py:102
+#: src/pyguibud/core/commands.py:106
 #, python-brace-format
 msgid ""
 "The image resource '{id}' is still used by '{user}'; remove that use "
@@ -494,61 +508,61 @@ msgstr ""
 "Die Bildressource '{id}' wird noch von '{user}' verwendet; entfernen Sie "
 "zuerst diese Verwendung."
 
-#: src/pyguibud/core/commands.py:256
+#: src/pyguibud/core/commands.py:260
 msgid "Edit"
 msgstr "Bearbeiten"
 
-#: src/pyguibud/core/commands.py:301
+#: src/pyguibud/core/commands.py:305
 msgid "Add element"
 msgstr "Element hinzufügen"
 
-#: src/pyguibud/core/commands.py:351
+#: src/pyguibud/core/commands.py:355
 msgid "Delete element"
 msgstr "Element löschen"
 
-#: src/pyguibud/core/commands.py:370
+#: src/pyguibud/core/commands.py:374
 #, python-brace-format
 msgid "'{node}' has already been removed."
 msgstr "'{node}' wurde bereits entfernt."
 
-#: src/pyguibud/core/commands.py:387 src/pyguibud/core/commands.py:867
+#: src/pyguibud/core/commands.py:391 src/pyguibud/core/commands.py:887
 #: src/pyguibud/designer/editing.py:96
 msgid "Move element"
 msgstr "Element verschieben"
 
-#: src/pyguibud/core/commands.py:455
+#: src/pyguibud/core/commands.py:463
 msgid "Set property"
 msgstr "Eigenschaft festlegen"
 
-#: src/pyguibud/core/commands.py:500
+#: src/pyguibud/core/commands.py:508
 msgid "Remove property"
 msgstr "Eigenschaft entfernen"
 
-#: src/pyguibud/core/commands.py:545 src/pyguibud/core/commands.py:601
+#: src/pyguibud/core/commands.py:553 src/pyguibud/core/commands.py:609
 msgid "Change attribute"
 msgstr "Attribut ändern"
 
-#: src/pyguibud/core/commands.py:652
+#: src/pyguibud/core/commands.py:660
 msgid "Change events"
 msgstr "Ereignisse ändern"
 
-#: src/pyguibud/core/commands.py:725
+#: src/pyguibud/core/commands.py:733
 msgid "Set variable"
 msgstr "Variable festlegen"
 
-#: src/pyguibud/core/commands.py:744
+#: src/pyguibud/core/commands.py:752
 msgid "Remove variable"
 msgstr "Variable entfernen"
 
-#: src/pyguibud/core/commands.py:771
+#: src/pyguibud/core/commands.py:779
 msgid "Set image resource"
 msgstr "Bildressource festlegen"
 
-#: src/pyguibud/core/commands.py:790
+#: src/pyguibud/core/commands.py:798
 msgid "Remove image resource"
 msgstr "Bildressource entfernen"
 
-#: src/pyguibud/core/commands.py:897 src/pyguibud/designer/editing.py:517
+#: src/pyguibud/core/commands.py:917 src/pyguibud/designer/editing.py:527
 msgid "Change layout"
 msgstr "Layout ändern"
 
@@ -1807,13 +1821,13 @@ msgstr "Hintergrundfarbe"
 msgid "Menu bar"
 msgstr "Menüleiste"
 
-#: src/pyguibud/core/widgets.py:318 src/pyguibud/designer/editing.py:586
+#: src/pyguibud/core/widgets.py:318 src/pyguibud/designer/editing.py:596
 #: src/pyguibud/designer/present/inspector.py:77
 #: src/pyguibud/designer/properties.py:81
 msgid "Menu"
 msgstr "Menü"
 
-#: src/pyguibud/core/widgets.py:326 src/pyguibud/designer/editing.py:587
+#: src/pyguibud/core/widgets.py:326 src/pyguibud/designer/editing.py:597
 #: src/pyguibud/designer/present/inspector.py:79
 #: src/pyguibud/designer/properties.py:68
 #: src/pyguibud/designer/properties.py:82
@@ -2345,38 +2359,38 @@ msgstr "Objektbaum"
 msgid "{action} ({shortcut})"
 msgstr "{action} ({shortcut})"
 
-#: src/pyguibud/designer/app.py:86
+#: src/pyguibud/designer/app.py:88
 msgid "PyGUIbud designer"
 msgstr "PyGUIbud-Designer"
 
-#: src/pyguibud/designer/app.py:87
+#: src/pyguibud/designer/app.py:89
 #, python-brace-format
 msgid "There is no theme called '{theme}'."
 msgstr "Es gibt kein Design namens '{theme}'."
 
 #. Translators: {name} is a file name such as "main.ui".
-#: src/pyguibud/designer/app.py:89
+#: src/pyguibud/designer/app.py:91
 #, python-brace-format
 msgid "Saved '{name}'."
 msgstr "'{name}' gespeichert."
 
 #. Translators: {name} is a file name such as "main.ui".
-#: src/pyguibud/designer/app.py:91
+#: src/pyguibud/designer/app.py:93
 #, python-brace-format
 msgid "'{name}' was changed by another program since it was opened."
 msgstr "'{name}' wurde seit dem Öffnen von einem anderen Programm geändert."
 
 #. Translators: the answers when the file changed on disk; _ marks the access
 #. key.
-#: src/pyguibud/designer/app.py:93
+#: src/pyguibud/designer/app.py:95
 msgid "_Overwrite"
 msgstr "Über_schreiben"
 
-#: src/pyguibud/designer/app.py:94 src/pyguibud/designer/standard_actions.py:97
+#: src/pyguibud/designer/app.py:96 src/pyguibud/designer/standard_actions.py:97
 msgid "Save _as…"
 msgstr "Speichern _unter…"
 
-#: src/pyguibud/designer/app.py:95 src/pyguibud/designer/dialogs/confirm.py:17
+#: src/pyguibud/designer/app.py:97 src/pyguibud/designer/dialogs/confirm.py:17
 #: src/pyguibud/designer/dialogs/export.py:43
 #: src/pyguibud/designer/dialogs/new_file.py:20
 #: src/pyguibud/designer/dialogs/rename.py:20
@@ -2389,7 +2403,7 @@ msgstr "_Abbrechen"
 #. (Alt+letter).
 #. Translators: the buttons of the rename dialog; _ marks the access key
 #. Translators: the buttons of the text dialog; _ marks the access key
-#: src/pyguibud/designer/app.py:96 src/pyguibud/designer/dialogs/message.py:21
+#: src/pyguibud/designer/app.py:98 src/pyguibud/designer/dialogs/message.py:21
 #: src/pyguibud/designer/dialogs/rename.py:19
 #: src/pyguibud/designer/dialogs/text.py:25
 msgid "_OK"
@@ -2399,23 +2413,23 @@ msgstr "_OK"
 #. Save anyway?".
 #. Translators: the buttons of the unsaved-changes question; _ marks the access
 #. key.
-#: src/pyguibud/designer/app.py:98
+#: src/pyguibud/designer/app.py:100
 #: src/pyguibud/designer/dialogs/save_changes.py:16
 #: src/pyguibud/designer/standard_actions.py:96
 msgid "_Save"
 msgstr "_Speichern"
 
-#: src/pyguibud/designer/app.py:101
+#: src/pyguibud/designer/app.py:103
 msgid "_Clear list"
 msgstr "_Liste leeren"
 
-#: src/pyguibud/designer/app.py:102
+#: src/pyguibud/designer/app.py:104
 msgid "Your settings could not be saved."
 msgstr "Ihre Einstellungen konnten nicht gespeichert werden."
 
 #. Translators: {reason} is an error description from the operating system;
 #. shown when quitting.
-#: src/pyguibud/designer/app.py:105
+#: src/pyguibud/designer/app.py:107
 #, python-brace-format
 msgid ""
 "Your settings could not be saved: {reason} Quit anyway? Your work is not "
@@ -2425,29 +2439,38 @@ msgstr ""
 "beenden? Ihre Arbeit ist nicht betroffen."
 
 #. Translators: the {reason} above when the operating system gave none.
-#: src/pyguibud/designer/app.py:108
+#: src/pyguibud/designer/app.py:110
 msgid "The settings file cannot be read or written."
 msgstr "Die Einstellungsdatei kann nicht gelesen oder geschrieben werden."
 
 #. Translators: the button of "Quit anyway?"; its access key must differ from
 #. "_Cancel".
-#: src/pyguibud/designer/app.py:110
+#: src/pyguibud/designer/app.py:112
 msgctxt "dialog"
 msgid "_Quit"
 msgstr "_Beenden"
 
-#: src/pyguibud/designer/app.py:111
+#: src/pyguibud/designer/app.py:113
 msgid "There is no unsaved work to recover."
 msgstr "Es gibt keine ungespeicherte Arbeit, die wiederhergestellt werden könnte."
 
-#: src/pyguibud/designer/app.py:112
+#: src/pyguibud/designer/app.py:114
 #: src/pyguibud/designer/dialogs/recovery.py:24
 msgid "_Discard"
 msgstr "_Verwerfen"
 
+#. Translators: status bar, after a paste into a text field was refused;
+#. {limit} is a number.
+#: src/pyguibud/designer/app.py:116
+#, python-brace-format
+msgid "The paste was not made: this field takes at most {limit} characters."
+msgstr ""
+"Das Einfügen wurde nicht ausgeführt: Dieses Feld nimmt höchstens {limit} "
+"Zeichen auf."
+
 #. Translators: status bar after opening a file; {count} is the number of
 #. warnings.
-#: src/pyguibud/designer/app.py:509
+#: src/pyguibud/designer/app.py:518
 #, python-brace-format
 msgid "Opened with {count} warning."
 msgid_plural "Opened with {count} warnings."
@@ -2456,7 +2479,7 @@ msgstr[1] "Mit {count} Warnungen geöffnet."
 
 #. Translators: asked before saving; {count} is the number of errors in the
 #. document.
-#: src/pyguibud/designer/app.py:614
+#: src/pyguibud/designer/app.py:623
 #, python-brace-format
 msgid "The document has {count} error. Save anyway?"
 msgid_plural "The document has {count} errors. Save anyway?"
@@ -2604,6 +2627,13 @@ msgid "The clipboard content had {count} warning."
 msgid_plural "The clipboard content had {count} warnings."
 msgstr[0] "Der Inhalt der Zwischenablage hatte {count} Warnung."
 msgstr[1] "Der Inhalt der Zwischenablage hatte {count} Warnungen."
+
+#. Translators: "Document" and "Delete window" are the menu and the entry named
+#. in the app.
+#: src/pyguibud/designer/clipboard_actions.py:39
+#: src/pyguibud/designer/edit.py:43
+msgid "Windows are deleted with Document > Delete window."
+msgstr "Fenster werden mit Dokument > Fenster löschen gelöscht."
 
 #: src/pyguibud/designer/dialogs/confirm.py:14
 msgid "Confirm"
@@ -2873,16 +2903,10 @@ msgstr "Kontext"
 msgid "Comment"
 msgstr "Kommentar"
 
-#. Translators: "Document" and "Delete window" are the menu and the entry named
-#. in the app.
-#: src/pyguibud/designer/edit.py:43
-msgid "Windows are deleted with Document > Delete window."
-msgstr "Fenster werden mit Dokument > Fenster löschen gelöscht."
-
 #. Translators: {id} is the identifier of the selected element and {count} the
 #. number
 #. of elements inside it.
-#: src/pyguibud/designer/edit.py:171
+#: src/pyguibud/designer/edit.py:179
 #, python-brace-format
 msgid "Delete '{id}' and its {count} element?"
 msgid_plural "Delete '{id}' and its {count} elements?"
@@ -2890,7 +2914,7 @@ msgstr[0] "'{id}' und sein {count} Element löschen?"
 msgstr[1] "'{id}' und seine {count} Elemente löschen?"
 
 #. Translators: several selected elements are deleted with what they contain.
-#: src/pyguibud/designer/edit.py:178
+#: src/pyguibud/designer/edit.py:186
 #, python-brace-format
 msgid "Delete {count} element and the elements inside it?"
 msgid_plural "Delete {count} elements and the elements inside them?"
@@ -2960,39 +2984,39 @@ msgstr "Elementgröße ändern"
 msgid "Delete elements"
 msgstr "Elemente löschen"
 
-#: src/pyguibud/designer/editing.py:518
+#: src/pyguibud/designer/editing.py:528
 msgid "Rename variable"
 msgstr "Variable umbenennen"
 
-#: src/pyguibud/designer/editing.py:519
+#: src/pyguibud/designer/editing.py:529
 msgid "Remove and unbind variable"
 msgstr "Variable entfernen und Bindung aufheben"
 
 #. Translators: a rename would merge two variables; {id} is the name that is
 #. taken.
-#: src/pyguibud/designer/editing.py:521
+#: src/pyguibud/designer/editing.py:531
 #, python-brace-format
 msgid "A variable called '{id}' already exists."
 msgstr "Es gibt bereits eine Variable namens '{id}'."
 
 #: src/pyguibud/designer/dialogs/rename.py:16
-#: src/pyguibud/designer/editing.py:636
+#: src/pyguibud/designer/editing.py:646
 msgid "Rename window"
 msgstr "Fenster umbenennen"
 
-#: src/pyguibud/designer/editing.py:637
+#: src/pyguibud/designer/editing.py:647
 msgid "A document needs at least one window."
 msgstr "Ein Dokument benötigt mindestens ein Fenster."
 
 #. Translators: deleting a component that another window still shows; {id} is
 #. the component,
 #. {user} the window that includes it.
-#: src/pyguibud/designer/editing.py:640
+#: src/pyguibud/designer/editing.py:650
 #, python-brace-format
 msgid "'{id}' is still included by '{user}'."
 msgstr "'{id}' wird noch von '{user}' eingebunden."
 
-#: src/pyguibud/designer/editing.py:642
+#: src/pyguibud/designer/editing.py:652
 msgid "Files that include this component from outside were not updated."
 msgstr ""
 "Dateien, die diese Komponente von außen einbinden, wurden nicht "
@@ -3226,7 +3250,7 @@ msgstr[1] "{count} Elemente ausgewählt; nur {shown} werden umrandet."
 #. the number
 #. of errors.
 #. Translators: part of the problem summary; {count} is a number of errors.
-#: src/pyguibud/designer/panels/canvas.py:609
+#: src/pyguibud/designer/panels/canvas.py:612
 #: src/pyguibud/designer/present/status.py:32
 #, python-brace-format
 msgid "{count} error"
@@ -3234,43 +3258,56 @@ msgid_plural "{count} errors"
 msgstr[0] "{count} Fehler"
 msgstr[1] "{count} Fehler"
 
-#: src/pyguibud/designer/panels/editors.py:29
+#: src/pyguibud/designer/panels/editors.py:42
 msgid "(none)"
 msgstr "(keine)"
 
-#: src/pyguibud/designer/panels/editors.py:30
+#: src/pyguibud/designer/panels/editors.py:43
 msgid "New variable…"
 msgstr "Neue Variable…"
 
-#: src/pyguibud/designer/panels/editors.py:31
+#: src/pyguibud/designer/panels/editors.py:44
 msgid "Add image…"
 msgstr "Bild hinzufügen…"
 
-#: src/pyguibud/designer/panels/editors.py:32
+#: src/pyguibud/designer/panels/editors.py:45
 msgid "Choose…"
 msgstr "Auswählen…"
 
-#: src/pyguibud/designer/panels/editors.py:33
+#: src/pyguibud/designer/panels/editors.py:46
 msgid "Edit text…"
 msgstr "Text bearbeiten…"
+
+#. Translators: under a read-only preview of a very long text; {length} is its
+#. number of
+#. characters. "Reset" is the ↺ button at the end of the row, which clears the
+#. text.
+#: src/pyguibud/designer/panels/editors.py:50
+#, python-brace-format
+msgid ""
+"This text has {length} characters: too long to edit here. Reset it to "
+"type a shorter one."
+msgstr ""
+"Dieser Text hat {length} Zeichen: zu lang, um ihn hier zu bearbeiten. "
+"Setzen Sie ihn zurück, um einen kürzeren einzugeben."
 
 #. Translators: the sticky sides of a grid cell: North, East, South, West (one
 #. letter each).
 #. Keep the letters N, E, S, W: they are the values stored in the .ui file and
 #. named in messages.
-#: src/pyguibud/designer/panels/editors.py:36
+#: src/pyguibud/designer/panels/editors.py:54
 msgid "N"
 msgstr "N"
 
-#: src/pyguibud/designer/panels/editors.py:36
+#: src/pyguibud/designer/panels/editors.py:54
 msgid "E"
 msgstr "E"
 
-#: src/pyguibud/designer/panels/editors.py:36
+#: src/pyguibud/designer/panels/editors.py:54
 msgid "S"
 msgstr "S"
 
-#: src/pyguibud/designer/panels/editors.py:36
+#: src/pyguibud/designer/panels/editors.py:54
 msgid "W"
 msgstr "W"
 
@@ -3936,13 +3973,13 @@ msgstr "Das automatische Speichern funktioniert wieder."
 
 #. Translators: in place of an included component of another file while the
 #. document has no file.
-#: src/pyguibud/designer/render_plan.py:78
+#: src/pyguibud/designer/render_plan.py:122
 msgid "Save the document to show included files."
 msgstr "Speichern Sie das Dokument, um eingebundene Dateien anzuzeigen."
 
 #. Translators: in place of an included component; {component} is its id, {src}
 #. its file.
-#: src/pyguibud/designer/render_plan.py:80
+#: src/pyguibud/designer/render_plan.py:124
 #, python-brace-format
 msgid "The component '{component}' from '{src}' cannot be shown."
 msgstr "Die Komponente '{component}' aus '{src}' kann nicht angezeigt werden."
@@ -3950,7 +3987,7 @@ msgstr "Die Komponente '{component}' aus '{src}' kann nicht angezeigt werden."
 #. Translators: status bar for a selected include; {id} is the include,
 #. {component} the
 #. component it shows and {file} the file name (or "this document").
-#: src/pyguibud/designer/render_plan.py:83
+#: src/pyguibud/designer/render_plan.py:127
 #, python-brace-format
 msgid ""
 "'{id}' shows '{component}' from {file} (read-only). Edit that file to "
@@ -3961,13 +3998,13 @@ msgstr ""
 
 #. Translators: the {file} of the message above when the component is in the
 #. open document.
-#: src/pyguibud/designer/render_plan.py:85
+#: src/pyguibud/designer/render_plan.py:129
 msgid "this document"
 msgstr "diesem Dokument"
 
 #. Translators: as above, when {file} uses a newer format than this version
 #. knows.
-#: src/pyguibud/designer/render_plan.py:88
+#: src/pyguibud/designer/render_plan.py:132
 #, python-brace-format
 msgid ""
 "'{id}' shows '{component}' from {file} (newer format). It is read-only: a"
@@ -3979,7 +4016,7 @@ msgstr ""
 #. Translators: status bar for a selected include drawn as a placeholder; {id}
 #. is the include
 #. and {reason} the text on the placeholder.
-#: src/pyguibud/designer/render_plan.py:93
+#: src/pyguibud/designer/render_plan.py:137
 #, python-brace-format
 msgid "'{id}' cannot be shown: {reason}"
 msgstr "'{id}' kann nicht angezeigt werden: {reason}"
@@ -4009,7 +4046,7 @@ msgid "Your settings could not be read and were reset."
 msgstr "Ihre Einstellungen konnten nicht gelesen werden und wurden zurückgesetzt."
 
 #. Translators: status bar; {count} is the number of selected elements.
-#: src/pyguibud/designer/shell.py:714
+#: src/pyguibud/designer/shell.py:722
 #, python-brace-format
 msgid "{count} element selected"
 msgid_plural "{count} elements selected"
@@ -4616,7 +4653,7 @@ msgstr "Loslassen, um '{id}' in '{container}' zu verschieben."
 
 #. Translators: shown while dragging; {count} is the number of elements being
 #. moved.
-#: src/pyguibud/designer/canvas/drag.py:623
+#: src/pyguibud/designer/canvas/drag.py:634
 #: src/pyguibud/designer/tree_dnd.py:156
 #, python-brace-format
 msgid "Release to move {count} element."

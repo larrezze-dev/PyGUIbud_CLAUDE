@@ -17,13 +17,22 @@ from pyguibud.backends.base import BuildPlan, DocumentPlan, Instance, TextSlot
 from pyguibud.core.diagnostics import Finding
 from pyguibud.core.errors import XmlIoError
 from pyguibud.core.files import MAX_EXPANDED_NODES, MAX_INCLUDE_DEPTH, DiskFiles
-from pyguibud.core.model import Document, Include, Widget, Window
+from pyguibud.core.model import Document, Include, PagePlacement, Widget, Window
 from pyguibud.core.registry import Registry
 from pyguibud.core.validate import validate
 from pyguibud.core.xml_io import ReadResult, read_ui
 from pyguibud.i18n import N_, _
 
-__all__ = ["DESIGN_KEY", "IncludeResolver", "RecordingScope", "design_plan", "source_text"]
+__all__ = [
+    "CANVAS_TEXT_LIMIT",
+    "DESIGN_KEY",
+    "TAB_TEXT_LIMIT",
+    "IncludeResolver",
+    "RecordingScope",
+    "clip_text",
+    "design_plan",
+    "source_text",
+]
 
 #: The document key of the open document in every design plan.
 DESIGN_KEY = "<designer>"
@@ -42,10 +51,37 @@ class RecordingScope:
         """Ignore ``ui.vars.<id>``."""
 
 
+#: Characters of one text the canvas draws: Tk lays out a 100,000-character label for seconds
+#: (QA-14a1-16, H41). Display only: the model, the inspector and the saved file keep it all.
+CANVAS_TEXT_LIMIT = 2_000
+#: Characters of a Notebook tab title on the canvas: a ttk tab never wraps, and draws in about
+#: 0.65 ms per character (QA-19c-07). Display only, as above.
+TAB_TEXT_LIMIT = 200
+
+
 def source_text(slot: TextSlot) -> str:
-    """The text as written in the document (translated preview is Step 15)."""
+    """The text as written in the document (translated preview is Step 15), clipped for display."""
     value = slot.prop.value
-    return value if isinstance(value, str) else ""
+    return clip_text(value if isinstance(value, str) else "")
+
+
+def clip_text(text: str, limit: int = CANVAS_TEXT_LIMIT) -> str:
+    """``text`` cut to ``limit`` characters with an ellipsis (canvas, inspector)."""
+    return text if len(text) <= limit else text[: limit - 1] + "…"
+
+
+def _page_titles(top: Instance) -> set[int]:
+    """The ``id()`` of every page title ``top`` and its (expanded) includes draw."""
+    found, todo = set[int](), [top]
+    while todo:
+        instance = todo.pop()
+        todo.extend(instance.includes.values())
+        for window in instance.windows:
+            for node in window.walk():
+                place = getattr(node, "placement", None)
+                if isinstance(place, PagePlacement) and place.text is not None:
+                    found.add(id(place.text))
+    return found
 
 
 def design_plan(
@@ -61,6 +97,14 @@ def design_plan(
         windows=(window,),
         scope=RecordingScope(),
     )
+    titles: list[set[int]] = []  # found on the first text: the includes are expanded by then
+
+    def text(slot: TextSlot) -> str:
+        if not titles:
+            titles.append(_page_titles(top))
+        shown = source_text(slot)
+        return clip_text(shown, TAB_TEXT_LIMIT) if id(slot.prop) in titles[0] else shown
+
     return BuildPlan(
         path=DESIGN_KEY,
         top=top,
@@ -68,7 +112,7 @@ def design_plan(
         images={},
         registry=registry,
         theme="",
-        text=source_text,
+        text=text,
         runtime_text=str,
         log=log,
     )

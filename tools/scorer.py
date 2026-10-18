@@ -97,8 +97,12 @@ def find_status(cell: str) -> str | None:
     """
     if cell.lstrip().startswith("🔶"):
         return "🔄"
+    stripped = cell.lstrip()
+    markers = {emoji for emoji in STATUS_ORDER if emoji in cell}
+    if stripped.startswith("✅") and markers - {"✅"}:
+        return "🔄"  # a leading ✅ with unfinished parts ("✅ 19a · 🧪 19c") is in progress
     for emoji in STATUS_ORDER:
-        if cell.lstrip().startswith(emoji):
+        if stripped.startswith(emoji):
             return emoji
     for emoji in reversed(STATUS_ORDER):  # the least finished one wins: ✅ only on its own
         if emoji in cell:
@@ -199,8 +203,14 @@ def load_gate() -> dict[str, object] | None:
     return data if isinstance(data, dict) else None
 
 
-def gate_run(gate: dict[str, object], coverage: float | None) -> TestRun:
-    """Build the test outcome from gate figures; pytest is not executed by the scorer."""
+def gate_run(gate: dict[str, object]) -> TestRun:
+    """Build the test outcome from gate figures; pytest is not executed by the scorer.
+
+    Coverage is taken only from an explicit ``coverage`` number in the gate file; an older
+    ``.scorer/coverage.json`` is never shown as if it belonged to the current gate.
+    """
+    raw_cov = gate.get("coverage")
+    coverage = float(raw_cov) if isinstance(raw_cov, (int, float)) else None
     block = gate.get("tests")
     if not isinstance(block, dict):
         return TestRun(None, coverage, "gate file has no tests block", ok=False)
@@ -485,11 +495,13 @@ def main() -> int:
 
     steps = parse_plan(PLAN)
     gate = load_gate()
+    # Gate figures supplied by the orchestrator take precedence; pytest is never run then.
     if gate is not None:
-        # Gate figures supplied by the orchestrator take precedence; pytest is never run here.
-        run = gate_run(gate, load_artefacts().coverage)
+        run = gate_run(gate)
+    elif args.no_tests:
+        run = load_artefacts()
     else:
-        run = load_artefacts() if args.no_tests else run_tests()
+        run = run_tests()
     quality = gate_quality(gate)
     commits = recent_commits()
     stamp = datetime.now().astimezone().strftime("%Y-%m-%d %H:%M:%S UTC%z")

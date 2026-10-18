@@ -1,20 +1,20 @@
 # PyGUIbud scoreboard
 
-_Last updated: 2026-10-16 19:40:03 UTC+0200_
+_Last updated: 2026-10-18 08:55:09 UTC+0200_
 
-- **Steps done:** 19/23
-- **Current step:** 18 Translations (7 languages) (⏳)
-- **Tests:** 5287/5300 passed (gate figures 2026-10-15, pytest not run by scorer)
-- **Coverage:** 91.1 %
-- **Test detail:** 5300 collected, 0 failed, 0 errors, 13 skipped, 0.00 s
+- **Steps done:** 20/23
+- **Current step:** 19 QA hardening ("idiot-proof") (🔄)
+- **Tests:** 6108/6118 passed (gate figures 2026-10-18, pytest not run by scorer)
+- **Coverage:** not available
+- **Test detail:** 6118 collected, 0 failed, 0 errors, 10 skipped, 0.00 s
 
 ## Quality gates
 
 | Check | Result |
 | --- | --- |
-| Lint (ruff) | passed: ruff check + ruff format clean (gate 2026-10-15) |
-| Types (mypy) | passed: mypy clean, 287 files (gate 2026-10-15) |
-| i18n coverage | 123/779 ≈ 15 % per locale (estimate, gate 2026-10-15) |
+| Lint (ruff) | passed: ruff check + ruff format clean (gate 2026-10-18) |
+| Types (mypy) | passed: mypy clean, 307 files (gate 2026-10-18) |
+| i18n coverage | 799 msgids, 7 locales at 100 % (gate 2026-10-18) |
 
 ## Steps
 
@@ -39,15 +39,15 @@ _Last updated: 2026-10-16 19:40:03 UTC+0200_
 | 15 | Preview & export | FRONTEND + BACKEND | ✅ done |
 | 16 | tkinter + PySide6 backends | BACKEND + FRONTEND | ✅ done |
 | 17 | Widget plugin API + ttkbootstrap extensions | ARCHITECT + BACKEND (opus) + FRONTEND | ✅ done |
-| 18 | Translations (7 languages) | TRANSLATOR + QA | ⏳ pending |
-| 19 | QA hardening ("idiot-proof") | QA + DEBUGGER | ⏳ pending |
+| 18 | Translations (7 languages) | TRANSLATOR + QA | ✅ done |
+| 19 | QA hardening ("idiot-proof") | QA + DEBUGGER | 🔄 in progress |
 | 20 | Packaging & release candidate | DEPLOYER | ⏳ pending |
 | 21 | Documentation & launch | LAME-CULOS | ⏳ pending |
 
 ## Recent commits
 
+- `4449d7d 015`
+- `26262ad 014`
+- `67125cc 013`
+- `067483d 012`
 - `2da74d8 011`
-- `e6ae6b7 010`
-- `dfee602 009`
-- `f5f5af9 008`
-- `2621983 007`

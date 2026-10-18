@@ -62,6 +62,7 @@ class Target:
     column: int = 0
     rect: Rect = field(default=Rect(0, 0, 0, 0), compare=False)
     bar: bool = field(default=False, compare=False)
+    after: bool = False  # a tree drop after the sibling at ``index - 1`` (D10 a, QA-19c-04)
 
     @property
     def key(self) -> tuple[int, str, int, int, int]:
