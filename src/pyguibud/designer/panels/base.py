@@ -8,6 +8,8 @@ from collections.abc import Callable
 from tkinter import ttk
 from typing import Any, TypeVar
 
+from ttkbootstrap.widgets.tooltip import ToolTip
+
 from pyguibud.designer.icons_tk import icons
 from pyguibud.designer.panels.focus import FocusFrame
 from pyguibud.designer.session import DesignerSession
@@ -21,9 +23,17 @@ from pyguibud.designer.theme_tk import (
 )
 from pyguibud.i18n import _
 
-__all__ = ["PanelBase"]
+__all__ = ["FullText", "PanelBase"]
 
 T = TypeVar("T")
+
+
+class FullText(ToolTip):
+    """The full text of something shown elided: shown only while it has a text."""
+
+    def show_tip(self, *args: Any) -> None:  # noqa: ANN401 - Tk event arguments
+        if self.text:
+            super().show_tip(*args)
 
 
 class PanelBase:

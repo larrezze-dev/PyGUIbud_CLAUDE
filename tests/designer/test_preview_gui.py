@@ -97,8 +97,10 @@ def test_live_language_and_theme_switches_and_use_theme(
     assert "pseudo-locale" in app.shell._message
     menu = app.shell.submenus["preview.theme"]
     menu.tk.eval(str(menu.cget("postcommand")))  # what posting the menu runs
-    assert menu.index("end") == 2
-    menu.invoke(2)  # "Document theme", "flatly", "darkly"
+    assert menu.index("end") == 3  # H89: "Document theme", separator, Light, Dark
+    dark = menu.nametowidget(str(menu.entrycget(3, "menu")))
+    assert [dark.entrycget(i, "label") for i in range(dark.index("end") + 1)] == ["darkly"]
+    dark.invoke(0)
     assert preview.theme == "darkly"
     assert children[0].stdin.lines == ["lang de_DE", "lang -", "lang en_XA", "quit"]
     children[0].end(0, {"code": "ok"})  # trim T4: the theme restarts the preview

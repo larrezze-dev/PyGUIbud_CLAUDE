@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import functools
 import logging
+import sys
 import tkinter
 from collections.abc import Sequence
 from tkinter import ttk
@@ -10,11 +12,17 @@ from typing import Any
 
 from pyguibud.core.keys import split_mnemonic
 from pyguibud.designer import screen
+from pyguibud.designer.theme_tk import LIST_STYLE, scaled
 from pyguibud.i18n import _
 
 __all__ = ["ModalDialog"]
 
 _log = logging.getLogger(__name__)
+#: The most of the work area a dialog may take; a taller body scrolls (D6, H85).
+_SCREEN_SHARE = 0.85
+#: Keys that scroll a scroll area: (units or pages, direction); Home and End jump.
+_SCROLL_KEYS = {"<Up>": ("units", -1), "<Down>": ("units", 1), "<Prior>": ("pages", -1),
+                "<Next>": ("pages", 1)}  # fmt: skip
 
 
 class ModalDialog:
@@ -40,6 +48,8 @@ class ModalDialog:
         self.window.bind("<Alt-KeyPress>", self._on_alt)
         self.body = ttk.Frame(self.window, padding=12)
         self.body.pack(fill="both", expand=True)
+        self._scroll: tuple[tkinter.Canvas, ttk.Scrollbar, ttk.Frame] | None = None
+        self._ringed: list[Any] = []  # plain Tk widgets (Text, Listbox, Canvas)
         self.restyle()
 
     # ------------------------------------------------------------ hooks
@@ -52,12 +62,24 @@ class ModalDialog:
         """The widget that takes the keyboard focus when the dialog opens (subclass hook)."""
         return self.window
 
+    def ring_on_focus(self, widget: Any) -> None:  # noqa: ANN401 - a plain Tk widget
+        """Give a plain Tk widget (no ttk focus look) the 2 px focus ring of the dialog lists."""
+        widget.configure(highlightthickness=scaled(self.window, 2))
+        self._ringed.append(widget)
+        self.restyle()
+
     def restyle(self) -> None:
-        """Take the window background from the live ttk theme."""
+        """Take the window background and the focus ring colour from the live ttk theme."""
         try:
-            colour = ttk.Style(self.root).lookup("TFrame", "background")
+            style = ttk.Style(self.root)
+            colour = style.lookup("TFrame", "background")
             if colour:
                 self.window.configure(background=colour)
+                if self._scroll is not None:
+                    self._scroll[0].configure(background=colour)
+                ring = style.lookup(LIST_STYLE, "bordercolor", ["focus"]) or colour
+                for widget in self._ringed:
+                    widget.configure(highlightbackground=colour, highlightcolor=ring)
         except tkinter.TclError:
             _log.debug("Could not recolour a dialog", exc_info=True)
 
@@ -69,9 +91,9 @@ class ModalDialog:
         except (KeyError, tkinter.TclError):  # the focus is in a widget tkinter does not know
             self._return_focus = None
         self.retranslate()
+        if self.root.winfo_viewable():  # before deiconify: in some Windows foreground states
+            self.window.transient(self.root)  # Tk withdraws a window made transient once shown
         self.window.deiconify()
-        if self.root.winfo_viewable():
-            self.window.transient(self.root)
         self.window.update_idletasks()
         self._centre()
         try:
@@ -81,12 +103,69 @@ class ModalDialog:
         # The keys must reach the dialog's main widget at once, not the bare window (QA-12-02).
         self.initial_focus().focus_force()
 
+    def scroll_area(self, parent: Any) -> ttk.Frame:  # noqa: ANN401 - a Tk container
+        """A frame in ``parent`` that scrolls vertically (wheel, arrows, Page Up/Down, Home/End)
+        once the dialog would be taller than 85 % of the work area (D6). Pack the buttons first,
+        so they stay outside it and always visible."""
+        canvas = tkinter.Canvas(parent, highlightthickness=0, borderwidth=0, takefocus=False)
+        bar = ttk.Scrollbar(parent, orient="vertical", command=canvas.yview, takefocus=False)
+        canvas.configure(yscrollcommand=bar.set)
+        inner = ttk.Frame(canvas)
+        item = canvas.create_window(0, 0, window=inner, anchor="nw")
+        canvas.bind("<Configure>", lambda e: canvas.itemconfigure(item, width=e.width), add="+")
+        canvas.pack(side="left", fill="both", expand=True)
+        self._scroll = (canvas, bar, inner)
+        for sequence in ("<MouseWheel>", "<Button-4>", "<Button-5>"):
+            self.window.bind(sequence, self._on_wheel, add="+")
+        for sequence, (what, step) in _SCROLL_KEYS.items():
+            self.window.bind(sequence, functools.partial(self._on_key, what, step), add="+")
+        self.window.bind("<Home>", lambda _e: canvas.yview_moveto(0), add="+")
+        self.window.bind("<End>", lambda _e: canvas.yview_moveto(1), add="+")
+        self.restyle()
+        return inner
+
+    def _on_key(self, what: str, step: int, _event: object) -> None:
+        if self._scroll is not None:
+            self._scroll[0].yview_scroll(step, what)  # type: ignore[call-overload]
+
+    def _on_wheel(self, event: Any) -> None:  # noqa: ANN401 - a Tk event
+        if self._scroll is not None:
+            delta = int(getattr(event, "delta", 0) or 0)
+            step = -1 if delta > 0 or getattr(event, "num", 0) == 4 else 1
+            self._scroll[0].yview_scroll(step, "units")
+
+    def work_area(self) -> tuple[int, int]:
+        """The largest size a dialog may take: the work area of the main window's monitor (no
+        taskbar) less the title bar, so its whole frame fits (H85, QA-19f-03)."""
+        width, height = self.window.wm_maxsize()
+        area_width, area_height, _left, _top = screen.work_area(self.root)
+        return (min(int(width), area_width),
+                min(int(height), area_height) - screen.title_height(self.root))  # fmt: skip
+
     def fit(self) -> None:
-        """Size the window to its content (never a fixed size, so +40 % text still fits)."""
+        """Size the window to its content (never a fixed size, so +40 % text still fits), but
+        never larger than the work area; a scroll area takes at most 85 % of it (D6)."""
         self.window.update_idletasks()
-        width, height = self.window.winfo_reqwidth(), self.window.winfo_reqheight()
+        area_width, area_height = self.work_area()
+        if self._scroll is not None:
+            canvas, bar, inner = self._scroll
+            content = inner.winfo_reqheight()
+            chrome = self.window.winfo_reqheight() - canvas.winfo_reqheight()
+            shown = max(1, min(content, int(area_height * _SCREEN_SHARE) - chrome))
+            canvas.configure(width=inner.winfo_reqwidth(), height=shown,
+                             scrollregion=(0, 0, inner.winfo_reqwidth(), content))  # fmt: skip
+            if shown < content:
+                bar.pack(side="right", fill="y", before=canvas)
+            else:
+                bar.pack_forget()
+            self.window.update_idletasks()
+        width = min(self.window.winfo_reqwidth(), area_width)
+        height = min(self.window.winfo_reqheight(), area_height)
         self.window.minsize(width, height)
-        self.window.geometry(f"{max(width, self.window.winfo_width())}x{height}")
+        self.window.geometry(f"{min(max(width, self.window.winfo_width()), area_width)}x{height}")
+        if sys.platform == "win32" and self.window.winfo_viewable():  # a re-fit (language, theme)
+            # x, y: the frame's (Windows); kept on the dialog's own monitor, wherever it was moved
+            self._place(self.window.winfo_x(), self.window.winfo_y(), self.window)
 
     def close(self) -> None:
         """Release the grab and destroy the window (idempotent)."""
@@ -140,7 +219,15 @@ class ModalDialog:
         width, height = self.window.winfo_reqwidth(), self.window.winfo_reqheight()
         left = self.root.winfo_rootx() + (self.root.winfo_width() - width) // 2
         top = self.root.winfo_rooty() + (self.root.winfo_height() - height) // 3
-        area_width, area_height, area_left, area_top = screen.desktop_bounds(self.root)
+        self._place(left, top)
+
+    def _place(self, left: int, top: int, owner: Any = None) -> None:  # noqa: ANN401 - Tk
+        """Move the frame to ``left, top``, kept with its title bar and buttons on the work area
+        of the monitor of ``owner`` (default: the main window), above the taskbar (QA-19f-03)."""
+        width, height = self.work_area()  # the size fit() gave the dialog, plus its title bar
+        width = min(self.window.winfo_reqwidth(), width)
+        height = min(self.window.winfo_reqheight(), height) + screen.title_height(self.root)
+        area_width, area_height, area_left, area_top = screen.work_area(owner or self.root)
         left = max(area_left, min(left, area_left + area_width - width))
         top = max(area_top, min(top, area_top + area_height - height))
         self.window.geometry(f"+{left}+{top}")

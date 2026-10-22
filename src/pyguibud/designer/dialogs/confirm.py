@@ -32,11 +32,10 @@ class ConfirmDialog(ModalDialog):
     ) -> None:
         super().__init__(root)
         self._on_confirm = on_confirm
-        ttk.Label(self.body, text=question, wraplength=self.root.winfo_fpixels("3.5i")).pack(
-            anchor="w"
-        )
-        row = ttk.Frame(self.body)
-        row.pack(side="bottom", anchor="e", pady=(12, 0))
+        label = ttk.Label(self.body, text=question, wraplength=self.root.winfo_fpixels("3.5i"))
+        label.pack(anchor="w")
+        row = ttk.Frame(self.body)  # packed before the text: a huge one never hides it (H96)
+        row.pack(side="bottom", anchor="e", pady=(12, 0), before=label)
         self.cancel_button = ttk.Button(row, command=self.close)
         self.confirm_button = ttk.Button(row, command=self.confirm, default="active")
         self.cancel_button.pack(side="right", padx=(6, 0))

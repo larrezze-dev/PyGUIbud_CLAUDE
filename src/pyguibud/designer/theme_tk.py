@@ -40,14 +40,18 @@ __all__ = [
     "FONT_TITLE",
     "GHOST_STYLE",
     "INVALID_PREFIX",
+    "LIST_STYLE",
     "OWN_STYLES",
     "STYLE_CAPTION",
+    "STYLE_COMBOBOX",
     "STYLE_DIVIDER",
+    "STYLE_ENTRY",
     "STYLE_ERROR",
     "STYLE_HEADER",
     "STYLE_HEADER_LABEL",
     "STYLE_MUTED",
     "STYLE_SECTION",
+    "STYLE_SPINBOX",
     "STYLE_STAGE",
     "STYLE_STRIP",
     "STYLE_TITLEBAR",
@@ -89,10 +93,16 @@ STYLE_STRIP: Final = "Designer.Strip.TLabel"
 STYLE_SECTION: Final = "Designer.Section.TLabel"
 STYLE_MUTED: Final = "Designer.Muted.TLabel"
 STYLE_ERROR: Final = "Designer.Error.TLabel"
+#: The designer's own fields (inspector, panels, dialogs): the base look, the theme's focus ring.
+STYLE_ENTRY: Final = "Designer.TEntry"
+STYLE_COMBOBOX: Final = "Designer.TCombobox"
+STYLE_SPINBOX: Final = "Designer.TSpinbox"
 #: Prefix of the invalid editor styles: ``f"{INVALID_PREFIX}.TEntry"`` and so on.
 INVALID_PREFIX: Final = "Designer.Invalid"
 #: The style of the designer's own lists; user Treeviews on the canvas keep the runtime look.
 TREE_STYLE: Final = "Designer.Treeview"
+#: The style of the dialogs' lists: they show the focus themselves (no panel ring around them).
+LIST_STYLE: Final = "Designer.List.Treeview"
 
 FONT_TITLE: Final = "PyGUIbudTitle"
 FONT_HEADER: Final = "PyGUIbudHeader"
@@ -111,9 +121,9 @@ _MIN_POINTS: Final = 7
 OWN_STYLES: Final = (
     STYLE_HEADER, STYLE_HEADER_LABEL, STYLE_DIVIDER, STYLE_STAGE, STYLE_TITLEBAR,
     STYLE_TITLE_LABEL, STYLE_CAPTION, STYLE_STRIP, STYLE_SECTION, STYLE_MUTED, STYLE_ERROR,
-    "Designer.TEntry", "Designer.TSpinbox", f"{INVALID_PREFIX}.TEntry",
+    STYLE_ENTRY, STYLE_SPINBOX, STYLE_COMBOBOX, f"{INVALID_PREFIX}.TEntry",
     f"{INVALID_PREFIX}.TSpinbox", f"{INVALID_PREFIX}.TCombobox", f"{INVALID_PREFIX}.TLabel",
-    TREE_STYLE,
+    TREE_STYLE, LIST_STYLE,
 )  # fmt: skip
 
 
@@ -233,6 +243,7 @@ def apply_designer_styles(root: tkinter.Misc, spec: ThemeSpec) -> None:
     conf(STYLE_MUTED, foreground=tokens.muted, font=FONT_CAPTION)
     conf(STYLE_ERROR, foreground=tokens.error_text)
     _editor_styles(style, tokens)
+    _focus_maps(style, tokens)
     icon_px = pick_size(16, scaling_factor(root))
     body = int(tkfont.nametofont(FONT_BODY, root=root).metrics("linespace"))
     conf(TREE_STYLE, rowheight=max(icon_px, body) + scaled(root, 6))
@@ -279,3 +290,19 @@ def _editor_styles(style: Any, tokens: DesignTokens) -> None:  # noqa: ANN401 - 
         # the base map (the read-only fill).
         focus = [("focus", tokens.error_border)]
         style.map(f"{INVALID_PREFIX}.{base}", bordercolor=focus, lightcolor=focus, darkcolor=focus)
+
+
+def _focus_maps(style: Any, tokens: DesignTokens) -> None:  # noqa: ANN401 - ttkbootstrap
+    """The theme's focus colour, not ttkbootstrap's ``primary`` (2.84:1 on the field in the
+    neutral dark theme, QA-19f-T02), on the editors and the dialog lists (QA-19f-T04). clam
+    paints the border and its inner light and dark edges: the focus edge is 2 px, not 1 px."""
+    for name, base in ((STYLE_ENTRY, "TEntry"), (STYLE_SPINBOX, "TSpinbox"),
+                       (STYLE_COMBOBOX, "TCombobox"), (LIST_STYLE, "Treeview")):  # fmt: skip
+        maps = {}
+        for option in ("bordercolor", "lightcolor", "darkcolor"):
+            inherited = [tuple(map(str, entry)) for entry in style.map(base, option)]
+            maps[option] = [
+                (*e[:-1], tokens.ring) if "focus" in e[:-1] and "invalid" not in e[:-1] else e
+                for e in inherited
+            ] or [("focus", "!disabled", tokens.ring)]
+        style.map(name, **maps)

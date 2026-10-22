@@ -6,6 +6,7 @@ uses a second :class:`~pyguibud.designer.preview_tk.PreviewRunner`, so at most o
 
 from __future__ import annotations
 
+import dataclasses
 import shutil
 import subprocess
 import tkinter
@@ -21,10 +22,11 @@ from pyguibud.designer.dialogs import files as file_dialogs
 from pyguibud.designer.dialogs.base import ModalDialog
 from pyguibud.designer.dialogs.message import Answer
 from pyguibud.designer.files import path_key
+from pyguibud.designer.present import elide_middle
 from pyguibud.designer.preview_tk import PreviewRunner, private_folder
 from pyguibud.designer.session import DesignerSession
 from pyguibud.designer.settings import Settings, remember_export
-from pyguibud.designer.theme_tk import INVALID_PREFIX
+from pyguibud.designer.theme_tk import INVALID_PREFIX, STYLE_ENTRY
 from pyguibud.i18n import N_, PSEUDO_LANGUAGE, _
 
 __all__ = ["ExportController", "ExportDialog"]
@@ -46,6 +48,14 @@ _M_UNSAVED = N_("Export uses the saved file, and '{name}' has changes that are n
 _M_SAVE_AND_EXPORT = N_("_Save and export")
 _M_CHANGED_BEFORE_RUN = N_("'{output}' changed after it was written, so it was not run.")
 _MAX_OUTSIDE_LINES = 5
+_SHOWN_CHARS = 120  # a longer path is shown cut in the middle; the export uses it whole (H92)
+
+
+def _shown(text: str) -> str:
+    """``text`` (a path) as the dialog shows it: at most about ``_SHOWN_CHARS`` characters."""
+    text = elide_middle(text, _SHOWN_CHARS)  # keeps the file name whole, however long
+    half = _SHOWN_CHARS // 2
+    return text if len(text) <= _SHOWN_CHARS else f"{text[:half]}…{text[-half:]}"
 
 
 class ExportDialog(ModalDialog):
@@ -74,7 +84,7 @@ class ExportDialog(ModalDialog):
         self.want_pot, self.allow, self.run_after = (tkinter.BooleanVar(root) for _i in range(3))
         self.output_label = ttk.Label(body)
         self.output_label.grid(row=0, column=0, sticky="w", padx=(0, 8))
-        self.output_entry = ttk.Entry(body, textvariable=self.output, width=48)
+        self.output_entry = ttk.Entry(body, textvariable=self.output, width=48, style=STYLE_ENTRY)
         self.output_entry.grid(row=0, column=1, sticky="ew")
         self.output_browse = ttk.Button(body, command=lambda: self._browse(self.output, False))
         self.output_browse.grid(row=0, column=2, padx=(6, 0))
@@ -86,7 +96,7 @@ class ExportDialog(ModalDialog):
         self.class_hint.grid(row=2, column=1, columnspan=2, sticky="w")
         self.pot_check = ttk.Checkbutton(body, variable=self.want_pot, command=self._pot_state)
         self.pot_check.grid(row=3, column=0, columnspan=3, sticky="w", pady=(12, 0))
-        self.pot_entry = ttk.Entry(body, textvariable=self.pot)
+        self.pot_entry = ttk.Entry(body, textvariable=self.pot, style=STYLE_ENTRY)
         self.pot_entry.grid(row=4, column=1, sticky="ew")
         self.pot_browse = ttk.Button(body, command=lambda: self._browse(self.pot, True))
         self.pot_browse.grid(row=4, column=2, padx=(6, 0))
@@ -99,8 +109,9 @@ class ExportDialog(ModalDialog):
         self.message = ttk.Label(body, style=f"{INVALID_PREFIX}.TLabel", justify="left",
                                  wraplength=wrap)  # fmt: skip
         self.message.grid(row=8, column=0, columnspan=3, sticky="w", pady=(8, 0))
-        buttons = ttk.Frame(body)
-        buttons.grid(row=9, column=0, columnspan=3, sticky="e", pady=(12, 0))
+        # A fixed row outside the body, packed before it: it never leaves the dialog (H92).
+        buttons = ttk.Frame(self.window, padding=(12, 0, 12, 12))
+        buttons.pack(side="bottom", fill="x", before=body)
         self.export_button = ttk.Button(buttons, command=self.accept, default="active")
         self.cancel_button = ttk.Button(buttons, command=self.close)  # after Export: tab order
         self.cancel_button.pack(side="right", padx=(6, 0))
@@ -141,7 +152,7 @@ class ExportDialog(ModalDialog):
             self.allow_check.grid_remove()
             self.paths.grid_remove()
             return
-        lines = list(paths[:_MAX_OUTSIDE_LINES])
+        lines = [_shown(path) for path in paths[:_MAX_OUTSIDE_LINES]]
         if len(paths) > _MAX_OUTSIDE_LINES:
             lines.append(ex.more_text(len(paths) - _MAX_OUTSIDE_LINES))
         self.paths.configure(text="\n".join(lines))
@@ -153,7 +164,8 @@ class ExportDialog(ModalDialog):
         if reason is None:
             self.message.grid_remove()
             return
-        self.message.configure(text=reason.text())
+        params = {k: _shown(v) if isinstance(v, str) else v for k, v in reason.params.items()}
+        self.message.configure(text=dataclasses.replace(reason, params=params).text())
         self.message.grid()
 
     def request(self) -> ex.ExportRequest:
@@ -171,6 +183,8 @@ class ExportDialog(ModalDialog):
 
     def accept(self) -> None:
         """Export now; a refusal stays in the dialog (and reveals the outside paths)."""
+        if self.closed:  # a second click of a double-click storm (H96)
+            return
         refusal = self.on_export(self.request())
         if refusal is None:
             self.close()

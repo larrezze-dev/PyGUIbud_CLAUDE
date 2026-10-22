@@ -20,6 +20,7 @@ from typing import Any
 from pyguibud.core import StackEvent
 from pyguibud.core.errors import PyGUIbudError, format_message
 from pyguibud.core.model import Include, Widget, Window
+from pyguibud.core.text import printable
 from pyguibud.designer import sizing
 from pyguibud.designer.canvas import design
 from pyguibud.designer.canvas.engine import CanvasEngine, WindowView, reveal, widget_rect
@@ -28,6 +29,7 @@ from pyguibud.designer.editing import Edge
 from pyguibud.designer.geometry import Rect
 from pyguibud.designer.icons_tk import icons
 from pyguibud.designer.panels.base import PanelBase
+from pyguibud.designer.present import clip
 from pyguibud.designer.present.canvas import canvas_tabs, kind_label, window_of
 from pyguibud.designer.session import DesignerSession, Selection
 from pyguibud.designer.signals import Signal
@@ -558,7 +560,7 @@ class CanvasPanel(PanelBase):
         for widget in (scroll, stage, plate, caption, glyph, title, kind, strip):
             widget.bind("<ButtonPress-1>", self._selector(window))
             widget.bind("<MouseWheel>", self._on_wheel)
-        title.configure(text=window.id)
+        title.configure(text=clip(printable(window.id)))
         kind.configure(text=kind_label(window))
         if self._spec is not None:
             self._restyle_stage(built, self._spec)
@@ -604,7 +606,7 @@ class CanvasPanel(PanelBase):
         self._drop_view(stage)
         stage.view, stage.error = view, None
         stage.card.grid_remove()
-        stage.title.configure(text=view.title or stage.window.id)
+        stage.title.configure(text=clip(printable(view.title or stage.window.id)))
         self._fill_strip(stage, view)
         self._outline(stage, reveal_node=True)
 

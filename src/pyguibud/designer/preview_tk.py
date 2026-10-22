@@ -22,6 +22,7 @@ from typing import Any, Literal
 
 from pyguibud.core.atomic import make_temp_dir
 from pyguibud.core.commands import SetField
+from pyguibud.core.keys import split_mnemonic
 from pyguibud.core.model import Window
 from pyguibud.designer import preview as pv
 from pyguibud.designer.session import DesignerSession
@@ -235,6 +236,24 @@ class PreviewRunner:
             self._timed_out = True
             self._signal("terminate")
         self._later("poll", POLL_MS, self._poll)
+
+
+_GROUP_LABELS = (pv.M_THEMES_LIGHT, pv.M_THEMES_DARK, pv.M_THEMES_OTHER)
+
+
+def group_themes(names: Collection[str]) -> dict[str, list[str]]:
+    """Split theme names into ``light``, ``dark`` and ``other`` by ttkbootstrap's theme type (or
+    the designer's own SAPE modes); the order of ``names`` is kept inside a group (H89)."""
+    from ttkbootstrap.themes.standard import STANDARD_THEMES
+
+    from pyguibud.designer.theme import load_theme_specs
+
+    kinds = {spec.name: spec.mode for spec in load_theme_specs()}
+    groups: dict[str, list[str]] = {"light": [], "dark": [], "other": []}
+    for name in names:
+        kind = kinds.get(name) or STANDARD_THEMES.get(name, {}).get("type")
+        groups[kind if kind in ("light", "dark") else "other"].append(name)
+    return groups
 
 
 class PreviewController:
@@ -484,9 +503,25 @@ class PreviewController:
         ready = self.state.phase == "running" and self.toolkit() == DEFAULT_BACKEND
         state = "normal" if ready else "disabled"
         menu.delete(0, "end")
-        for value, label in [("", _(pv.M_DOCUMENT_THEME)), *((t, t) for t in self.themes)]:
-            menu.add_radiobutton(label=label, value=value, variable=self._var, state=state,
-                                 command=lambda v=value: self.set_theme(v or None))  # fmt: skip
+        for old in menu.winfo_children():  # the group cascades of the last post (QA-19f-04)
+            old.destroy()
+
+        def add(target: Any, value: str, label: str) -> None:  # noqa: ANN401 - a tkinter.Menu
+            target.add_radiobutton(label=label, value=value, variable=self._var, state=state,
+                                   command=lambda: self.set_theme(value or None))  # fmt: skip
+
+        add(menu, "", _(pv.M_DOCUMENT_THEME))
+        groups = group_themes(self.themes)
+        if any(groups.values()):
+            menu.add_separator()
+        for key, names in zip(_GROUP_LABELS, groups.values(), strict=True):
+            if not names:
+                continue
+            text, underline = split_mnemonic(_(key))
+            sub = tkinter.Menu(menu, tearoff=False)
+            menu.add_cascade(label=text, underline=underline, menu=sub, state=state)
+            for name in names:
+                add(sub, name, name)
 
     def dispose(self) -> None:
         for disconnect in self._disconnects:

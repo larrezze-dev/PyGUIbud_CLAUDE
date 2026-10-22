@@ -31,7 +31,7 @@ from pyguibud.designer.actions import (
 from pyguibud.designer.canvas.design import unbind_tag
 from pyguibud.designer.canvas.drag import DragController
 from pyguibud.designer.icons_tk import icons
-from pyguibud.designer.panels.base import PanelBase
+from pyguibud.designer.panels.base import FullText, PanelBase
 from pyguibud.designer.panels.canvas import CanvasPanel
 from pyguibud.designer.panels.inspector import InspectorPanel
 from pyguibud.designer.panels.palette import PalettePanel
@@ -42,20 +42,12 @@ from pyguibud.designer.present.focus import cycle
 from pyguibud.designer.present.status import findings_summary, selection_path
 from pyguibud.designer.session import DesignerSession
 from pyguibud.designer.theme import ThemeSpec
-from pyguibud.designer.theme_tk import FONT_CAPTION, GHOST_STYLE, STYLE_DIVIDER, space
+from pyguibud.designer.theme_tk import FONT_CAPTION, GHOST_STYLE, STYLE_DIVIDER, scaled, space
 from pyguibud.i18n import _, ngettext
 
 __all__ = ["MESSAGE_MS", "Shell"]
 
 _log = logging.getLogger(__name__)
-
-
-class _FullText(ToolTip):
-    """The status bar's tooltip: only while the message is elided (it has a text then)."""
-
-    def show_tip(self, *args: Any) -> None:  # noqa: ANN401 - Tk event arguments
-        if self.text:
-            super().show_tip(*args)
 
 
 #: How long a transient status-bar message stays (milliseconds).
@@ -66,9 +58,13 @@ _TEXT_CLASSES = frozenset({"TEntry", "Entry", "Text", "TCombobox", "TSpinbox", "
 _TEXT_OWNED = frozenset({"edit.undo", "edit.redo"})
 #: The palette widens to fit its longest name, but never past this share of the window (QA-18-05).
 _PALETTE_SHARE = 0.4
+#: px at 96 dpi: the canvas never gets narrower while the side panels can give way (D5, H88).
+CANVAS_FLOOR = 280
 #: Bind tag placed before ``TButton`` on the toolbar buttons: a mouse click must not take the
 #: keyboard focus from the canvas or the tree, whose clipboard keys would stop (QA-14p-03).
 _NO_CLICK_FOCUS = "PyGUIbudNoClickFocus"
+#: Ctrl+Tab and Ctrl+Shift+Tab: the next or previous tab of the focused notebook.
+_TAB_SWITCH = (("<Control-Tab>", 1), ("<Control-Shift-Tab>", -1))
 #: Act once per physical key press: a held Delete or Ctrl+X must not cascade onto the parent
 #: that the removal selects (QA-13b-04), nor a held Ctrl+V/Ctrl+D multiply the pasted widgets.
 _ONCE_PER_PRESS = frozenset({"edit.delete", "edit.cut", "edit.paste", "edit.duplicate"})
@@ -176,6 +172,11 @@ class Shell:
         self._message_id: str | None = None
         self._clamp_id: str | None = None
         self._settled: dict[str, tuple[int, list[int], list[int]]] = {}  # paned -> last clamp
+        self._sash_px: dict[str, int] = {}  # paned -> its sash width, once measured
+        #: px: the palette width the user set by dragging its sash, also in an earlier session (D4)
+        self.palette_user = 0
+        self._palette_drag = False  # a press on the palette's sash: its release is the user's
+        self._refit_palette = 0  # D4 re-fit: 2 = wait for Tk's new sizes, 1 = re-fit now
         self._disposed = False
 
         root.columnconfigure(0, weight=1)
@@ -222,9 +223,10 @@ class Shell:
         self._bind_shortcuts()
         self._build_tree_menu()
         root.bind_all("<FocusIn>", self._on_focus_in, add="+")
-        for sequence, step in (("<Control-Tab>", 1), ("<Control-Shift-Tab>", -1)):
-            root.bind_all(sequence, lambda e, d=step: self._switch_tab(e, d))
-            self._bound.append(sequence)
+        # On the window's own tag, not "all": there Tk 8.6.15 lets <<NextWindow>> (Tab) beat the
+        # more specific <Control-Tab> while <<PrevWindow>> is bound too (QA-19f-T01).
+        for sequence, step in _TAB_SWITCH:
+            root.bind(sequence, lambda e, d=step: self._switch_tab(e, d), add="+")
         root.bind_all("<KeyRelease>", self._on_key_release, add="+")
         self._keep_panels_visible()
         self.refresh_states()
@@ -602,6 +604,30 @@ class Shell:
                 paned.bind(sequence, self._schedule_clamp, add="+")
             for pane in self._panes(paned):
                 pane.bind("<Configure>", self._schedule_clamp, add="+")
+        self.body.bind("<ButtonPress-1>", self._on_sash_press, add="+")
+        self.body.bind("<ButtonRelease-1>", self._on_sash_release, add="+")
+
+    def _on_sash_press(self, event: Any) -> None:  # noqa: ANN401 - a Tk event
+        self._palette_drag = str(self.body.identify(event.x, event.y)) == "0"
+
+    def _on_sash_release(self, _event: object) -> None:
+        if self._palette_drag:
+            self._palette_drag = False
+            self.palette_user = int(self.body.sashpos(0))  # type: ignore[no-untyped-call]
+
+    def refit_palette(self) -> None:
+        """D4: at the next clamp, the palette takes the width its names need in the current
+        language and theme, or the wider one the user dragged; an auto-grown width shrinks."""
+        self._refit_palette = 2
+        self._schedule_clamp()
+
+    def _fit_palette(self) -> None:
+        self._refit_palette = 0
+        palette, body = self.palette, self.body
+        want = max(palette.frame.winfo_reqwidth(), palette.fit_width(), self.palette_user)
+        if body.winfo_width() > 1 and len(self._panes(body)) > 1:
+            body.sashpos(0, max(1, min(want, self._palette_cap())))  # type: ignore[no-untyped-call]
+            self._settled.pop(str(self.body), None)
 
     def _panes(self, paned: Any) -> list[Any]:  # noqa: ANN401 - a ttk PanedWindow
         return [self.root.nametowidget(str(pane)) for pane in paned.panes()]
@@ -617,8 +643,15 @@ class Shell:
             return 0
         if horizontal:
             least = max(p.heading.winfo_reqwidth() for p in panels) + 24
-            if pane is self.palette.frame:  # long translated names are never cut (QA-18-05)
-                return max(least, min(self.palette.fit_width(), self._palette_cap()))
+            # D5: the palette gives way first (its names elide), then the right-hand pane down to
+            # the object tree's names (QA-18-16), so the canvas keeps its floor.
+            if pane is self.palette.frame:
+                return max(least, min(self.palette.floor_width(), self._palette_cap()))
+            if pane is self.canvas.frame:
+                return max(least, scaled(self.root, CANVAS_FLOOR))
+            if pane is self.right:
+                tabs = max(self.tree.frame.winfo_reqwidth(), self.variables.frame.winfo_reqwidth())
+                return max(least, self.tree.fit_width() + int(self.side.winfo_reqwidth()) - tabs)
             return least
         return max(p.heading.winfo_reqheight() for p in panels) * 3
 
@@ -635,6 +668,13 @@ class Shell:
         if self._disposed:
             return
         try:
+            if self._refit_palette:  # one idle round for the new sizes (a theme's scrollbar),
+                if self._refit_palette == 1:  # then one for the new sash's layout (its x)
+                    self._fit_palette()
+                else:
+                    self._refit_palette = 1
+                self._schedule_clamp()
+                return
             for paned in (self.body, self.right):
                 self._clamp(paned, horizontal=paned is self.body)
         except tkinter.TclError:  # the window is being destroyed
@@ -649,8 +689,13 @@ class Shell:
         positions = [int(paned.sashpos(index)) for index in range(len(panes) - 1)]
         if self._settled.get(str(paned)) == (size, minimum, positions):
             return  # what the last clamp left (Tk may refuse a position): never write it again
+        # The sash width, read only from a fresh layout (the first pane as wide as its sash
+        # position): right after a sashpos() the panes' x is stale (D4 re-fit, 19f).
+        first = panes[0].winfo_width() if horizontal else panes[0].winfo_height()
         start = panes[1].winfo_x() if horizontal else panes[1].winfo_y()
-        sash = max(1, start - positions[0]) if start > positions[0] else 5
+        if first == positions[0] and start > positions[0]:
+            self._sash_px[str(paned)] = start - positions[0]
+        sash = self._sash_px.get(str(paned), 5)
         wanted = list(positions)
         for index in range(len(wanted)):  # every pane keeps its minimum on its far side ...
             before = wanted[index - 1] + sash if index else 0
@@ -675,7 +720,7 @@ class Shell:
         bar.columnconfigure(0, weight=1)
         xs, m = space(self.root, "xs"), space(self.root, "m")
         self._status = ttk.Label(bar, anchor="w")
-        self._status_tip, self._status_width = _FullText(self._status, text=""), 0
+        self._status_tip, self._status_width = FullText(self._status, text=""), 0
         self._status.bind("<Configure>", self._refit_status, add="+")
         self._summary = ttk.Label(bar, anchor="e", compound="left", font=FONT_CAPTION)
         self._status.grid(row=1, column=0, sticky="ew", padx=(m, 0), pady=xs)
@@ -762,6 +807,7 @@ class Shell:
             self.side.tab(panel.frame, text=_(panel.HEADING))
         self._refresh_summary()
         self._refresh_status()
+        self.refit_palette()  # the app's language switch clamps the sashes next (D4)
 
     # ------------------------------------------------------------ theme
     def restyle(self, spec: ThemeSpec) -> None:
@@ -779,6 +825,7 @@ class Shell:
                 _log.debug("Could not recolour a menu", exc_info=True)
         for panel in self.all_panels:
             panel.restyle(spec)
+        self.refit_palette()  # new fonts: the names may need another width (D4)
 
     # ------------------------------------------------------------ lifecycle
     def dispose(self) -> None:
@@ -801,6 +848,8 @@ class Shell:
         try:
             for sequence in (*self._bound, "<FocusIn>", "<KeyRelease>"):
                 unbind_tag(self.root, "all", sequence)
+            for sequence, _step in _TAB_SWITCH:
+                unbind_tag(self.root, str(self.root), sequence)
             unbind_tag(self.root, _NO_CLICK_FOCUS, "<ButtonPress-1>")
             self.root.configure(menu="")
             for widget in (self.menubar, self.tree_menu, self.toolbar, self.body, self.statusbar):

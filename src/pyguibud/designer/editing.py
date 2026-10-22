@@ -43,6 +43,7 @@ from pyguibud.core.model import (
     WidgetSpec,
     Window,
 )
+from pyguibud.core.text import printable
 from pyguibud.core.validate import RESERVED_IDS
 from pyguibud.designer.geometry import Rect
 from pyguibud.designer.targets import MAX_INDEX, Target
@@ -695,7 +696,7 @@ def window_delete_refusal(
         user = _window_of(include)
         if user is not window and not any(user is w for w in also):
             name = include.id if user is None else user.id
-            return _(_M_STILL_INCLUDED).format(id=window.id, user=name)
+            return _(_M_STILL_INCLUDED).format(id=printable(window.id), user=printable(name))
     return None
 
 

@@ -347,14 +347,10 @@ def test_every_panel_keeps_its_minimum_at_the_minimum_size(app: Any, lang: str) 
     shell = app.shell
     for pane in shell._panes(shell.body):
         assert pane.winfo_width() >= shell._minimum(pane, True) - 1, (lang, pane)
-    assert shell.palette.frame.winfo_width() >= shell.palette.fit_width() - 1
+    # D5 (19f): the palette may give way below its fit width (names elide), never below this.
+    assert shell.palette.frame.winfo_width() >= shell.palette.floor_width() - 1
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="QA-18-09:the keyboard-shortcuts dialog is ~1100 px tall; its Close button is "
-    "off a 1080 px screen in every language",
-)
 def test_qa18_09_cheat_sheet_fits_a_full_hd_screen(app: Any) -> None:
     app.open_shortcuts()
     _settle(app.root)
@@ -362,7 +358,7 @@ def test_qa18_09_cheat_sheet_fits_a_full_hd_screen(app: Any) -> None:
     _switch(app, "de_DE")
     dialog.window.update_idletasks()
     room = min(dialog.window.winfo_screenheight(), 1080) - 48  # minus a taskbar
-    if dialog.window.winfo_reqheight() <= room:
+    if dialog.rows.winfo_reqheight() <= room:  # the rows uncapped (19f: the dialog scrolls)
         pytest.skip("this display's fonts make the sheet short enough; QA-18-09 not visible")
     assert dialog.window.winfo_reqheight() <= room
 
@@ -463,11 +459,6 @@ def _object_tree_cut(app: Any) -> set[str]:
     return cut
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="QA-18-16: at 800x500 the wider translated palette takes ~20 px from the object "
-    "tree's name column; ids such as 'frm_greeting (Frame)' that fit in English are cut",
-)
 @pytest.mark.parametrize("lang", ["fr_FR", "de_DE", "pt_PT"])
 def test_qa18_16_object_tree_names_that_fit_in_english_fit_in_every_language(
     app: Any, lang: str

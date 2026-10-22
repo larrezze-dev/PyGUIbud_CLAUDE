@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from pyguibud.core import Document, Include, Widget, Window
+from pyguibud.core.text import printable
 from pyguibud.designer.present import clip
 from pyguibud.i18n import N_, _, ngettext
 
@@ -65,7 +66,7 @@ def canvas_tabs(document: Document) -> list[CanvasTab]:
     tabs: list[CanvasTab] = []
     for window in document.children:
         title = window.props.get("title")
-        text = clip(title.value if title is not None and title.value else window.id)
+        text = clip(printable(title.value if title is not None and title.value else window.id))
         if not text:
             text = _(_M_NO_ID)
         layout = (

@@ -59,34 +59,40 @@ def _yes_no(flag: bool) -> str:
     return _(_M_YES) if flag else _(_M_NO)
 
 
+def _shown(value: object) -> str:
+    """Model text for display: control and bidi characters escaped (never edited back)."""
+    return clip(printable(str(value)))
+
+
 def _class_and_id(node: object) -> list[tuple[str, str]]:
     if isinstance(node, Window):
-        return [(_("Class"), _("Window")), (_("Id"), clip(node.id)), (_("Kind"), kind_label(node))]
+        rows = [(_("Class"), _("Window")), (_("Id"), _shown(node.id))]
+        return [*rows, (_("Kind"), kind_label(node))]
     if isinstance(node, Widget):
-        rows = [(_("Class"), clip(node.class_name)), (_("Id"), clip(node.id))]
-        return rows + ([(_("Plugin"), clip(node.plugin))] if node.plugin else [])
+        rows = [(_("Class"), _shown(node.class_name)), (_("Id"), _shown(node.id))]
+        return rows + ([(_("Plugin"), _shown(node.plugin))] if node.plugin else [])
     if isinstance(node, Include):
         return [
             (_("Class"), _("Include")),
-            (_("Id"), clip(node.id)),
-            (_("Source"), clip(node.src)),
-            (_("Component"), clip(node.component)),
+            (_("Id"), _shown(node.id)),
+            (_("Source"), _shown(node.src)),
+            (_("Component"), _shown(node.component)),
         ]
     if isinstance(node, Menubar):
         return [(_("Class"), _("Menu bar"))]
     if isinstance(node, Menu):
-        return [(_("Class"), _("Menu")), (_("Id"), clip(node.id))]
+        return [(_("Class"), _("Menu")), (_("Id"), _shown(node.id))]
     if isinstance(node, Action):
-        rows = [(_("Class"), _("Action")), (_("Id"), clip(node.id))]
+        rows = [(_("Class"), _("Action")), (_("Id"), _shown(node.id))]
         if node.handler:
-            rows.append((_("Handler"), clip(node.handler)))
+            rows.append((_("Handler"), _shown(node.handler)))
         if node.shortcut:
-            rows.append((_("Shortcut"), clip(node.shortcut)))
+            rows.append((_("Shortcut"), _shown(node.shortcut)))
         return rows
     if isinstance(node, MenuSeparator):
         return [(_("Class"), _("Separator"))]
     if isinstance(node, Statusbar):
-        return [(_("Class"), _("Status bar")), (_("Id"), clip(node.id))]
+        return [(_("Class"), _("Status bar")), (_("Id"), _shown(node.id))]
     return []
 
 

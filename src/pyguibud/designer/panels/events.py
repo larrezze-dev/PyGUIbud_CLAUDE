@@ -15,6 +15,7 @@ from pyguibud.core.commands import Outcome, SetEvents
 from pyguibud.core.model import Action, Document, Event, Widget
 from pyguibud.designer.panels.editors import Editor, EditorHost, bind_history, history_action
 from pyguibud.designer.properties import Field
+from pyguibud.designer.theme_tk import STYLE_COMBOBOX, STYLE_ENTRY
 from pyguibud.i18n import N_, _
 
 __all__ = ["EventsTab", "HandlerBox"]
@@ -33,7 +34,9 @@ class HandlerBox(Editor):
 
     def __init__(self, parent: Any, field: Field, host: EditorHost) -> None:  # noqa: ANN401
         super().__init__(parent, field, host)
-        self.widget = ttk.Combobox(self.frame, textvariable=self.var, values=field.choices)
+        self.style = STYLE_COMBOBOX
+        self.widget = ttk.Combobox(self.frame, textvariable=self.var, values=field.choices,
+                                   style=self.style)  # fmt: skip
         self.widget.grid(row=0, column=0, sticky="ew")
         self._bind(self.widget)
         for sequence in ("<Return>", "<KP_Enter>", "<<ComboboxSelected>>"):
@@ -97,7 +100,7 @@ class EventsTab:
                 remove.grid(row=row, column=2, padx=(4, 0))
         row = len(self.boxes)
         ttk.Label(self.frame, text=_(_M_KEY)).grid(row=row, column=0, sticky="w", pady=(8, 0))
-        self.key_entry = ttk.Entry(self.frame)
+        self.key_entry = ttk.Entry(self.frame, style=STYLE_ENTRY)
         self.key_entry.grid(row=row, column=1, sticky="ew", pady=(8, 0))
         self.key_entry.bind("<Return>", lambda _e: self.add_key())
         bind_history(self.key_entry, self._key_history)

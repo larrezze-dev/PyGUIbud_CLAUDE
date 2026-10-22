@@ -10,6 +10,7 @@ from typing import Literal
 
 from pyguibud.core.commands import Command
 from pyguibud.core.model import Window
+from pyguibud.core.text import printable
 from pyguibud.designer.editing import (
     M_EXTERNAL_INCLUDES,
     delete_window_command,
@@ -106,7 +107,8 @@ class WindowActions:
         if reason := window_delete_refusal(document, window):
             self._message(reason)
             return
-        self._confirm(_(_M_DELETE_WINDOW).format(id=window.id), lambda: self._remove(window))
+        question = _(_M_DELETE_WINDOW).format(id=printable(window.id))
+        self._confirm(question, lambda: self._remove(window))
 
     def _remove(self, window: Window) -> None:
         document = self.session.document

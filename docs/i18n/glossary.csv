@@ -130,3 +130,4 @@ clipboard,system store used by cut; copy and paste,clipboard,portapapeles,área 
 pseudo-locale,artificial language (en_XA) to test layouts,pseudo-locale,pseudolocale,pseudo-idioma,pseudoidioma,Pseudo-Locale,pseudo-lingua,pseudo-landinstelling,pseudo-locale
 entry point,Python packaging hook that plugins register,entry point,punto de entrada,ponto de entrada,ponto de entrada,Einstiegspunkt,punto di ingresso,entry point,point d'entrée
 backend,toolkit implementation that builds the widgets (ttkbootstrap; tkinter; PySide6),backend,backend,backend,backend,Backend,backend,backend,backend
+other themes,Preview > Theme submenu: themes of unknown type (access key chosen per locale),other themes,otros,outros,outros,andere,altri,overige,autres

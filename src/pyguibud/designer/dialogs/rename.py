@@ -8,7 +8,7 @@ from tkinter import ttk
 from typing import Any
 
 from pyguibud.designer.dialogs.base import ModalDialog
-from pyguibud.designer.theme_tk import INVALID_PREFIX
+from pyguibud.designer.theme_tk import INVALID_PREFIX, STYLE_ENTRY
 from pyguibud.i18n import N_, _
 
 __all__ = ["RenameDialog"]
@@ -38,7 +38,7 @@ class RenameDialog(ModalDialog):
         self.value = tkinter.StringVar(root, value=current)
         self.label = ttk.Label(self.body)
         self.label.grid(row=0, column=0, sticky="w", padx=(0, 8))
-        self.entry = ttk.Entry(self.body, textvariable=self.value, width=32)
+        self.entry = ttk.Entry(self.body, textvariable=self.value, width=32, style=STYLE_ENTRY)
         self.entry.grid(row=0, column=1, sticky="ew")
         self.body.columnconfigure(1, weight=1)
         self.reason = ttk.Label(self.body, style=f"{INVALID_PREFIX}.TLabel", justify="left",

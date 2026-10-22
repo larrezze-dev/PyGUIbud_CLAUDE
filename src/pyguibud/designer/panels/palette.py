@@ -7,11 +7,13 @@ from tkinter import font as tkfont
 from tkinter import ttk
 from typing import Any, Protocol
 
-from pyguibud.designer.panels.base import PanelBase
+from pyguibud.designer.panels.base import FullText, PanelBase
+from pyguibud.designer.present import fit_text
 from pyguibud.designer.present.icons import class_icon
 from pyguibud.designer.present.palette import palette_groups
 from pyguibud.designer.session import DesignerSession
-from pyguibud.designer.theme_tk import FONT_HEADER, TREE_STYLE
+from pyguibud.designer.theme import ThemeSpec
+from pyguibud.designer.theme_tk import FONT_HEADER, TREE_STYLE, scaled
 from pyguibud.i18n import N_, _
 
 __all__ = ["PalettePanel"]
@@ -22,6 +24,7 @@ _RENDERED = "<<PaletteRendered>>"
 _INDENT = 20  # px: Tk's Treeview indent when the theme sets none
 _TEXT_PAD = 8  # px: the room Tk keeps around a row's text
 _WIDTH = 160  # px: the tree's usual width (``PanelBase._new_tree``); short names keep it
+_Metrics = tuple[int, tkfont.Font, tkfont.Font]  # indent, item font, category font
 
 
 class DragSink(Protocol):
@@ -66,8 +69,14 @@ class PalettePanel(PanelBase):
         for sequence in ("<Triple-Button-1>", "<Quadruple-Button-1>"):  # else Tk repeats Double
             tree.bind(sequence, lambda e: self._swallow(tree.identify_row(e.y)), add="+")
         tree.bind(_RENDERED, lambda _e: self._rendered(), add="+")
+        # D5: when the palette gives way to the canvas, names elide; the tooltip shows them whole.
+        tree.bind("<Configure>", lambda _e: self._elide(), add="+")
+        tree.bind("<Motion>", self._on_motion, add="+")
+        self._tip = FullText(tree, text="")
         self._renders = 0  # renders whose <<TreeviewSelect>> events are still queued
         self._fit = 0  # the tree width that shows every row uncut (QA-18-05)
+        self._column = 0  # the width last asked for the tree column
+        self._rows: dict[str, tuple[str, Any, bool]] = {}  # iid -> (full text, icon, category)
         self._render()
 
     def fit_width(self) -> int:
@@ -80,13 +89,54 @@ class PalettePanel(PanelBase):
         if tree is None:
             return 0
         overhead = max(0, self.frame.winfo_reqwidth() - tree.winfo_reqwidth())
-        return self._fit + overhead
+        border = max(0, tree.winfo_reqwidth() - self._column) if self._column else 0
+        return self._fit + border + overhead  # the frame's request once the column is _fit
 
-    def _measure(self, rows: list[tuple[str, Any, bool]]) -> int:
-        """The widest row: depth indent, expand indicator, icon and text (category in bold)."""
+    def floor_width(self) -> int:
+        """The narrowest the palette gets when it gives way first (D5): its usual width, or
+        less when every name fits in less. Narrower than :meth:`fit_width`, names elide."""
+        tree = self.tree
+        overhead = max(0, self.frame.winfo_reqwidth() - tree.winfo_reqwidth()) if tree else 0
+        return min(self.fit_width(), scaled(self.frame, _WIDTH) + overhead)
+
+    def _row_width(self, text: str, icon: Any, category: bool, metrics: _Metrics) -> int:  # noqa: ANN401
+        """A row's need: depth indent (the indicator column, plus a level for an item), icon,
+        text (a category in bold) and Tk's padding."""
+        indent, body, header = metrics
+        icon_px = int(self.frame.tk.call("image", "width", icon)) if icon else 0
+        font = header if category else body
+        return (1 if category else 2) * indent + icon_px + font.measure(text) + _TEXT_PAD
+
+    def _elide(self) -> None:
+        """Cut the names to the tree's width (with "…"); the full names come back when it fits."""
+        tree, metrics = self.tree, self._metrics()
+        if tree is None or metrics is None or tree.winfo_width() <= 1:
+            return
+        width = tree.winfo_width()
+        for iid, (text, icon, category) in self._rows.items():
+            room = width - self._row_width("", icon, category, metrics)
+            font = metrics[2] if category else metrics[1]
+            shown = fit_text(text, room, font.measure)
+            if tree.exists(iid) and str(tree.item(iid, "text")) != shown:
+                tree.item(iid, text=shown)
+
+    def _on_motion(self, event: Any) -> None:  # noqa: ANN401 - a Tk event
+        """The hovered row's full name as the tooltip, only while it is shown elided."""
+        tree = self.tree
+        row = tree.identify_row(event.y) if tree is not None else ""
+        full = self._rows[row][0] if row in self._rows else ""
+        text = full if tree is not None and full and str(tree.item(row, "text")) != full else ""
+        if text != self._tip.text:
+            self._tip.hide_tip()
+            self._tip.configure(text=text)
+            if text:
+                self._tip.schedule()
+
+    def _metrics(self) -> _Metrics | None:
+        """(indent, body font, category font) of the tree, or None before the theme fonts."""
         tree = self.tree
         if tree is None:
-            return 0
+            return None
         style = ttk.Style(tree)
         try:
             indent = int(tree.winfo_fpixels(style.lookup(TREE_STYLE, "indent") or _INDENT))
@@ -96,14 +146,8 @@ class PalettePanel(PanelBase):
             )  # fmt: skip
             header = tkfont.nametofont(FONT_HEADER)
         except (tkinter.TclError, ValueError):  # no theme fonts yet (an early render)
-            return 0
-        widest = 0
-        for text, icon, category in rows:
-            icon_px = int(tree.tk.call("image", "width", icon)) if icon else 0
-            font = header if category else body
-            depth = 1 if category else 2  # the indicator column, plus one level for an item
-            widest = max(widest, depth * indent + icon_px + font.measure(text) + _TEXT_PAD)
-        return widest
+            return None
+        return indent, body, header
 
     def _on_select(self) -> None:
         picked = self.tree.selection() if self.tree is not None else ()
@@ -152,7 +196,7 @@ class PalettePanel(PanelBase):
         selected = tree.selection()
         scroll = self._scroll_state()
         tree.delete(*tree.get_children())
-        rows: list[tuple[str, Any, bool]] = []
+        self._rows.clear()
         for index, group in enumerate(palette_groups(self.session.registry)):
             first = f"w:{group.items[0].name}" if group.items else ""
             category = tree.insert(
@@ -163,15 +207,22 @@ class PalettePanel(PanelBase):
                 open=opened.get(first, True),
                 tags=("category",),
             )
-            rows.append((group.category_label, "", True))
+            self._rows[category] = (group.category_label, "", True)
             for item in group.items:
                 label = _(_M_PLUGIN).format(label=item.label) if item.plugin else item.label
                 icon = self._icon(class_icon(item.name, self.session.registry))
                 tree.insert(category, "end", iid=f"w:{item.name}", text=label, image=icon)
-                rows.append((label, icon, False))
-        self._fit = self._measure(rows)
+                self._rows[f"w:{item.name}"] = (label, icon, False)
+        metrics = self._metrics()
+        rows = self._rows.values()
+        self._fit = max((self._row_width(*r, metrics) for r in rows), default=0) if metrics else 0
         if self._fit:  # the requested width: the first layout already shows every name
-            tree.column("#0", width=max(_WIDTH, self._fit))
+            self._column = max(scaled(tree, _WIDTH), self._fit)
+            tree.column("#0", width=self._column)
+            # ttk re-requests a tree's size on a geometry option only, not on a column width:
+            # else the width of the start language stays the palette's request (QA-19f-01).
+            tree.configure(height=tree.cget("height"))
+        self._elide()
         if selected and tree.exists(selected[0]):
             tree.selection_set(selected[0])
         self._restore_scroll(scroll)
@@ -184,3 +235,8 @@ class PalettePanel(PanelBase):
 
     def _rendered(self) -> None:
         self._renders = max(0, self._renders - 1)
+
+    def restyle(self, spec: ThemeSpec) -> None:
+        """New theme fonts: measure the names again (the shell then re-fits the width, D4)."""
+        super().restyle(spec)
+        self._render()

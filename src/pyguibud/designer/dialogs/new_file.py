@@ -8,6 +8,7 @@ from typing import Any
 
 from pyguibud.designer.dialogs.base import ModalDialog
 from pyguibud.designer.present.new_file import TemplateRow, template_rows
+from pyguibud.designer.theme_tk import LIST_STYLE
 from pyguibud.i18n import N_, _
 
 __all__ = ["NewFileDialog"]
@@ -37,7 +38,7 @@ class NewFileDialog(ModalDialog):
         self.prompt = ttk.Label(self.body, anchor="w", wraplength=360)
         self.prompt.grid(row=0, column=0, sticky="ew", pady=(0, 6))
         self.list = ttk.Treeview(
-            self.body, show="tree", selectmode="browse", height=5, takefocus=True
+            self.body, show="tree", selectmode="browse", height=5, takefocus=True, style=LIST_STYLE
         )
         self.list.column("#0", stretch=True, minwidth=120, width=240)
         self.list.grid(row=1, column=0, sticky="nsew")

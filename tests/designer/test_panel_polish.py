@@ -171,7 +171,7 @@ def test_the_combobox_keeps_its_readonly_state_and_gets_no_text_style(
     assert combos
     for editor in combos:
         assert "readonly" in editor.widget.state()
-        assert str(editor.widget.cget("style")) in ("", "TCombobox")  # not Designer.TEntry
+        assert str(editor.widget.cget("style")) == "Designer.TCombobox"  # no text style (19f-T02)
         editor.set_enabled(True)
         assert "readonly" in editor.widget.state()  # enabling never removes its normal state
 

@@ -288,7 +288,8 @@ def test_dialog_commands_apply_only_changed_parts() -> None:
 def test_a_dialog_stays_on_a_single_monitor_desktop(
     designer_root: Any, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    monkeypatch.setattr(screen, "desktop_bounds", lambda _root: (1920, 1080, 0, 0))
+    monkeypatch.setattr(screen, "work_area", lambda _root: (1920, 1080, 0, 0))  # the fake's monitor
+    monkeypatch.setattr(screen, "title_height", lambda _root: 0)  # no frame on the fake
     dialog = message_dialog(designer_root, lambda: "QA")
     placed: list[str] = []
     try:

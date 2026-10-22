@@ -43,7 +43,7 @@ class ChoiceDialog(ModalDialog):
         self.label = ttk.Label(self.body, wraplength=root.winfo_fpixels("3.5i"), justify="left")
         self.label.pack(anchor="w")
         row = ttk.Frame(self.body)
-        row.pack(side="bottom", anchor="e", pady=(12, 0))
+        row.pack(side="bottom", anchor="e", pady=(12, 0), before=self.label)  # never hidden
         self.buttons: list[tuple[ttk.Button, str, Answer]] = []
         for index, (msgid, answer) in enumerate(buttons):
             button = ttk.Button(row, command=functools.partial(self.press, index),

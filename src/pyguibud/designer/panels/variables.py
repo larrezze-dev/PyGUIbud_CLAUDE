@@ -14,6 +14,7 @@ from typing import Any
 
 from pyguibud.core.commands import Command, Macro, Outcome, SetField, SetVariable
 from pyguibud.core.model import Variable, Widget
+from pyguibud.core.text import printable
 from pyguibud.designer.editing import (
     new_variable,
     remove_and_unbind,
@@ -26,6 +27,7 @@ from pyguibud.designer.panels.editors import bind_history, history_action
 from pyguibud.designer.present import clip
 from pyguibud.designer.session import DesignerSession
 from pyguibud.designer.theme import ThemeSpec
+from pyguibud.designer.theme_tk import STYLE_COMBOBOX, STYLE_ENTRY
 from pyguibud.i18n import N_, _, ngettext
 
 __all__ = ["VariablesPanel"]
@@ -87,10 +89,10 @@ class VariablesPanel(PanelBase):
         edit.columnconfigure(1, weight=1)
         self.id_var, self.default_var = tkinter.StringVar(edit), tkinter.StringVar(edit)
         self.type_var = tkinter.StringVar(edit)
-        self.id_entry = ttk.Entry(edit, textvariable=self.id_var)
+        self.id_entry = ttk.Entry(edit, textvariable=self.id_var, style=STYLE_ENTRY)
         self.type_box = ttk.Combobox(edit, textvariable=self.type_var, values=_TYPES, width=8,
-                                     state="readonly")  # fmt: skip
-        self.default_entry = ttk.Entry(edit, textvariable=self.default_var)
+                                     state="readonly", style=STYLE_COMBOBOX)  # fmt: skip
+        self.default_entry = ttk.Entry(edit, textvariable=self.default_var, style=STYLE_ENTRY)
         self._labels: list[tuple[Any, str]] = []
         for row, (msgid, widget) in enumerate(
             ((_M_ID, self.id_entry), (_M_TYPE, self.type_box), (_M_DEFAULT, self.default_entry))
@@ -147,9 +149,10 @@ class VariablesPanel(PanelBase):
         tree.delete(*tree.get_children())
         for variable in document.variables.values() if document is not None else ():
             users = [w.id for w in variable_users(document, variable.id)] if document else []
-            used = _(_M_USERS).format(count=len(users), ids=clip(", ".join(users), 60))
-            values = (variable.type, clip(variable.default, 40), used if users else "0")
-            tree.insert("", "end", iid=variable.id, text=variable.id, values=values)
+            ids = printable(clip(", ".join(users), 60))  # display only: bidi escaped (H81)
+            used = _(_M_USERS).format(count=len(users), ids=ids)
+            values = (variable.type, printable(clip(variable.default, 40)), used if users else "0")
+            tree.insert("", "end", iid=variable.id, text=printable(variable.id), values=values)
         if keep is not None and tree.exists(keep):
             tree.selection_set(keep)
             tree.focus(keep)

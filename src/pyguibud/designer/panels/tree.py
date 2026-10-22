@@ -25,7 +25,7 @@ from pyguibud.designer.present.tree import tree_rows
 from pyguibud.designer.session import DesignerSession, Selection
 from pyguibud.designer.targets import Target
 from pyguibud.designer.theme import ThemeSpec, tag_colours
-from pyguibud.designer.theme_tk import scaled
+from pyguibud.designer.theme_tk import TREE_STYLE, scaled
 from pyguibud.i18n import N_, _
 
 __all__ = ["TreePanel"]
@@ -54,6 +54,8 @@ class TreePanel(PanelBase):
         super().__init__(parent, session, ring_px=ring_px)
         tree = self._new_tree(("detail", "status"))
         tree.configure(selectmode="extended")  # Ctrl/Shift multi-selection (spec 7.2)
+        # D5: the name column keeps its width (every name whole); the detail columns give way.
+        tree.column("#0", stretch=False)
         self._on_full_text = on_full_text
         self._full: dict[str, tuple[str, str]] = {}  # key -> untruncated (detail, status)
         self._fit_job: str | None = None
@@ -334,8 +336,36 @@ class TreePanel(PanelBase):
         with contextlib.suppress(tkinter.TclError):
             self._fit_job = tree.after_idle(self._fit_cells)
 
+    def fit_width(self) -> int:
+        """The panel width that shows every name whole: the name column plus the scrollbar and
+        the ring (the shell keeps the right-hand pane at least this wide, D5, QA-18-16)."""
+        tree = self.tree
+        if tree is None:
+            return 0
+        overhead = max(0, self.frame.winfo_reqwidth() - tree.winfo_reqwidth())
+        return int(tree.column("#0", "width")) + overhead
+
+    def _fit_names(self, font: tkfont.Font) -> None:
+        """Make the name column (#0) as wide as its widest row: indent, icon and text."""
+        tree = self.tree
+        assert tree is not None
+        style = ttk.Style(tree)
+        indents = (style.lookup(TREE_STYLE, "indent"), style.lookup("Treeview", "indent"))
+        indent = max(int(tree.winfo_fpixels(i)) for i in (*indents, 20) if i)
+        widest = 0
+        stack = [(child, 1) for child in tree.get_children("")]
+        while stack:
+            key, depth = stack.pop()
+            image = tree.item(key, "image")
+            icon = int(tree.tk.call("image", "width", image[0])) if image else 0
+            widest = max(widest, indent * depth + icon + font.measure(str(tree.item(key, "text"))))
+            stack += [(child, depth + 1) for child in tree.get_children(key)]
+        if widest and int(tree.column("#0", "width")) != widest + font.measure("m"):
+            tree.column("#0", width=widest + font.measure("m"))
+
     def _fit_cells(self) -> None:
-        """Cut the detail and status cells to their column width, ending with an ellipsis."""
+        """Size the name column, then cut the detail and status cells to their column width,
+        ending with an ellipsis."""
         tree = self.tree
         self._fit_job = None
         if tree is None:
@@ -346,6 +376,7 @@ class TreePanel(PanelBase):
             )
         except tkinter.TclError:
             font = tkfont.nametofont("TkDefaultFont")
+        self._fit_names(font)
         padding = 2 * font.measure("m")  # the cell margin Tk keeps around the text
         for index, column in enumerate(("detail", "status")):
             width = int(tree.column(column, "width")) - padding
@@ -378,6 +409,7 @@ class TreePanel(PanelBase):
 
     def restyle(self, spec: ThemeSpec) -> None:
         super().restyle(spec)
+        self._schedule_fit()  # new theme fonts: the names need another width
         if self.tree is not None:
             self.tree.tag_configure("error", foreground=tag_colours(spec)["error"])
             colours = spec.colors

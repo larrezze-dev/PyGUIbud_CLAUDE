@@ -13,7 +13,7 @@ from pyguibud.core import ReadResult, XmlIoError
 from pyguibud.designer.dialogs.base import ModalDialog
 from pyguibud.designer.present import elide_middle
 from pyguibud.designer.recovery import RecoveryEntry
-from pyguibud.designer.theme_tk import STYLE_MUTED, space
+from pyguibud.designer.theme_tk import LIST_STYLE, STYLE_MUTED, space
 from pyguibud.i18n import N_, _
 
 __all__ = ["RecoveryDialog"]
@@ -61,7 +61,7 @@ class RecoveryDialog(ModalDialog):
         self._restore, self._confirm, self._later = restore, confirm, later
         rows = min(8, max(3, len(entries)))
         self.tree = ttk.Treeview(self.body, columns=("path", "time"), show="tree headings",
-                                 selectmode="browse", height=rows)  # fmt: skip
+                                 selectmode="browse", height=rows, style=LIST_STYLE)  # fmt: skip
         self.tree.column("#0", width=int(root.winfo_fpixels("1.6i")), stretch=False)
         self.tree.column("path", width=int(root.winfo_fpixels("2.6i")), stretch=True)
         self.tree.column("time", width=int(root.winfo_fpixels("1.3i")), stretch=False)

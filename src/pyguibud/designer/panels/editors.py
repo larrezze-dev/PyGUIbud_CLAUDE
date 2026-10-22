@@ -16,12 +16,15 @@ from dataclasses import replace
 from tkinter import ttk
 from typing import Any, Protocol
 
+from ttkbootstrap.widgets.tooltip import ToolTip
+
 from pyguibud.core.keys import tk_shortcut
 from pyguibud.core.model import Prop
+from pyguibud.core.text import printable
 from pyguibud.designer.icons_tk import icons
 from pyguibud.designer.properties import Field
 from pyguibud.designer.render_plan import CANVAS_TEXT_LIMIT, clip_text
-from pyguibud.designer.theme_tk import INVALID_PREFIX
+from pyguibud.designer.theme_tk import INVALID_PREFIX, STYLE_COMBOBOX, STYLE_ENTRY, STYLE_SPINBOX
 from pyguibud.i18n import N_, _
 
 __all__ = [
@@ -37,8 +40,6 @@ __all__ = [
 
 #: Style prefix of an editor whose text was refused (configured with the other Designer styles).
 INVALID = INVALID_PREFIX
-#: The normal looks of the text editors (their read-only fill is mapped by the theme layer).
-STYLE_ENTRY, STYLE_SPINBOX = "Designer.TEntry", "Designer.TSpinbox"
 _M_NONE = N_("(none)")
 _M_NEW_VARIABLE = N_("New variable…")
 _M_ADD_IMAGE = N_("Add image…")
@@ -49,6 +50,8 @@ _M_EDIT_TEXT = N_("Edit text…")
 _M_TOO_LONG = N_(
     "This text has {length} characters: too long to edit here. Reset it to type a shorter one."
 )
+#: Under a read-only id (no Reset): the msgid of ``backends._tk`` (the field label as {id}).
+_M_CLIPPED = N_("The text of '{id}' has {length} characters; only the first {limit} are shown.")
 # Translators: the sticky sides of a grid cell: North, East, South, West (one letter each).
 # Keep the letters N, E, S, W: they are the values stored in the .ui file and named in messages.
 _STICKY = (("n", N_("N")), ("e", N_("E")), ("s", N_("S")), ("w", N_("W")))
@@ -157,6 +160,7 @@ class _Text(Editor):
 
     text_input = True
     note: ttk.Label | None = None
+    hint: ToolTip | None = None
 
     def __init__(self, parent: Any, field: Field, host: EditorHost) -> None:  # noqa: ANN401
         super().__init__(parent, field, host)
@@ -169,8 +173,9 @@ class _Text(Editor):
                                       increment=1 if field.kind == "int" else 0.1,
                                       command=self._arrow)  # fmt: skip
         elif field.kind == "bootstyle":  # an editable combobox: pick a suggestion or type
+            self.style = STYLE_COMBOBOX
             self.widget = ttk.Combobox(self.frame, textvariable=self.var, values=field.choices,
-                                       width=12)  # fmt: skip
+                                       width=12, style=self.style)  # fmt: skip
             self.widget.bind("<<ComboboxSelected>>", lambda _e: self._enter())
         else:
             self.style = STYLE_ENTRY
@@ -201,7 +206,7 @@ class _Text(Editor):
         # ``field`` keeps the full value and an untouched preview is never pending (H41).
         length = len(field.value or "")
         texts = field.key.startswith("prop:") or field.key == "place:page:text"  # QA-19c-06
-        long = texts and length > CANVAS_TEXT_LIMIT
+        long = length > CANVAS_TEXT_LIMIT  # an id or handler too (from a file, QA-19f-08)
         super().load(replace(field, value=clip_text(field.value or "")) if long else field)
         self.field = field
         if long != self.long:
@@ -210,15 +215,28 @@ class _Text(Editor):
         if long and self.note is None:
             self.note = ttk.Label(self.frame, wraplength=self.frame.winfo_fpixels("2.2i"))
         if self.note is not None and long:
-            self.note.configure(text=_(_M_TOO_LONG).format(length=length))
+            note = _(_M_TOO_LONG).format(length=length) if texts else _(_M_CLIPPED).format(
+                id=_(field.label), length=length, limit=CANVAS_TEXT_LIMIT)  # fmt: skip
+            self.note.configure(text=note)
             self.note.grid(row=1, column=0, columnspan=3, sticky="w")
         elif self.note is not None:
             self.note.grid_remove()
+        self._escaped_hint()
         swatch = getattr(self, "swatch", None)
         if swatch is not None:
             # A colour Tk does not know leaves the swatch as it is (the guard judges the text).
             with contextlib.suppress(tkinter.TclError):
                 swatch.configure(background=self.shown or self.frame.winfo_toplevel()["bg"])
+
+    def _escaped_hint(self) -> None:
+        """Show control and bidi characters of the model text escaped in a tooltip. The entry
+        keeps the raw text, so an untouched field never commits the escaped form (H61)."""
+        safe = printable(self.shown)
+        if safe == self.shown and self.hint is None:
+            return
+        if self.hint is None:
+            self.hint = ToolTip(self.widget, text=safe)
+        self.hint.text = safe
 
     def _enter(self) -> str:
         # Only typed text commits (QA-14a1-18): Enter in an untouched field, above all a "(mixed)"
@@ -283,7 +301,8 @@ class _Choice(Editor):
 
     def __init__(self, parent: Any, field: Field, host: EditorHost) -> None:  # noqa: ANN401
         super().__init__(parent, field, host)
-        self.widget = ttk.Combobox(self.frame, textvariable=self.var, state="readonly", width=12)
+        self.widget = ttk.Combobox(self.frame, textvariable=self.var, state="readonly", width=12,
+                                   style=STYLE_COMBOBOX)  # fmt: skip
         self.widget.grid(row=0, column=0, sticky="ew")
         self.widget.bind("<<ComboboxSelected>>", lambda _e: self._picked())
         self._bind(self.widget)

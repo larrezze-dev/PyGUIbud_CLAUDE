@@ -182,14 +182,21 @@ def design_tokens(spec: ThemeSpec) -> DesignTokens:
     header = readonly_bg = c["light"]
     # Every surface a designer label is painted on (readonly_bg is header).
     surfaces = (bg, c["inputbg"], c["selectbg"], header, titlebar)
-    error_border = readable(c["danger"], (c["inputbg"], bg, stage), fg, NON_TEXT_CONTRAST)
+    divider = c["border"] if hc else _mix(bg, c["border"], 0.45)
+    # The error card (bg fill) sits on the plate (divider) inside the stage; the denied-drop
+    # indicator on the stage: 3:1 against every one of them (H91, QA-14p-10).
+    flanks = (c["inputbg"], bg, stage, divider)
+    error_border = readable(c["danger"], flanks, fg, NON_TEXT_CONTRAST)
+    if any(contrast(error_border, surface) < NON_TEXT_CONTRAST for surface in flanks):
+        # High contrast: the divider is the text colour, so only a mid tone clears both ends.
+        error_border = readable(c["danger"], flanks, bg, NON_TEXT_CONTRAST)
     return DesignTokens(
         stage=stage,
         plate_border=readable(c["border"], (stage, bg), fg, NON_TEXT_CONTRAST),
         titlebar=titlebar,
         titlebar_fg=fg,
         header=header,
-        divider=c["border"] if hc else _mix(bg, c["border"], 0.45),
+        divider=divider,
         muted=readable(c["secondary"], surfaces, c["inputfg"]),
         error_text=readable(c["danger"], surfaces, fg),
         error_border=error_border,

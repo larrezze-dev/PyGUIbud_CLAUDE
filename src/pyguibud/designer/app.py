@@ -18,6 +18,7 @@ from typing import Any, Literal
 from pyguibud.core import PyGUIbudError, ReadResult, XmlIoError, default_registry, write_ui
 from pyguibud.core.keys import split_mnemonic
 from pyguibud.core.registry import configure_default_registry
+from pyguibud.core.text import printable
 from pyguibud.designer.actions import ActionRegistry
 from pyguibud.designer.clipboard_actions import ClipboardActions
 from pyguibud.designer.dialogs import files as file_dialogs
@@ -85,6 +86,8 @@ from pyguibud.i18n import (
 __all__ = ["CLI_THEMES", "DesignerApp", "apply_app_icon", "desktop_bounds", "fit_geometry", "run"]
 
 _log = logging.getLogger(__name__)
+#: The ``sashes`` entry holding the palette width the user dragged (absent: never dragged).
+_DRAGGED = "palette_user"
 
 _M_TITLE = N_("PyGUIbud designer")
 _M_UNKNOWN_THEME = N_("There is no theme called '{theme}'.")
@@ -353,7 +356,7 @@ class DesignerApp:
     def retranslate(self) -> None:
         """Re-apply the window title: the document's name and state, else the product name."""
         document = self.session.document
-        self.root.title(_(_M_TITLE) if document is None else self.session.title)
+        self.root.title(_(_M_TITLE) if document is None else printable(self.session.title))
 
     # ------------------------------------------------------------ dialogs and actions
     def _live_dialogs(self) -> list[ModalDialog]:
@@ -558,7 +561,7 @@ class DesignerApp:
         entries = self.recent.entries
         for number, path in enumerate(entries, 1):
             mark = f"_{number}" if number < 10 else "1_0"
-            text, underline = split_mnemonic(f"{mark} {path.replace('_', '__')}")
+            text, underline = split_mnemonic(f"{mark} {printable(path).replace('_', '__')}")
             menu.add_command(label=text, underline=underline,
                              command=functools.partial(self.open_recent, path))  # fmt: skip
         if entries:
@@ -825,6 +828,8 @@ class DesignerApp:
             count = len(paned.panes()) - 1
             for index, position in enumerate(self.settings.sashes.get(key, ())[:count]):
                 paned.sashpos(index, position)
+        # Only a width the user dragged (stored apart at Quit) outlives an auto-grown one (D4).
+        self.shell.palette_user = (self.settings.sashes.get(_DRAGGED) or (0,))[0]
         self.shell.clamp_sashes()
 
     def _remember_window(self) -> None:
@@ -838,6 +843,8 @@ class DesignerApp:
                 key: tuple(int(paned.sashpos(i)) for i in range(len(paned.panes()) - 1))
                 for key, paned in (("main", self.shell.body), ("right", self.shell.right))
             }
+            if self.shell.palette_user > 0:
+                self.settings.sashes[_DRAGGED] = (self.shell.palette_user,)
         except tkinter.TclError:
             _log.debug("The window state could not be read", exc_info=True)
 

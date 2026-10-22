@@ -13,6 +13,7 @@ from pyguibud.core.registry import Registry
 from pyguibud.designer.dialogs.base import ModalDialog
 from pyguibud.designer.present.plugins import PluginRow, plugin_rows, status_texts, toggled
 from pyguibud.designer.settings import Settings
+from pyguibud.designer.theme_tk import LIST_STYLE
 from pyguibud.i18n import N_, _
 
 __all__ = ["PluginsDialog"]
@@ -66,13 +67,14 @@ class PluginsDialog(ModalDialog):
         self.header = ttk.Label(self.body, justify="left", wraplength=wrap)
         self.header.grid(row=0, column=0, sticky="w", pady=(0, 8))
         self.tree = ttk.Treeview(self.body, columns=("widgets", "status"), height=6,
-                                 selectmode="browse")  # fmt: skip
+                                 selectmode="browse", style=LIST_STYLE)  # fmt: skip
         self.tree.grid(row=1, column=0, sticky="nsew")
         self.tree.bind("<<TreeviewSelect>>", lambda _e: self._show())
         box = ttk.Frame(self.body)
         box.grid(row=2, column=0, sticky="nsew", pady=(8, 0))
         self.details = tkinter.Text(box, width=72, height=10, wrap="word",
                                     state="disabled", takefocus=1)  # fmt: skip
+        self.ring_on_focus(self.details)  # read-only, but the arrows and Page keys scroll it
         bar = ttk.Scrollbar(box, orient="vertical", command=self.details.yview, takefocus=0)
         self.details.configure(yscrollcommand=bar.set)
         bar.pack(side="right", fill="y")  # packed first: it keeps its width when space is short

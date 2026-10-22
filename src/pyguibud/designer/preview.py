@@ -60,6 +60,12 @@ M_CLOSED = N_("Preview closed.")
 M_WARNING_MORE = N_("{first} (+{count} more)")
 # Translators: Preview > Theme: the theme that the document itself names.
 M_DOCUMENT_THEME = N_("Document theme")
+# Translators: Preview > Theme submenus that group the theme names; "_" marks the access key.
+M_THEMES_LIGHT = N_("_Light")
+# Translators: see "_Light"; the group of dark themes. The access key differs from the others.
+M_THEMES_DARK = N_("_Dark")
+# Translators: see "_Light"; themes that are neither light nor dark by name or type.
+M_THEMES_OTHER = N_("_Other")
 # Translators: {lang} is a language code such as de_DE; {folder} is a folder path.
 M_NO_CATALOGUE = N_(
     "No translation catalogue for {lang} in {folder}: the texts are shown in the document language."

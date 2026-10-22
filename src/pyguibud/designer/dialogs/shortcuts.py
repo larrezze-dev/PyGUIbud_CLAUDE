@@ -33,11 +33,11 @@ class ShortcutsDialog(ModalDialog):
     def __init__(self, root: Any, registry: ActionRegistry) -> None:  # noqa: ANN401 - app root
         super().__init__(root)
         self.registry = registry
-        self.rows = ttk.Frame(self.body)
-        self.rows.pack(fill="both", expand=True)
-        self.rows.columnconfigure(1, weight=1)
+        # Close is packed first: it stays outside the scrolling rows, always visible (D6, H85).
         self.close_button = ttk.Button(self.body, command=self.close, default="active")
         self.close_button.pack(side="bottom", anchor="e", pady=(12, 0))
+        self.rows = self.scroll_area(self.body)
+        self.rows.columnconfigure(1, weight=1)
         self.access_keys = [(self.close_button, _M_CLOSE)]
         self.window.bind("<Return>", lambda _e: self.close())
 
