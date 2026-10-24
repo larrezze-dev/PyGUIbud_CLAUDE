@@ -5,6 +5,7 @@ from __future__ import annotations
 from collections.abc import Callable
 from typing import Any
 
+from pyguibud.core.text import printable
 from pyguibud.designer.dialogs.message import ChoiceDialog
 from pyguibud.i18n import N_, _
 
@@ -28,6 +29,6 @@ def save_changes_dialog(
     """Save is the default (Enter); Cancel and Esc change nothing."""
     return ChoiceDialog(
         root,
-        lambda: _(_M_QUESTION).format(name=name()),
+        lambda: _(_M_QUESTION).format(name=printable(name())),
         [(_M_SAVE, save), (_M_DONT_SAVE, discard), (_M_CANCEL, None)],
     )

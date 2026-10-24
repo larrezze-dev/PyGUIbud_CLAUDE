@@ -8,9 +8,10 @@ from __future__ import annotations
 
 from collections.abc import Callable
 
+from pyguibud.core.text import printable
 from pyguibud.i18n import N_, _
 
-__all__ = ["MAX_TEXT", "clip", "elide_middle", "fit_text", "severity_label"]
+__all__ = ["MAX_TEXT", "clip", "elide_middle", "fit_text", "inserted", "severity_label"]
 
 #: User values (ids, titles) are shown verbatim but never longer than this.
 MAX_TEXT = 100
@@ -23,6 +24,12 @@ def clip(text: object, limit: int = MAX_TEXT) -> str:
     """``text`` as a string, cut to ``limit`` characters with an ellipsis."""
     value = str(text)
     return value if len(value) <= limit else value[: limit - 1] + "…"
+
+
+def inserted(value: object) -> str:
+    """An id put into a message: escaped first (H81), then clipped, so 10,000 bidi characters
+    never become a 60,000-character label (QA-19g-09). Not for paths: their name would go."""
+    return clip(printable(str(value)))
 
 
 def fit_text(text: str, width: int, measure: Callable[[str], int], *, words: bool = False) -> str:

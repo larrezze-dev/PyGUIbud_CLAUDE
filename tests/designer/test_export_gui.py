@@ -170,6 +170,19 @@ def test_a_file_changed_before_the_run_is_not_run(
     assert runs == [] and "was not run" in app.shell._message
 
 
+def test_a_vanished_interpreter_is_named_when_the_run_cannot_start(app: DesignerApp) -> None:
+    """QA-19g-08 for Run after export: a deleted venv is not an unexplained OS error."""
+
+    def missing(_argv: list[str], **_options: Any) -> FakeProcess:
+        raise FileNotFoundError(2, "The system cannot find the file specified")
+
+    app.exporter.runner.popen = missing
+    dialog = _dialog(app)
+    dialog.run_after.set(True)
+    dialog.accept()
+    assert "no Python interpreter was found" in app.shell._message
+
+
 def test_enter_on_cancel_cancels(app: DesignerApp) -> None:
     dialog = _dialog(app)
     dialog._on_return(SimpleNamespace(widget=dialog.cancel_button))

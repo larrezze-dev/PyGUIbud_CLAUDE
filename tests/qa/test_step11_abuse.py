@@ -75,42 +75,43 @@ def test_extract_still_replaces_its_own_template(tmp_path: Path) -> None:
 # ---------------------------------------------------------------- QA-11-02: aliased folders
 @pytest.mark.skipif(sys.platform != "win32", reason="NTFS junction")
 def test_module_written_through_a_junction_finds_its_catalogue(tmp_path: Path) -> None:
-    import _winapi  # CPython on Windows
+    if sys.platform == "win32":  # a literal check, so mypy skips the body on linux/darwin
+        import _winapi  # CPython on Windows
 
-    from babel.messages.catalog import Catalog
-    from babel.messages.mofile import write_mo
+        from babel.messages.catalog import Catalog
+        from babel.messages.mofile import write_mo
 
-    folder = tmp_path / "ui" / "locale" / "de_DE" / "LC_MESSAGES"
-    folder.mkdir(parents=True)
-    catalogue = Catalog(locale="de_DE", domain="form")
-    catalogue.add("Hi", "Hallo")
-    with (folder / "form.mo").open("wb") as stream:
-        write_mo(stream, catalogue)
-    source = _ui(tmp_path / "ui" / "form.ui", meta='i18n_domain="form"')
-    real = tmp_path / "out"
-    real.mkdir()
-    (tmp_path / "a" / "b").mkdir(parents=True)
-    link = tmp_path / "a" / "b" / "link"
-    _winapi.CreateJunction(str(real), str(link))
-    output = link / "form_ui.py"
-    text = generate_python(read_ui(str(source)), str(source), output=str(output)).text
-    output.write_text(text, encoding="utf-8")
-    # Import the module through the junction and ask its own support code for the catalogue.
-    script = (
-        "import importlib.util, sys\n"
-        "spec = importlib.util.spec_from_file_location('form_ui', sys.argv[1])\n"
-        "module = importlib.util.module_from_spec(spec)\n"
-        "spec.loader.exec_module(module)\n"
-        "print(module._translators(module._DOCS, 'de_DE', None, None)[0].gettext('Hi'))\n"
-    )
-    result = subprocess.run(
-        [sys.executable, "-c", script, str(output)],
-        capture_output=True,
-        text=True,
-        timeout=60,
-        check=False,
-    )
-    assert result.stdout.strip() == "Hallo", result.stderr
+        folder = tmp_path / "ui" / "locale" / "de_DE" / "LC_MESSAGES"
+        folder.mkdir(parents=True)
+        catalogue = Catalog(locale="de_DE", domain="form")
+        catalogue.add("Hi", "Hallo")
+        with (folder / "form.mo").open("wb") as stream:
+            write_mo(stream, catalogue)
+        source = _ui(tmp_path / "ui" / "form.ui", meta='i18n_domain="form"')
+        real = tmp_path / "out"
+        real.mkdir()
+        (tmp_path / "a" / "b").mkdir(parents=True)
+        link = tmp_path / "a" / "b" / "link"
+        _winapi.CreateJunction(str(real), str(link))
+        output = link / "form_ui.py"
+        text = generate_python(read_ui(str(source)), str(source), output=str(output)).text
+        output.write_text(text, encoding="utf-8")
+        # Import the module through the junction and ask its own support code for the catalogue.
+        script = (
+            "import importlib.util, sys\n"
+            "spec = importlib.util.spec_from_file_location('form_ui', sys.argv[1])\n"
+            "module = importlib.util.module_from_spec(spec)\n"
+            "spec.loader.exec_module(module)\n"
+            "print(module._translators(module._DOCS, 'de_DE', None, None)[0].gettext('Hi'))\n"
+        )
+        result = subprocess.run(
+            [sys.executable, "-c", script, str(output)],
+            capture_output=True,
+            text=True,
+            timeout=60,
+            check=False,
+        )
+        assert result.stdout.strip() == "Hallo", result.stderr
 
 
 # ---------------------------------------------------------------- QA-11-04: output collisions

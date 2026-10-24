@@ -154,13 +154,14 @@ def _diff(tk: Any, qt: Any, path: str = "") -> list[tuple[str, Any, Any]]:
 
 def _normalise_min_width(view: dict[str, Any], ui: Path, clamp: int | None) -> dict[str, Any]:
     """Map the Windows minimum track width to "none" for windows that declare no ``min_width``."""
-    if sys.platform != "win32" or clamp is None:
-        return view
-    declared = {w.id for w in read_ui(ui).document.children if w.min_width is not None}
-    view = json.loads(json.dumps(view))  # a copy
-    for key, window in view["windows"].items():
-        if key not in declared and window["minsize"][0] == clamp:
-            window["minsize"][0] = 0
+    if sys.platform == "win32":  # a literal check, so mypy skips it on linux/darwin
+        if clamp is None:
+            return view
+        declared = {w.id for w in read_ui(ui).document.children if w.min_width is not None}
+        view = json.loads(json.dumps(view))  # a copy
+        for key, window in view["windows"].items():
+            if key not in declared and window["minsize"][0] == clamp:
+                window["minsize"][0] = 0
     return view
 
 

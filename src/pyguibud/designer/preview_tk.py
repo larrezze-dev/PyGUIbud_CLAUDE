@@ -30,7 +30,7 @@ from pyguibud.designer.settings import DEFAULT_BACKEND, Settings
 from pyguibud.i18n import PSEUDO_LANGUAGE, _, get_language
 from pyguibud.preview import READY, RESULT, STDERR
 
-__all__ = ["PreviewController", "PreviewRunner", "private_folder", "sweep_stale"]
+__all__ = ["PreviewController", "PreviewRunner", "private_folder", "python_missing", "sweep_stale"]
 
 _log = logging.getLogger(__name__)
 POLL_MS = 200
@@ -50,6 +50,12 @@ _REMOVE_RETRY_SECONDS = 0.05
 def _remove(folder: Path | None) -> None:
     if folder is not None:
         shutil.rmtree(folder, ignore_errors=True)  # a live child's open files keep it (Windows)
+
+
+def python_missing(error: OSError, folder: Path) -> bool:
+    """A start failed because the interpreter is gone (a deleted venv): a file is missing
+    although the private ``folder`` is there (QA-19g-08). Ask before removing ``folder``."""
+    return isinstance(error, FileNotFoundError) and folder.is_dir()
 
 
 def private_folder(kind: str = "") -> Path:
@@ -352,9 +358,12 @@ class PreviewController:
         try:
             self.runner.start(argv, folder)
         except OSError as exc:
+            gone = python_missing(exc, folder)
             _remove(folder)
             self.state.exited()
-            self.post(_(pv.M_TEMP).format(reason=exc.strerror or exc))
+            self.post(
+                _(pv.M_NO_PYTHON) if gone else _(pv.M_TEMP).format(reason=exc.strerror or exc)
+            )
             return
         self.current, self._stopped = prepared, False
         self._differs = self._theme_differs()

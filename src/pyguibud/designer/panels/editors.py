@@ -73,6 +73,7 @@ class Editor:
     """Base editor: ``widget`` is the focusable part, placed in ``frame`` by the subclass."""
 
     text_input = False  # True: Ctrl+Z reverts typed text first (spec 3.3)
+    locked = False  # a read-only document: the editor stays disabled whatever it loads
     long = False  # a read-only preview of a text too long for an Entry (H41)
 
     def __init__(self, parent: Any, field: Field, host: EditorHost) -> None:  # noqa: ANN401
@@ -140,6 +141,7 @@ class Editor:
         """Enable the editor, or make it read-only: entries and spinboxes stay selectable and
         copyable (``readonly``); everything else is ``disabled`` (D9). A combobox is readonly
         in its normal state, so it must never get that flag removed."""
+        enabled = enabled and not self.locked
         for child in self.frame.winfo_children():
             if isinstance(child, ttk.Widget) and not isinstance(child, ttk.Label | ttk.Frame):
                 text = isinstance(child, ttk.Entry) and not isinstance(child, ttk.Combobox)
@@ -381,14 +383,17 @@ def make_editor(parent: Any, field: Field, host: EditorHost) -> Editor:  # noqa:
     return editor
 
 
-def after_paste(widget: Any) -> str | None:  # noqa: ANN401 - a ttk entry, spinbox or combobox
+def after_paste(widget: Any, primary: bool = False) -> str | None:  # noqa: ANN401 - a ttk entry
     """The text of ``widget`` once the clipboard is pasted at its cursor, over its selection
     (None: nothing to paste). Tk 8.6 counts a character outside the BMP as two indices
-    (UTF-16), the Python string as one: the indices are converted (QA-19c-02)."""
+    (UTF-16), the Python string as one: the indices are converted (QA-19c-02). ``primary``:
+    the X11 middle-click paste, which inserts the PRIMARY selection at the mouse (only the
+    length is exact) and replaces nothing."""
     try:
-        pasted, text = str(widget.clipboard_get()), str(widget.get())
+        which = "PRIMARY" if primary else "CLIPBOARD"  # "clipboard get" reads CLIPBOARD too
+        pasted, text = str(widget.selection_get(selection=which)), str(widget.get())
         first = last = int(widget.index("insert"))
-        if widget.selection_present():  # the paste replaces the selection
+        if widget.selection_present() and not primary:  # the paste replaces the selection
             first, last = int(widget.index("sel.first")), int(widget.index("sel.last"))
     except tkinter.TclError:
         return None
@@ -402,13 +407,14 @@ def guard_pastes(root: tkinter.Misc, refuse: Callable[[], None]) -> Callable[[],
     """Refuse, in every ttk entry, spinbox and combobox, a paste that would leave more than
     :data:`CANVAS_TEXT_LIMIT` characters: Tk lays a long Entry out for seconds, per key press
     too (QA-19c-01). A class binding, so a ``_Text`` editor's own binding runs first (and
-    commits a long text). ``refuse()`` says why; the returned function removes the guard."""
+    commits a long text). ``<<PasteSelection>>`` (X11 middle click) is guarded the same way.
+    ``refuse()`` says why; the returned function removes the guard."""
 
-    def check(path: str) -> str:
+    def check(path: str, primary: str) -> str:
         widget = root.nametowidget(path)
         if widget.instate(["readonly"]) or widget.instate(["disabled"]):
             return ""  # ttk pastes nothing there
-        text = after_paste(widget)
+        text = after_paste(widget, primary == "1")
         if text is None or len(text) <= CANVAS_TEXT_LIMIT:
             return ""
         refuse()
@@ -416,15 +422,15 @@ def guard_pastes(root: tkinter.Misc, refuse: Callable[[], None]) -> Callable[[],
 
     name, mark, scripts = root.register(check), ";# pyguibud paste guard\n", {}
     for cls in ("TEntry", "TSpinbox", "TCombobox"):
-        scripts[cls] = str(root.bind_class(cls, "<<Paste>>")).split(mark)[-1]  # a second app
-        root.tk.call(
-            "bind", cls, "<<Paste>>", f'if {{"[{name} %W]" == "break"}} break {mark}{scripts[cls]}'
-        )
+        for primary, event in enumerate(("<<Paste>>", "<<PasteSelection>>")):
+            script = scripts[cls, event] = str(root.bind_class(cls, event)).split(mark)[-1]
+            guard = f'if {{"[{name} %W {primary}]" == "break"}} break {mark}{script}'
+            root.tk.call("bind", cls, event, guard)  # a second app replaces the first's guard
 
     def remove() -> None:
-        for cls, script in scripts.items():
-            if name in str(root.bind_class(cls, "<<Paste>>")):  # not a later app's guard
-                root.tk.call("bind", cls, "<<Paste>>", script)
+        for (cls, event), script in scripts.items():
+            if name in str(root.bind_class(cls, event)):  # not a later app's guard
+                root.tk.call("bind", cls, event, script)
         root.deletecommand(name)
 
     return remove

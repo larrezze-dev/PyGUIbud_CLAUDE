@@ -32,6 +32,7 @@ from pyguibud.core.atomic import create_temporary
 from pyguibud.core.commands import Command, Macro, SetField, SetResource
 from pyguibud.core.errors import format_message
 from pyguibud.core.files import is_network_or_device_path
+from pyguibud.core.text import printable
 from pyguibud.i18n import N_, _
 
 __all__ = [
@@ -260,7 +261,7 @@ class SavePlan:
         if self.refusal is None:
             return None
         reason = _(self.reason) if self.reason is not None else ""
-        return format_message(self.refusal, {"reason": reason, "name": self.name})
+        return format_message(self.refusal, {"reason": reason, "name": printable(self.name)})
 
 
 def save_plan(

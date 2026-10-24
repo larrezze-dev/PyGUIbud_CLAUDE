@@ -12,6 +12,8 @@ from dataclasses import replace
 from tkinter import ttk
 from typing import Any
 
+from ttkbootstrap.widgets.tooltip import ToolTip
+
 from pyguibud.core.commands import Command, Macro, Outcome, SetField, SetVariable
 from pyguibud.core.model import Variable, Widget
 from pyguibud.core.text import printable
@@ -23,11 +25,12 @@ from pyguibud.designer.editing import (
 )
 from pyguibud.designer.files import M_READ_ONLY
 from pyguibud.designer.panels.base import PanelBase
-from pyguibud.designer.panels.editors import bind_history, history_action
-from pyguibud.designer.present import clip
+from pyguibud.designer.panels.editors import _M_CLIPPED, _M_TOO_LONG, bind_history, history_action
+from pyguibud.designer.present import clip, inserted
+from pyguibud.designer.render_plan import CANVAS_TEXT_LIMIT, clip_text
 from pyguibud.designer.session import DesignerSession
 from pyguibud.designer.theme import ThemeSpec
-from pyguibud.designer.theme_tk import STYLE_COMBOBOX, STYLE_ENTRY
+from pyguibud.designer.theme_tk import GHOST_STYLE, STYLE_COMBOBOX, STYLE_ENTRY
 from pyguibud.i18n import N_, _, ngettext
 
 __all__ = ["VariablesPanel"]
@@ -40,6 +43,7 @@ _M_ADD = N_("Add")
 _M_RENAME = N_("Rename…")
 _M_DELETE = N_("Delete")
 _M_BIND = N_("Bind to selection")
+_M_RESET = N_("Reset to default")  # the inspector's msgid
 # Translators: {count} is the number of users; {ids} lists their ids.
 _M_USERS = N_("{count} ({ids})")
 _TYPES = ("string", "int", "double", "bool")
@@ -101,6 +105,12 @@ class VariablesPanel(PanelBase):
             label.grid(row=row, column=0, sticky="w", padx=(0, 6), pady=1)
             widget.grid(row=row, column=1, sticky="ew", pady=1)
             self._labels.append((label, msgid))
+        # A default too long to edit here gets the inspector's Reset: it clears it (QA-19g-10).
+        self.reset = ttk.Button(edit, text="↺", style=GHOST_STYLE, command=self.reset_default)
+        self.reset.grid(row=2, column=2, padx=(4, 0))
+        self._reset_tip = ToolTip(self.reset)
+        self.note = ttk.Label(edit, wraplength=edit.winfo_fpixels("2.2i"))  # why it is read-only
+        self.note.grid(row=3, column=0, columnspan=3, sticky="w")
         for widget, commit in ((self.id_entry, self._commit_id),
                                (self.default_entry, self._commit_default)):  # fmt: skip
             widget.bind("<Return>", _breaking(commit))
@@ -149,10 +159,10 @@ class VariablesPanel(PanelBase):
         tree.delete(*tree.get_children())
         for variable in document.variables.values() if document is not None else ():
             users = [w.id for w in variable_users(document, variable.id)] if document else []
-            ids = printable(clip(", ".join(users), 60))  # display only: bidi escaped (H81)
+            ids = clip(printable(", ".join(users)), 60)  # display only: bidi escaped (H81)
             used = _(_M_USERS).format(count=len(users), ids=ids)
-            values = (variable.type, printable(clip(variable.default, 40)), used if users else "0")
-            tree.insert("", "end", iid=variable.id, text=printable(variable.id), values=values)
+            values = (variable.type, clip(printable(variable.default), 40), used if users else "0")
+            tree.insert("", "end", iid=variable.id, text=inserted(variable.id), values=values)
         if keep is not None and tree.exists(keep):
             tree.selection_set(keep)
             tree.focus(keep)
@@ -168,6 +178,7 @@ class VariablesPanel(PanelBase):
                 tree.heading(column, text=_(msgid))
         for label, msgid in self._labels:
             label.configure(text=_(msgid))
+        self._reset_tip.text = _(_M_RESET)
         for index, (button, (msgid, _h)) in enumerate(zip(self.buttons, self.actions, strict=True)):
             button.configure(text=_(msgid))
             self.menu.entryconfigure(index, label=_(msgid))
@@ -198,17 +209,47 @@ class VariablesPanel(PanelBase):
 
     def _load_row(self) -> None:
         variable = self._variable()
-        self.id_var.set(variable.id if variable else "")
+        self.id_var.set(clip_text(variable.id) if variable else "")
         self.type_var.set(variable.type if variable else "")
-        self.default_var.set(variable.default if variable else "")
+        self.default_var.set(clip_text(variable.default) if variable else "")
         state = ["!disabled"] if variable and not self._read_only() else ["disabled"]
         for widget in (self.id_entry, self.type_box, self.default_entry):
             widget.state(state)
+        # A text too long for an Entry shows as a read-only clip that never commits (QA-19f-08);
+        # every other row clears the flag again (QA-19g-05). A read-only document stays disabled.
+        for attribute, entry in (("id", self.id_entry), ("default", self.default_entry)):
+            long = self._long(attribute) and "disabled" not in state
+            entry.state(["readonly"] if long else ["!readonly"])
+        notes = []  # why a clip cannot be typed; Reset clears a long default (QA-19g-06, 10)
+        if variable is not None and self._long("id"):
+            length = len(variable.id)
+            notes.append(_(_M_CLIPPED).format(id=_(_M_ID), length=length, limit=CANVAS_TEXT_LIMIT))
+        if variable is not None and self._long("default"):
+            notes.append(_(_M_TOO_LONG).format(length=len(variable.default)))
+        self.note.configure(text="\n".join(notes))
+        for item, shown in ((self.note, bool(notes)), (self.reset, self._long("default"))):
+            if shown:
+                item.grid()
+            else:
+                item.grid_remove()
         # A20: a read-only document offers no variable action (the keys say why, _refused).
         locked = self._read_only()
+        self.reset.state(["disabled"] if locked else ["!disabled"])
         for index, button in enumerate(self.buttons):
             button.state(["disabled"] if locked else ["!disabled"])
             self.menu.entryconfigure(index, state="disabled" if locked else "normal")
+
+    def _long(self, attribute: str) -> bool:
+        variable = self._variable()
+        return variable is not None and len(getattr(variable, attribute)) > CANVAS_TEXT_LIMIT
+
+    def _typed(self, attribute: str) -> str:
+        """The text of the id or default entry; the model's own while it shows a clip."""
+        variable = self._variable()
+        if variable is not None and self._long(attribute):
+            return str(getattr(variable, attribute))
+        text = (self.id_var if attribute == "id" else self.default_var).get()
+        return text.strip(" ") if attribute == "id" else text  # "x\n" is refused (QA-19c-09)
 
     def _read_only(self) -> bool:
         stack = self.session.stack
@@ -274,7 +315,7 @@ class VariablesPanel(PanelBase):
             "'{id}' is bound to {count} widget. Unbind it and delete it?",
             "'{id}' is bound to {count} widgets. Unbind them and delete it?",
             count,
-        ).format(id=variable.id, count=count)
+        ).format(id=inserted(variable.id), count=count)
 
         def unbind_and_delete() -> None:
             self._run(remove_and_unbind(document, variable.id))  # rebuilt: the users may differ
@@ -299,12 +340,12 @@ class VariablesPanel(PanelBase):
         document, variable = self.session.document, self._variable()
         if document is None or variable is None or self._read_only():
             return True
-        new = self.id_var.get().strip()
+        new = self._typed("id")
         if new != variable.id:
             if not self._run(rename_variable(document, variable.id, new), select=new):
                 return False
             variable = document.variables.get(new, variable)
-        text = self.default_var.get()
+        text = self._typed("default")
         if text != variable.default:
             return self._run(SetVariable(document, replace(variable, default=text)))
         return True
@@ -315,14 +356,14 @@ class VariablesPanel(PanelBase):
         model = "" if variable is None else str(getattr(variable, attribute))
 
         def typed() -> str:
-            return var.get().strip() if attribute == "id" else var.get()
+            return self._typed(attribute)
 
         return history_action(redo, pending=lambda: typed() != model,
                               revert=lambda: var.set(model), invoke=self.invoke)  # fmt: skip
 
     def _commit_id(self) -> None:
         document, variable = self.session.document, self._variable()
-        new = self.id_var.get().strip()
+        new = self._typed("id")
         if document is None or variable is None or new == variable.id:
             return
         if not self._run(rename_variable(document, variable.id, new), select=new):
@@ -337,9 +378,15 @@ class VariablesPanel(PanelBase):
 
     def _commit_default(self) -> None:
         document, variable = self.session.document, self._variable()
-        text = self.default_var.get()
+        text = self._typed("default")
         if document is not None and variable is not None and text != variable.default:
             self._run(SetVariable(document, replace(variable, default=text)))
+
+    def reset_default(self) -> None:
+        """↺: clear a default too long to edit here, as one undoable step (QA-19g-10)."""
+        document, variable = self.session.document, self._variable()
+        if document is not None and variable is not None and not self._refused():
+            self._run(SetVariable(document, replace(variable, default="")))
 
     def _context_menu(self, event: Any) -> None:  # noqa: ANN401 - a Tk event
         tree = self.tree

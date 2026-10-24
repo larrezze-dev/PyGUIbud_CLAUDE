@@ -17,13 +17,15 @@ from typing import Any
 
 from pyguibud.codegen import CodegenError
 from pyguibud.codegen import _class_name as class_name_for
+from pyguibud.core.text import printable
 from pyguibud.designer import export as ex
 from pyguibud.designer.dialogs import files as file_dialogs
 from pyguibud.designer.dialogs.base import ModalDialog
 from pyguibud.designer.dialogs.message import Answer
 from pyguibud.designer.files import path_key
 from pyguibud.designer.present import elide_middle
-from pyguibud.designer.preview_tk import PreviewRunner, private_folder
+from pyguibud.designer.preview import M_NO_PYTHON
+from pyguibud.designer.preview_tk import PreviewRunner, private_folder, python_missing
 from pyguibud.designer.session import DesignerSession
 from pyguibud.designer.settings import Settings, remember_export
 from pyguibud.designer.theme_tk import INVALID_PREFIX, STYLE_ENTRY
@@ -226,7 +228,7 @@ class ExportController:
         path = session.path
         if path is None or session.dirty:
             self.ask(
-                lambda: _(_M_UNSAVED).format(name=session.display_name),
+                lambda: _(_M_UNSAVED).format(name=printable(session.display_name)),
                 [(_M_SAVE_AND_EXPORT, lambda: self.save(self.start)), (_M_CANCEL, None)],
             )
             return
@@ -271,7 +273,7 @@ class ExportController:
     def _run(self, plan: ex.ExportPlan) -> str:
         """Run what was just written, in its folder; the status note (or "")."""
         if not ex.intact(plan.output, plan.text):
-            return _(_M_CHANGED_BEFORE_RUN).format(output=plan.output)
+            return _(_M_CHANGED_BEFORE_RUN).format(output=printable(plan.output))
         lang = self.settings.preview_lang
         self.runner.dispose()  # one run at a time: the previous one ends (<= 1 s)
         try:
@@ -282,8 +284,9 @@ class ExportController:
             argv = ex.run_argv(plan.output, lang)
             self.runner.start(argv, folder, cwd=Path(plan.output).parent, wait_ready=False)
         except OSError as exc:
+            missing = python_missing(exc, folder)  # a deleted venv (QA-19g-08)
             shutil.rmtree(folder, ignore_errors=True)
-            return exc.strerror or str(exc)
+            return _(M_NO_PYTHON) if missing else exc.strerror or str(exc)
         return _(ex.M_RUN_PSEUDO) if lang == PSEUDO_LANGUAGE else ""
 
     def _exited(self, code: int, _result: tuple[str, str], tail: str, _timed_out: bool) -> None:

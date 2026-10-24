@@ -1,20 +1,20 @@
 # PyGUIbud scoreboard
 
-_Last updated: 2026-10-18 08:55:09 UTC+0200_
+_Last updated: 2026-10-23 18:19:15 UTC+0200_
 
 - **Steps done:** 20/23
 - **Current step:** 19 QA hardening ("idiot-proof") (🔄)
-- **Tests:** 6108/6118 passed (gate figures 2026-10-18, pytest not run by scorer)
+- **Tests:** 6999/7000 passed (gate figures 2026-10-23, pytest not run by scorer)
 - **Coverage:** not available
-- **Test detail:** 6118 collected, 0 failed, 0 errors, 10 skipped, 0.00 s
+- **Test detail:** 7000 collected, 0 failed, 0 errors, 1 skipped, 0.00 s
 
 ## Quality gates
 
 | Check | Result |
 | --- | --- |
-| Lint (ruff) | passed: ruff check + ruff format clean (gate 2026-10-18) |
-| Types (mypy) | passed: mypy clean, 307 files (gate 2026-10-18) |
-| i18n coverage | 799 msgids, 7 locales at 100 % (gate 2026-10-18) |
+| Lint (ruff) | passed: ruff check + ruff format clean (380 files, gate 2026-10-23) |
+| Types (mypy) | passed: mypy clean on win32, linux and darwin (328 files, gate 2026-10-23) |
+| i18n coverage | 830 msgids, 7 locales at 100 % (Step 19f figure, plan §4) |
 
 ## Steps
 
@@ -46,8 +46,8 @@ _Last updated: 2026-10-18 08:55:09 UTC+0200_
 
 ## Recent commits
 
-- `4449d7d 015`
-- `26262ad 014`
-- `67125cc 013`
-- `067483d 012`
-- `2da74d8 011`
+- `a035bb1 021`
+- `ecefd4c 020`
+- `5dd0483 019 Step 19d: plugin and backend hardening (H49–H69) v.2`
+- `06e96ab 019 Step 19d: plugin and backend hardening (H49–H69)`
+- `faf5d89 016`

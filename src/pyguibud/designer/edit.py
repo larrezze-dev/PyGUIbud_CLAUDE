@@ -33,6 +33,7 @@ from pyguibud.designer.editing import (
     reorder_command,
     resize_command,
 )
+from pyguibud.designer.present import inserted
 from pyguibud.designer.present.tree import node_label
 from pyguibud.designer.session import DesignerSession
 from pyguibud.designer.sizing import Measured, step_command
@@ -178,7 +179,7 @@ class EditActions:
                 "Delete '{id}' and its {count} element?",
                 "Delete '{id}' and its {count} elements?",
                 count,
-            ).format(id=getattr(nodes[0], "id", "") or node_label(nodes[0]), count=count)
+            ).format(id=inserted(getattr(nodes[0], "id", "") or node_label(nodes[0])), count=count)
         else:
             # Translators: several selected elements are deleted with what they contain.
             question = ngettext(

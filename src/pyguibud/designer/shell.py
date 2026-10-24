@@ -37,9 +37,10 @@ from pyguibud.designer.panels.inspector import InspectorPanel
 from pyguibud.designer.panels.palette import PalettePanel
 from pyguibud.designer.panels.tree import TreePanel
 from pyguibud.designer.panels.variables import VariablesPanel
-from pyguibud.designer.present import fit_text
+from pyguibud.designer.present import clip, fit_text
 from pyguibud.designer.present.focus import cycle
 from pyguibud.designer.present.status import findings_summary, selection_path
+from pyguibud.designer.render_plan import CANVAS_TEXT_LIMIT
 from pyguibud.designer.session import DesignerSession
 from pyguibud.designer.theme import ThemeSpec
 from pyguibud.designer.theme_tk import FONT_CAPTION, GHOST_STYLE, STYLE_DIVIDER, scaled, space
@@ -777,6 +778,7 @@ class Shell:
     def _fit_status(self, text: str) -> None:
         """Elide ``text`` with "…" at a word boundary to the label's width; the full text is
         the tooltip (spec direct-manipulation 11 Q13). An unmapped label shows it whole."""
+        text = clip(text, CANVAS_TEXT_LIMIT)  # escaped ids can be 60,000 characters (QA-19g-09)
         self._status_width = width = self._status.winfo_width()
         name = str(ttk.Style(self.root).lookup("TLabel", "font") or "TkDefaultFont")
         try:

@@ -235,6 +235,7 @@ class InspectorPanel(PanelBase):
             self._wheel(widget)
         self._show_state(field)
         if self.read_only:
+            editor.locked = True
             editor.set_enabled(False)
 
     def _show_state(self, field: Field) -> None:

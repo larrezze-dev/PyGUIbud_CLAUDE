@@ -13,8 +13,15 @@ from typing import Any
 
 from pyguibud.core.commands import Outcome, SetEvents
 from pyguibud.core.model import Action, Document, Event, Widget
-from pyguibud.designer.panels.editors import Editor, EditorHost, bind_history, history_action
+from pyguibud.designer.panels.editors import (
+    Editor,
+    EditorHost,
+    _Text,
+    bind_history,
+    history_action,
+)
 from pyguibud.designer.properties import Field
+from pyguibud.designer.render_plan import CANVAS_TEXT_LIMIT
 from pyguibud.designer.theme_tk import STYLE_COMBOBOX, STYLE_ENTRY
 from pyguibud.i18n import N_, _
 
@@ -27,13 +34,13 @@ _M_REMOVE = N_("Remove")
 _M_KEY = N_("Key")
 
 
-class HandlerBox(Editor):
-    """An editable combobox of handler names for the event ``field.key[6:]``."""
-
-    text_input = True
+class HandlerBox(_Text):
+    """An editable combobox of handler names for the event ``field.key[6:]``. It loads like a
+    text editor: a handler too long for an Entry is a read-only clip with a note, never
+    committed (QA-19f-08, QA-19g-07); only the widget and its bindings are its own."""
 
     def __init__(self, parent: Any, field: Field, host: EditorHost) -> None:  # noqa: ANN401
-        super().__init__(parent, field, host)
+        Editor.__init__(self, parent, field, host)  # not _Text's: it builds an Entry
         self.style = STYLE_COMBOBOX
         self.widget = ttk.Combobox(self.frame, textvariable=self.var, values=field.choices,
                                    style=self.style)  # fmt: skip
@@ -51,10 +58,11 @@ class HandlerBox(Editor):
 
 
 def handler_names(document: Document) -> tuple[str, ...]:
-    """Every handler name already used in the document, sorted."""
+    """Every handler name already used in the document, sorted; one too long for an Entry is
+    left out, so a dropdown never loads it (QA-19g-07)."""
     names = {e.handler for n in document.walk() for e in getattr(n, "events", ())}
     names |= {n.handler for n in document.walk() if isinstance(n, Action) and n.handler}
-    return tuple(sorted(names))
+    return tuple(sorted(name for name in names if len(name) <= CANVAS_TEXT_LIMIT))
 
 
 class EventsTab:
@@ -108,6 +116,7 @@ class EventsTab:
         add.grid(row=row, column=2, padx=(4, 0), pady=(8, 0))
         if self.host.read_only:
             for box in self.boxes:
+                box.locked = True  # a long handler's load must not enable it again
                 box.set_enabled(False)
             self.key_entry.state(["disabled"])
             add.state(["disabled"])

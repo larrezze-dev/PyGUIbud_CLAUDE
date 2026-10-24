@@ -24,15 +24,19 @@ ui = show_ui["load"]({path!r}, "pyside6", None)
 tops = dict(ui.windows)
 shown = {{key: top.isVisible() for key, top in tops.items()}}
 titles = {{key: top.windowTitle() for key, top in tops.items()}}
+closed = []
 def close_all():
+    closed.append(time.perf_counter())
     for top in tops.values():
         top.close()
 QtCore.QTimer.singleShot(50, close_all)
 QtCore.QTimer.singleShot(5000, QtWidgets.QApplication.instance().quit)  # fallback: never hang
 started = time.perf_counter()
 ui.run()  # runs the loop until close_all ends it, as main() does
-ran = time.perf_counter() - started
-print(json.dumps({{"shown": shown, "titles": titles, "ran": ran}}))
+ended = time.perf_counter()
+ran = ended - started
+blocked = bool(closed) and closed[0] <= ended  # run() returned only after close_all
+print(json.dumps({{"shown": shown, "titles": titles, "ran": ran, "blocked": blocked}}))
 """
 
 
@@ -58,11 +62,11 @@ def test_show_ui_shows_hello_with_pyside6() -> None:
     result = _probe(ROOT / "examples" / "hello.ui")
     assert result["shown"] == {"main": True}
     assert result["titles"] == {"main": "Hello PyGUIbud"}
-    assert 0.04 <= result["ran"] < 4.0  # run() blocked until the window closed, not the fallback
+    assert result["blocked"] and result["ran"] < 4.0  # blocked until close_all, not the fallback
 
 
 def test_show_ui_shows_the_dialogs_of_a_dialog_only_document_with_pyside6() -> None:
     result = _probe(ROOT / "tests" / "codegen" / "data" / "dialogs.ui")
     assert result["shown"] == {"dlg_about": True, "dlg_ask": True}
     assert result["titles"] == {"dlg_about": "About", "dlg_ask": "Question"}
-    assert 0.04 <= result["ran"] < 4.0  # the loop ended when the last dialog closed
+    assert result["blocked"] and result["ran"] < 4.0  # the loop ended when the last dialog closed

@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import builtins
 import os
+import sys
 import time
 from pathlib import Path
 from typing import Any
@@ -211,23 +212,24 @@ def test_qa_14b2_07_a_file_readable_again_is_shown_again(tmp_path: Path) -> None
     """Q9: an included file locked by another program (unreadable) shows a placeholder. Once
     the lock is gone the file is unchanged (same mtime and size), so ``changed()`` stays False
     and even a rebuild after an edit reuses the cached failure: the placeholder never goes."""
-    import msvcrt
+    if sys.platform == "win32":  # a literal check, so mypy skips the body on linux/darwin
+        import msvcrt
 
-    card = _file(tmp_path / "card.ui", _component())
-    main = _main(tmp_path / "main.ui", _inc("card.ui"))
-    document = read_ui(main).document
-    size = card.stat().st_size
-    with card.open("r+b") as handle:
-        msvcrt.locking(handle.fileno(), msvcrt.LK_NBLCK, size)
-        try:
-            _top, reasons, resolver = _expand(main, document)
-        finally:
-            handle.seek(0)
-            msvcrt.locking(handle.fileno(), msvcrt.LK_UNLCK, size)
-    assert reasons  # unreadable: a placeholder, no traceback
-    resolver.changed()  # the focus-in check
-    _top, reasons, _r = _expand(main, document, resolver, revision=1)  # and a later edit
-    assert reasons == {}
+        card = _file(tmp_path / "card.ui", _component())
+        main = _main(tmp_path / "main.ui", _inc("card.ui"))
+        document = read_ui(main).document
+        size = card.stat().st_size
+        with card.open("r+b") as handle:
+            msvcrt.locking(handle.fileno(), msvcrt.LK_NBLCK, size)
+            try:
+                _top, reasons, resolver = _expand(main, document)
+            finally:
+                handle.seek(0)
+                msvcrt.locking(handle.fileno(), msvcrt.LK_UNLCK, size)
+        assert reasons  # unreadable: a placeholder, no traceback
+        resolver.changed()  # the focus-in check
+        _top, reasons, _r = _expand(main, document, resolver, revision=1)  # and a later edit
+        assert reasons == {}
 
 
 def test_an_include_without_a_component_name_is_a_placeholder(tmp_path: Path) -> None:

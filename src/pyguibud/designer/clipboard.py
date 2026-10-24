@@ -55,6 +55,7 @@ from pyguibud.designer.editing import (
     window_delete_refusal,
 )
 from pyguibud.designer.files import rebase_paths
+from pyguibud.designer.present import inserted
 from pyguibud.i18n import N_, _, ngettext
 
 __all__ = [
@@ -416,7 +417,7 @@ def _remap(
         if isinstance(node, Include) and node.src == "#":
             node.component = renamed.get(node.component, node.component)
             if node.component not in windows:
-                return _(_M_FOREIGN_INCLUDE).format(id=printable(node.id))
+                return _(_M_FOREIGN_INCLUDE).format(id=inserted(node.id))
     return commands
 
 

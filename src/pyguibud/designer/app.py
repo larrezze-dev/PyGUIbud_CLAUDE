@@ -16,6 +16,7 @@ from pathlib import Path
 from typing import Any, Literal
 
 from pyguibud.core import PyGUIbudError, ReadResult, XmlIoError, default_registry, write_ui
+from pyguibud.core.errors import format_message
 from pyguibud.core.keys import split_mnemonic
 from pyguibud.core.registry import configure_default_registry
 from pyguibud.core.text import printable
@@ -543,7 +544,7 @@ class DesignerApp:
             self.recent.remove(path)
             self._save_settings()
             self._fill_recent()
-            self._tell(lambda: _(_M_MISSING).format(path=path))
+            self._tell(lambda: _(_M_MISSING).format(path=printable(path)))
             return
         self.guard(lambda: self.open_path(Path(path)))
 
@@ -627,7 +628,7 @@ class DesignerApp:
                 write()
                 return
             self._ask(
-                lambda: _(_M_CONFLICT).format(name=session.display_name),
+                lambda: _(_M_CONFLICT).format(name=printable(session.display_name)),
                 [(_M_OVERWRITE, write), (_M_SAVE_AS, lambda: self.save(as_new=True, then=then)),
                  (_M_CANCEL, None)],
             )  # fmt: skip
@@ -661,7 +662,7 @@ class DesignerApp:
             failure = stack.failure if rebased and stack.undo() is False else None
             reason = text = _lazy(exc)
             if failure is not None:  # still rebased and dirty: say so in the dialog (H37)
-                text = lambda: f"{reason()}\n\n{failure.message}"  # noqa: E731 - two sentences
+                text = lambda: f"{reason()}\n\n{printable(failure.message)}"  # noqa: E731 - two sentences
             # Spec 9.3 step 4: the OS reason, and Save as... to put the work somewhere else.
             save_as = functools.partial(self.save, as_new=True, then=then)
             self._ask(text, [(_M_OK, None), (_M_SAVE_AS, save_as)])
@@ -914,8 +915,17 @@ class DesignerApp:
 
 
 def _lazy(error: PyGUIbudError) -> Callable[[], str]:
-    """The error's message, translated when shown (also after a language switch)."""
-    return lambda: str(error)
+    """The error's message, translated when shown (also after a language switch). The values
+    put into it (paths, names, the location) are escaped, not the text (QA-19g-02, 04)."""
+
+    def text() -> str:
+        params = {k: v if isinstance(v, int | float) else printable(str(v))
+                  for k, v in error.params.items()}  # fmt: skip
+        message = format_message(error.msgid, params)
+        where = printable(error.location) if isinstance(error, XmlIoError) else ""
+        return f"{where}: {message}" if where else message
+
+    return text
 
 
 def fit_geometry(

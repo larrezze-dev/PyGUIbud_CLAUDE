@@ -10,6 +10,7 @@ from tkinter import ttk
 from typing import Any
 
 from pyguibud.core import ReadResult, XmlIoError
+from pyguibud.core.text import printable
 from pyguibud.designer.dialogs.base import ModalDialog
 from pyguibud.designer.present import elide_middle
 from pyguibud.designer.recovery import RecoveryEntry
@@ -141,7 +142,9 @@ class RecoveryDialog(ModalDialog):
     def _show_where(self) -> None:
         current = self._current()
         path = self._entries[current].path if current in self._entries else None
-        self.where.configure(text=_(_M_WHERE).format(path=path or _(_M_NOT_SAVED)))
+        self.where.configure(
+            text=_(_M_WHERE).format(path=printable(path) if path else _(_M_NOT_SAVED))
+        )
 
     def retranslate(self) -> None:
         self.label_buttons()
@@ -198,7 +201,7 @@ class RecoveryDialog(ModalDialog):
             self.tree.selection_set(remaining[0])
             self.tree.focus(remaining[0])
 
-        self._confirm(_(_M_DISCARD_QUESTION).format(name=entry.display_name), drop)
+        self._confirm(_(_M_DISCARD_QUESTION).format(name=printable(entry.display_name)), drop)
 
     def close(self) -> None:
         job, self._fit_job = self._fit_job, None
