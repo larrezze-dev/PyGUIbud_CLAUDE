@@ -284,4 +284,4 @@ py -m venv r; .\r\Scripts\python -m pip install --find-links rc pyguibud-runtime
 - **`release.yml`:** as §5.2; the build job outputs `version`/`prerelease`, and `publish-pypi` runs only when `prerelease == 'false'`.
 - **Tests:** `tests/test_packaging_files.py` covers the licence byte copies, the README credit and absolute links, the metadata keys and the workflow invariants. `actionlint` (through `uvx --from actionlint-py`) is clean on both workflows.
 - **Budget:** 0 / 60 net `src/**/*.py` + `runtime/src/**/*.py` lines (only TOML, tools, tests, workflows and docs changed). Start numstat for 20c: 0 against the 20b commit.
-- **Git (user, 2026-10-24):** CLAUDE.md now allows autonomous git. 20b is committed on branch `step-20b`, pushed, and proposed as a PR to `master`. No `v*` tag is ever pushed by an agent, because a tag publishes.
+- **Git (user, 2026-10-24):** CLAUDE.md now allows autonomous git. 20b is committed on branch `step-20b` and pushed; the user opens the PR to `master` (`gh` is not installed). No `v*` tag is ever pushed by an agent, because a tag publishes.

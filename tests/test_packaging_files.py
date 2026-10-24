@@ -25,7 +25,12 @@ def _check_dist() -> ModuleType:
 
 @pytest.mark.parametrize("name", ["LICENSE", "NOTICE.md"])
 def test_the_runtime_ships_byte_copies_of_the_licence_files(name: str) -> None:
-    assert (ROOT / "runtime" / name).read_bytes() == (ROOT / name).read_bytes()
+    # Line endings are a checkout artefact (core.autocrlf rewrites only the files it touches).
+    copy, original = (
+        path.read_bytes().replace(b"\r\n", b"\n")
+        for path in (ROOT / "runtime" / name, ROOT / name)
+    )
+    assert copy == original
 
 
 @pytest.mark.parametrize("readme", ["README.md", "runtime/README.md"])

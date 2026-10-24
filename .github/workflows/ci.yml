@@ -145,9 +145,11 @@ jobs:
           for module in (pyguibud.core, pyguibud.designer):
               assert site in pathlib.Path(module.__file__).resolve().parents, module.__file__
           from pyguibud_runtime import load_ui
-          class Handlers:
-              def __getattr__(self, name):
-                  return lambda *args: None
+          class Handlers:  # the two handlers hello.ui binds
+              def on_greet(self):
+                  pass
+              def on_quit(self):
+                  pass
           load_ui("hello.ui", Handlers()).destroy()
           print("designer venv OK")
           EOF
@@ -169,9 +171,11 @@ jobs:
           else:
               raise AssertionError("pyguibud is installed")
           assert not list(pathlib.Path(sysconfig.get_path("scripts")).glob("pyguibud*"))
-          class Handlers:
-              def __getattr__(self, name):
-                  return lambda *args: None
+          class Handlers:  # the two handlers hello.ui binds
+              def on_greet(self):
+                  pass
+              def on_quit(self):
+                  pass
           pyguibud_runtime.load_ui("hello.ui", Handlers()).destroy()
           print("runtime-only venv OK")
           EOF
