@@ -50,7 +50,10 @@ __all__ = [
 WIDGETS_GROUP: Final = "pyguibud.widgets"
 BACKENDS_GROUP: Final = "pyguibud.backends"
 
-_BUILTIN_DISTRIBUTION = "pyguibud"
+#: The distribution that declares PyGUIbud's own entry points (ADR-016).
+_BUILTIN_DISTRIBUTION: Final = "pyguibud-runtime"
+#: PyGUIbud's distribution names: any other entry point they declare is a fork (H66).
+_RESERVED_DISTRIBUTIONS: Final = frozenset({"pyguibud", _BUILTIN_DISTRIBUTION})
 #: The value prefix of PyGUIbud's own entry points, per group (H66: both must match).
 _BUILTIN_PREFIXES: Final[Mapping[str, str]] = MappingProxyType(
     {WIDGETS_GROUP: "pyguibud.core.widgets:", BACKENDS_GROUP: "pyguibud.backends."}
@@ -158,23 +161,28 @@ class BackendInfo:
 
 def _distribution(ep: EntryPointLike) -> str:
     """The distribution name shown and filtered on. Another entry point of a distribution named
-    ``pyguibud`` (a fork, a hand-edited install) is named after its top-level module instead, so
-    it never joins the Built-in row nor hides its errors from R87 (H66)."""
+    ``pyguibud`` or ``pyguibud-runtime`` (a fork, a hand-edited or stale install) is named after
+    its top-level module instead, so it never joins the Built-in row nor hides its errors from R87
+    (H66)."""
     dist = ep.dist
     if dist is None:
         return _UNKNOWN_DISTRIBUTION
-    if canonical_distribution(dist.name) != _BUILTIN_DISTRIBUTION or _is_builtin(ep):
+    if _is_builtin(ep):  # one spelling, whatever the metadata's (``pyguibud_runtime``)
+        return _BUILTIN_DISTRIBUTION
+    if canonical_distribution(dist.name) not in _RESERVED_DISTRIBUTIONS:
         return dist.name
     module = ep.value.partition(":")[0].partition(".")[0].strip()
     plain = (
-        _MODULE_NAME.fullmatch(module) and canonical_distribution(module) != _BUILTIN_DISTRIBUTION
+        _MODULE_NAME.fullmatch(module)
+        and canonical_distribution(module) not in _RESERVED_DISTRIBUTIONS
     )
     return module if plain else _UNKNOWN_DISTRIBUTION
 
 
 def _is_builtin(ep: EntryPointLike) -> bool:
     """Distribution, group and value prefix: a prefix alone is spoofable by a third party (D2),
-    and a distribution name alone by a fork or a hand-made ``pyguibud`` metadata folder (H66)."""
+    and a distribution name alone by a fork or a hand-made ``pyguibud-runtime`` metadata folder
+    (H66)."""
     dist, prefix = ep.dist, _BUILTIN_PREFIXES.get(ep.group)
     return (
         dist is not None
@@ -513,7 +521,7 @@ class Registry:
                 Diagnostic(
                     group=WIDGETS_GROUP,
                     entry_point="",
-                    distribution="pyguibud",
+                    distribution=_BUILTIN_DISTRIBUTION,
                     code="registry.load_failed",
                     msgid=N_("The built-in widgets could not be loaded: {error}"),
                     params={"error": repr(exc)},
@@ -528,7 +536,7 @@ class Registry:
             Diagnostic(
                 group=WIDGETS_GROUP,
                 entry_point="",
-                distribution="pyguibud",
+                distribution=_BUILTIN_DISTRIBUTION,
                 code="registry.core_fallback",
                 msgid=N_(
                     "Built-in widgets were missing from the installed package metadata and were "
@@ -590,7 +598,7 @@ class Registry:
 
     def _origin_name(self, name: str) -> str:
         ep = self._origins.get(name)
-        return _distribution(ep) if ep is not None else "pyguibud"
+        return _distribution(ep) if ep is not None else _BUILTIN_DISTRIBUTION
 
     def _ensure_loaded(self) -> None:
         if not self._loaded:

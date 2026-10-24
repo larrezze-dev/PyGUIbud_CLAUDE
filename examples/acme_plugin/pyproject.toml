@@ -8,7 +8,7 @@ version = "0.1.0"
 description = "A sample PyGUIbud widget plugin: acme:ColourSwatch."
 readme = "README.md"
 requires-python = ">=3.10"
-dependencies = ["pyguibud"]
+dependencies = ["pyguibud-runtime"]
 
 [project.entry-points."pyguibud.widgets"]
 acme = "acme_pyguibud:widgets"

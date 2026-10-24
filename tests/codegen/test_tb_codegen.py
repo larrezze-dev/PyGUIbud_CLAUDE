@@ -267,8 +267,8 @@ def _plugin_registry() -> Registry:
         factories={"ttkbootstrap": "zz_plugin:gauge"},
     )
     widgets = [
-        _EP("core", "pyguibud.core.widgets:core_widgets", _Dist("pyguibud"), core_widgets),
-        _EP("tb", "pyguibud.core.widgets:tb_widgets", _Dist("pyguibud"), tb_widgets),
+        _EP("core", "pyguibud.core.widgets:core_widgets", _Dist("pyguibud-runtime"), core_widgets),
+        _EP("tb", "pyguibud.core.widgets:tb_widgets", _Dist("pyguibud-runtime"), tb_widgets),
         _EP("zz", "zz_plugin:specs", _Dist("zz-plugin"), lambda: (spec,)),
     ]
 

@@ -63,8 +63,8 @@ def _raising(*_args: Any) -> Any:
 
 def _registry(*plugins: _EP, disabled: Any = ()) -> Registry:
     eps = [
-        _EP("core", "pyguibud.core.widgets:core_widgets", _Dist("pyguibud"), core_widgets),
-        _EP("tb", "pyguibud.core.widgets:tb_widgets", _Dist("pyguibud"), tb_widgets),
+        _EP("core", "pyguibud.core.widgets:core_widgets", _Dist("pyguibud-runtime"), core_widgets),
+        _EP("tb", "pyguibud.core.widgets:tb_widgets", _Dist("pyguibud-runtime"), tb_widgets),
         *plugins,
     ]
 
@@ -87,16 +87,18 @@ def _all_statuses() -> Registry:
 # ------------------------------------------------------------------ presenter (pure)
 def test_rows_cover_every_status_built_in_first() -> None:
     rows = {row.key: row for row in plugin_rows(_all_statuses())}
-    assert next(iter(rows)) == "pyguibud"
+    assert next(iter(rows)) == "pyguibud-runtime"
     assert {k: r.status for k, r in rows.items()} == {
-        "pyguibud": "builtin",
+        "pyguibud-runtime": "builtin",
         "zz-ok": "loaded",
         "zz-bad": "failed",
         "zz-off": "disabled",
         "zz-old": "incompatible",
     }
     assert rows["zz-ok"].classes == ("zz:Swatch",) and rows["zz-ok"].distribution == "Zz_OK"
-    assert "tb:Meter" in rows["pyguibud"].classes and not rows["pyguibud"].can_toggle
+    assert (
+        "tb:Meter" in rows["pyguibud-runtime"].classes and not rows["pyguibud-runtime"].can_toggle
+    )
     assert rows["zz-bad"].diagnostics[0].message.startswith("The entry point 'bad' from 'zz-bad'")
     details = rows["zz-bad"].details()
     assert "Traceback" in details and "import boom" in details
@@ -110,7 +112,7 @@ def test_status_text_names_the_change_on_next_start() -> None:
     assert rows["zz-ok"].status_text(("zz-ok",)) == "Loaded (disabled on next start)"
     assert rows["zz-off"].status_text(()) == "Disabled (enabled on next start)"
     assert rows["zz-off"].status_text(("zz-off",)) == "Disabled"
-    assert rows["pyguibud"].status_text(("pyguibud",)) == "Built-in"
+    assert rows["pyguibud-runtime"].status_text(("pyguibud-runtime",)) == "Built-in"
 
 
 def test_the_start_up_note_counts_errors_and_names_safe_mode() -> None:
@@ -240,7 +242,7 @@ class TestPluginsDialog:
         dialog = self._open(app)
         tree = dialog.tree
         texts = [tree.item(i, "text") for i in tree.get_children()]
-        assert texts == ["pyguibud", "zz-bad", "zz.off", "Zz_OK", "zz-old"]
+        assert texts == ["pyguibud-runtime", "zz-bad", "zz.off", "Zz_OK", "zz-old"]
         assert tree.set("1", "status") == "Failed"
         assert dialog.initial_focus() is tree  # the keys reach the list at once
         assert str(dialog.details.cget("takefocus")) == "1"  # Tab reaches the details

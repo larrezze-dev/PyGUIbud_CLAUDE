@@ -426,7 +426,9 @@ def test_qa17c_07_the_status_column_shows_the_whole_next_start_status(app: Any, 
 def test_a_long_traceback_scrolls_with_the_keyboard(app: Any) -> None:
     dialog = _open(app)
     dialog.window.update()
-    row = next(i for i, r in enumerate(dialog.rows) if r.status == "failed" and r.key != "pyguibud")
+    row = next(
+        i for i, r in enumerate(dialog.rows) if r.status == "failed" and r.key != "pyguibud-runtime"
+    )
     dialog.tree.selection_set(str(row))
     dialog._show()
     dialog.details.focus_set()

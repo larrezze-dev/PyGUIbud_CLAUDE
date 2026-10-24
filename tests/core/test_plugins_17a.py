@@ -64,8 +64,8 @@ class _EP:
 
 def _builtins() -> list[_EP]:
     return [
-        _EP("core", "pyguibud.core.widgets:core_widgets", _Dist("pyguibud"), core_widgets),
-        _EP("tb", "pyguibud.core.widgets:tb_widgets", _Dist("pyguibud"), tb_widgets),
+        _EP("core", "pyguibud.core.widgets:core_widgets", _Dist("pyguibud-runtime"), core_widgets),
+        _EP("tb", "pyguibud.core.widgets:tb_widgets", _Dist("pyguibud-runtime"), tb_widgets),
     ]
 
 

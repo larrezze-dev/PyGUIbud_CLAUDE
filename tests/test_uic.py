@@ -13,8 +13,8 @@ from pathlib import Path
 
 import pytest
 
-import pyguibud
 from pyguibud import i18n, uic
+from pyguibud.__about__ import __version__
 from pyguibud.core import Finding
 from pyguibud.credits import credit
 from pyguibud.uic import main
@@ -333,7 +333,7 @@ def test_version(capsys: pytest.CaptureFixture[str]) -> None:
     with pytest.raises(SystemExit) as info:
         main(["--version"])
     assert info.value.code == 0
-    assert capsys.readouterr().out == f"pyguibud-uic {pyguibud.__version__}\n{credit()}\n"
+    assert capsys.readouterr().out == f"pyguibud-uic {__version__}\n{credit()}\n"
 
 
 def test_help_lists_the_options(capsys: pytest.CaptureFixture[str]) -> None:
@@ -428,7 +428,7 @@ def test_installed_script_exit_codes(tmp_path: Path) -> None:
     assert call().returncode == 2
     version = call("--version")
     first, credit_line = version.stdout.splitlines()
-    assert version.returncode == 0 and first == f"pyguibud-uic {pyguibud.__version__}"
+    assert version.returncode == 0 and first == f"pyguibud-uic {__version__}"
     assert "Luciano Arrezze" in credit_line
     assert "Traceback" not in ok.stderr + failed.stderr
 

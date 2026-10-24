@@ -59,8 +59,13 @@ def acme(monkeypatch: pytest.MonkeyPatch) -> Iterator[Callable[[str | None], Reg
         monkeypatch.delitem(sys.modules, "acme_pyguibud", raising=False)
         module = importlib.import_module("acme_pyguibud")
         widgets = [
-            _EP("core", "pyguibud.core.widgets:core_widgets", _Dist("pyguibud"), core_widgets),
-            _EP("tb", "pyguibud.core.widgets:tb_widgets", _Dist("pyguibud"), tb_widgets),
+            _EP(
+                "core",
+                "pyguibud.core.widgets:core_widgets",
+                _Dist("pyguibud-runtime"),
+                core_widgets,
+            ),
+            _EP("tb", "pyguibud.core.widgets:tb_widgets", _Dist("pyguibud-runtime"), tb_widgets),
             _EP("acme", "acme_pyguibud:widgets", _Dist("acme-pyguibud"), module.widgets),
         ]
 

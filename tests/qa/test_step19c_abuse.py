@@ -36,6 +36,7 @@ from pyguibud.designer.files import SavePlan
 from pyguibud.designer.render_plan import CANVAS_TEXT_LIMIT, clip_text
 from pyguibud.designer.settings import Settings
 from pyguibud.designer.targets import Target
+from tests._paths import RUNTIME_LOCALE
 from tests.conftest import BUDGET_FACTOR, reset_root
 from tests.strategies_m23 import BAD_IDS, BAD_NAMES
 
@@ -1219,7 +1220,7 @@ def test_qa_19c_03_a_revert_that_raises_after_changing_the_model_clears_the_hist
 
 def test_h37_the_new_msgids_are_in_the_catalogue_template() -> None:
     """Read-only: the translator owns the catalogues; the template must hold the new texts."""
-    pot = (ROOT / "src" / "pyguibud" / "locale" / "pyguibud.pot").read_text("utf-8")
+    pot = (RUNTIME_LOCALE / "pyguibud.pot").read_text("utf-8")
     # 19e H77: the cited menu path became a placeholder filled from the real menu labels.
     for msgid in (
         UNDO_FAILED,

@@ -28,7 +28,7 @@ from babel.messages.pofile import read_po, write_po
 from pyguibud.core.keys import split_mnemonic
 
 ROOT = Path(__file__).resolve().parents[1]
-LOCALE_DIR = ROOT / "src" / "pyguibud" / "locale"
+LOCALE_DIR = ROOT / "runtime" / "src" / "pyguibud" / "locale"  # owned by pyguibud-runtime
 DOMAIN = "pyguibud"
 WIDTH = 76
 SEP = "\x04"

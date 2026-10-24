@@ -324,12 +324,12 @@ def test_the_dialog_writes_settings_and_the_restart_disables_acme(
     try:
         dialog = _open_plugins(app)
         # The built-in row cannot be disabled: the button is off and toggle() does nothing.
-        dialog.tree.selection_set(_row_of(dialog, "pyguibud"))
+        dialog.tree.selection_set(_row_of(dialog, "pyguibud-runtime"))
         dialog._show()
         assert dialog.toggle_button.instate(["disabled"])
         dialog.toggle()
         assert app.settings.disabled_plugins == ()
-        assert not settings_path().exists() or "pyguibud" not in json.loads(
+        assert not settings_path().exists() or "pyguibud-runtime" not in json.loads(
             settings_path().read_text(encoding="utf-8")
         ).get("disabled_plugins", [])
         dialog.tree.selection_set(_row_of(dialog, ACME))

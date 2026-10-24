@@ -79,6 +79,10 @@ def _fifty_mb(path: Path) -> None:
         chunk = b"<a>" * (1 << 20)
         for _ in range(17):  # 51 MiB of <a>
             stream.write(chunk)
+    # Real-time antivirus scans a fresh file on its first open (~2 s for 51 MiB on Windows),
+    # inside the timed refusal. Open it once here so the budget measures PyGUIbud only.
+    with path.open("rb") as stream:
+        stream.read(1)
 
 
 _HELLO = HELLO.read_bytes()

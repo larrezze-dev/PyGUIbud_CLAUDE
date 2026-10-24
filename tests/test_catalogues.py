@@ -1,4 +1,4 @@
-"""Tests for the gettext catalogues shipped in ``src/pyguibud/locale``."""
+"""Tests for the gettext catalogues shipped in ``runtime/src/pyguibud/locale``."""
 
 from __future__ import annotations
 
@@ -16,8 +16,8 @@ from babel.messages.pofile import read_po
 from pyguibud import i18n
 from pyguibud.core.keys import split_mnemonic
 from pyguibud.i18n import DOMAIN, LANGUAGES, LOCALE_DIR, SOURCE_LANGUAGE, _, set_language
+from tests._paths import DESIGNER_SRC, RUNTIME_SRC
 
-SRC_DIR = Path(__file__).resolve().parents[1] / "src"
 POT_PATH = LOCALE_DIR / f"{DOMAIN}.pot"
 TARGETS = [code for code in LANGUAGES if code != SOURCE_LANGUAGE]
 _PLACEHOLDER = re.compile(r"\{[^{}]*\}|%\([^)]*\)[#0\- +]*\d*(?:\.\d+)?[a-zA-Z]")
@@ -54,13 +54,14 @@ def _extract_keys() -> set[MsgKey]:
         "npgettext": ((1, "c"), 2, 3),
     }
     found: set[MsgKey] = set()
-    for _file, _line, message, _comments, context in extract_from_dir(
-        str(SRC_DIR),
-        method_map=[("**.py", "python")],
-        keywords=keywords,  # type: ignore[arg-type]
-        comment_tags=["Translators:"],
-    ):
-        found.add((message if isinstance(message, str) else tuple(message), context))
+    for root in (DESIGNER_SRC, RUNTIME_SRC):  # one domain over both portions (spec packaging D3)
+        for _file, _line, message, _comments, context in extract_from_dir(
+            str(root),
+            method_map=[("**.py", "python")],
+            keywords=keywords,  # type: ignore[arg-type]
+            comment_tags=["Translators:"],
+        ):
+            found.add((message if isinstance(message, str) else tuple(message), context))
     return found
 
 

@@ -111,7 +111,7 @@ def test_acme_spec_and_factories(acme: Any) -> None:
     assert set(spec.factories) == {"ttkbootstrap", "tkinter", "pyside6"}
     registry = Registry(_plugin_source(_EP("acme", "acme-pyguibud", lambda: module.widgets)))
     assert registry.require("acme:ColourSwatch").category == "Acme"
-    assert [d for d in registry.diagnostics() if d.distribution != "pyguibud"] == []
+    assert [d for d in registry.diagnostics() if d.distribution != "pyguibud-runtime"] == []
 
 
 @pytest.mark.parametrize("mode", ["import", "spec", "exit"])
@@ -124,7 +124,7 @@ def test_acme_break_modes_give_one_diagnostic(acme: Any, mode: str) -> None:
     registry.load()
     found = [d for d in registry.diagnostics() if d.distribution == "acme-pyguibud"]
     assert len(found) == 1 and found[0].code == "registry.load_failed"
-    assert [d for d in registry.diagnostics() if d.distribution != "pyguibud"] == found
+    assert [d for d in registry.diagnostics() if d.distribution != "pyguibud-runtime"] == found
     assert registry.require("Label").name == "Label"
 
 

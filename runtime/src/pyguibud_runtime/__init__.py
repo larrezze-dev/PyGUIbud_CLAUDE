@@ -9,11 +9,10 @@ importing it loads no GUI toolkit (the backend imports it while building). Gener
 
 from __future__ import annotations
 
+from pyguibud.__about__ import __version__
 from pyguibud_runtime._load import load_ui
 from pyguibud_runtime._texts import Translator
 from pyguibud_runtime._ui import LoadedUi, UiScope
 from pyguibud_runtime.errors import UiError
-
-__version__ = "0.1.0.dev0"
 
 __all__ = ["LoadedUi", "Translator", "UiError", "UiScope", "__version__", "load_ui"]

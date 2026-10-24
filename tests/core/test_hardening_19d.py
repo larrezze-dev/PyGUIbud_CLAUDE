@@ -31,16 +31,18 @@ BOOTSTYLE = f"{{{NS_TB}}}bootstyle"
 
 
 # ---------------------------------------------------------------- H66: the Built-in row
-def _spoof(obj: object, value: str = "evil.mod:specs") -> _EP:
-    return _EP("evil", value, _Dist("pyguibud"), obj)
+def _spoof(obj: object, value: str = "evil.mod:specs", dist: str = "pyguibud") -> _EP:
+    return _EP("evil", value, _Dist(dist), obj)
 
 
-def test_h66_a_foreign_entry_point_of_a_pyguibud_distribution_is_not_builtin() -> None:
-    reg = Registry(entry_points=_source(_spoof([_spec("evil:Gauge")])))
+# ADR-016: the built-in distribution is pyguibud-runtime; a stale or forked "pyguibud" is not.
+@pytest.mark.parametrize("dist", ["pyguibud", "pyguibud-runtime", "PyGUIbud_Runtime"])
+def test_h66_a_foreign_entry_point_of_a_pyguibud_distribution_is_not_builtin(dist: str) -> None:
+    reg = Registry(entry_points=_source(_spoof([_spec("evil:Gauge")], dist=dist)))
     spec = reg.require("evil:Gauge")
     assert spec.plugin == "evil"  # named after its module, never "pyguibud"
     rows = {row.key: row for row in plugin_rows(reg)}
-    assert "evil:Gauge" not in rows["pyguibud"].classes
+    assert "evil:Gauge" not in rows["pyguibud-runtime"].classes
     assert rows["evil"].status == "loaded" and rows["evil"].classes == ("evil:Gauge",)
 
 
@@ -50,7 +52,9 @@ def test_h66_a_failing_foreign_entry_point_counts_for_r87() -> None:
     assert {row.key: row.status for row in plugin_rows(reg)}["evil"] == "failed"
 
 
-@pytest.mark.parametrize("value", ["pyguibud.extra:specs", "PyGUIbud.x:specs", "?:x", ""])
+@pytest.mark.parametrize(
+    "value", ["pyguibud.extra:specs", "PyGUIbud.x:specs", "pyguibud_runtime.x:specs", "?:x", ""]
+)
 def test_h66_an_unnameable_foreign_entry_point_is_unknown(value: str) -> None:
     reg = Registry(entry_points=_source(_spoof(RuntimeError("boom"), value)))
     (diagnostic,) = [d for d in reg.diagnostics() if d.code == "registry.load_failed"]
@@ -62,11 +66,17 @@ def test_h66_builtin_needs_the_group_prefix_and_the_built_in_backends_stay_built
         _EP(
             "tkinter",
             "pyguibud.backends.tkinter:TkinterBackend",
-            _Dist("pyguibud"),
+            _Dist("pyguibud-runtime"),
             object(),
             group=BACKENDS_GROUP,
         ),
-        _EP("odd", "pyguibud.core.widgets:x", _Dist("pyguibud"), object(), group=BACKENDS_GROUP),
+        _EP(
+            "odd",
+            "pyguibud.core.widgets:x",
+            _Dist("pyguibud-runtime"),
+            object(),
+            group=BACKENDS_GROUP,
+        ),
     ]
     widgets = _source()
 
@@ -75,8 +85,8 @@ def test_h66_builtin_needs_the_group_prefix_and_the_built_in_backends_stay_built
 
     reg = Registry(entry_points=source)
     names = {info.name: info.distribution for info in reg.backends()}
-    assert names == {"tkinter": "pyguibud", "odd": "unknown"}
-    assert [row.key for row in plugin_rows(reg)] == ["pyguibud"]  # the core widgets only
+    assert names == {"tkinter": "pyguibud-runtime", "odd": "unknown"}
+    assert [row.key for row in plugin_rows(reg)] == ["pyguibud-runtime"]  # the core widgets only
 
 
 # ---------------------------------------------------------------- H67: a misdeclared plugin=

@@ -38,7 +38,7 @@ M_PROBLEMS = NP_(
     "{count} plugin problem — see Help ▸ Plugins.", "{count} plugin problems — see Help ▸ Plugins."
 )
 M_SAFE_MODE = N_("Plugins are disabled (safe mode).")
-_BUILTIN = "pyguibud"
+_BUILTIN = "pyguibud-runtime"  # the registry's built-in distribution (ADR-016)
 _UNKNOWN = "unknown"  # the registry's name when the metadata gives no distribution
 
 

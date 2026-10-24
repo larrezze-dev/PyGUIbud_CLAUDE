@@ -82,7 +82,7 @@ def _spec(
 
 
 def _tb_ep() -> _EP:
-    return _wep("tb", tb_widgets, "pyguibud", "pyguibud.core.widgets:tb_widgets")
+    return _wep("tb", tb_widgets, "pyguibud-runtime", "pyguibud.core.widgets:tb_widgets")
 
 
 def _codes(reg: Registry) -> list[str]:
@@ -118,13 +118,13 @@ def test_empty_source_falls_back_to_core_with_warning() -> None:
     diag = _only(reg, "registry.core_fallback")
     assert diag.severity == "warning"
     assert diag.entry_point == ""
-    assert diag.distribution == "pyguibud"
+    assert diag.distribution == "pyguibud-runtime"
     assert "Frame" in diag.message and "Statusbar" in diag.message
     assert "tb:Meter" in diag.message
 
 
 def test_builtin_entry_point_no_diagnostics() -> None:
-    builtin = _wep("core", core_widgets, "pyguibud", "pyguibud.core.widgets:core_widgets")
+    builtin = _wep("core", core_widgets, "pyguibud-runtime", "pyguibud.core.widgets:core_widgets")
     reg = Registry(entry_points=_source(builtin, _tb_ep()))
     assert reg.diagnostics() == ()
     assert len(reg.specs()) == 29
@@ -293,7 +293,7 @@ def test_builtin_specs_all_have_display_names() -> None:
 
 def test_core_cannot_be_overridden_by_plugin() -> None:
     fake = _spec("Button", fallback=None, children="layout")
-    builtin = _wep("core", core_widgets, "pyguibud", "pyguibud.core.widgets:core_widgets")
+    builtin = _wep("core", core_widgets, "pyguibud-runtime", "pyguibud.core.widgets:core_widgets")
     reg = Registry(entry_points=_source(builtin, _wep("evil", fake, "evil")))
     assert reg.require("Button").children == "none"
     assert "registry.reserved_name" in _codes(reg)
@@ -319,7 +319,7 @@ def test_duplicate_inside_one_entry_point() -> None:
 
 
 def test_load_order_builtin_first_then_distribution_then_name() -> None:
-    builtin = _wep("core", core_widgets, "pyguibud", "pyguibud.core.widgets:core_widgets")
+    builtin = _wep("core", core_widgets, "pyguibud-runtime", "pyguibud.core.widgets:core_widgets")
     eps = [
         _wep("z", _spec("z:One"), "zeta"),
         _wep("b", _spec("b:Two"), "alpha"),
@@ -349,7 +349,7 @@ def test_core_safety_net_failure_is_diagnosed(monkeypatch: pytest.MonkeyPatch) -
     monkeypatch.setattr(widgets_module, "core_widgets", boom)
     reg = Registry(entry_points=_source())
     diag = _only(reg, "registry.load_failed")
-    assert diag.distribution == "pyguibud"
+    assert diag.distribution == "pyguibud-runtime"
     assert "no widgets" in diag.message
     assert reg.specs() == ()
 
@@ -357,7 +357,9 @@ def test_core_safety_net_failure_is_diagnosed(monkeypatch: pytest.MonkeyPatch) -
 def test_core_safety_net_only_fills_missing() -> None:
     partial = [s for s in core_widgets() if s.name != "Statusbar"]
     reg = Registry(
-        entry_points=_source(_wep("core", partial, "pyguibud", "pyguibud.core.widgets:x"), _tb_ep())
+        entry_points=_source(
+            _wep("core", partial, "pyguibud-runtime", "pyguibud.core.widgets:x"), _tb_ep()
+        )
     )
     diag = _only(reg, "registry.core_fallback")
     assert diag.params["names"] == "Statusbar"
@@ -581,7 +583,7 @@ def test_default_registry_caches_and_resets() -> None:
 def test_real_entry_point_loads_the_builtin_specs_without_diagnostics() -> None:
     reg = default_registry()
     # An installed third-party plugin may add specs and diagnostics; the built-ins never do.
-    assert not [d for d in reg.diagnostics() if d.distribution == "pyguibud"]
+    assert not [d for d in reg.diagnostics() if d.distribution == "pyguibud-runtime"]
     specs = [s for s in reg.specs() if s.name in BUILTIN_NAMES]
     assert [s.name for s in specs] == [s.name for s in (*core_widgets(), *tb_widgets())]
     assert all(s.plugin is None for s in specs)

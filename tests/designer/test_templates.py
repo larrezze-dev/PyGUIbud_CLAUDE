@@ -68,9 +68,10 @@ def test_template_bytes_read_through_the_manifest() -> None:
 
 
 def test_templates_are_package_data_of_the_wheel() -> None:
-    """hatch ships every file of ``src/pyguibud``; guard that nothing excludes the data."""
+    """hatch ships every file of ``src/pyguibud`` but the catalogue sources; guard that nothing
+    excludes the data."""
     text = (Path(__file__).resolve().parents[2] / "pyproject.toml").read_text(encoding="utf-8")
-    assert 'packages = ["src/pyguibud", "src/pyguibud_runtime"]' in text
+    assert 'packages = ["src/pyguibud"]' in text
     assert "*.ui" not in text.split("[tool.hatch.build.targets.wheel]")[1].split("[tool.")[0]
 
 

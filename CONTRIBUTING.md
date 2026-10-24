@@ -25,17 +25,17 @@ Never import a GUI toolkit inside `pyguibud.core`; the core stays toolkit-agnost
 ## Development set-up
 Requires Python ≥ 3.10 and [uv](https://docs.astral.sh/uv/). The repository scaffold arrives in Step 04 of the [development plan](./DEVELOPMENT_PLAN.md).
 ```bash
-uv sync --all-extras          # or: pip install -e ".[dev,pyside]"
+uv sync --all-extras          # or: pip install -e ./runtime -e ".[dev,pyside]"
 uv run pre-commit install
 uv run pytest
 uv run ruff check . && uv run ruff format --check .
-uv run mypy src/pyguibud/core
+uv run mypy
 ```
 
 ## Rules for every change
 1. **Language:** code, identifiers, comments, UI strings and docs are written in **British English (en-GB)**: `colour`, `behaviour`, `licence` (noun), `initialise`, `serialise`.
 2. **i18n:** every user-facing string goes through `_()`. Do not build sentences by concatenation; use named placeholders (`_("Saved {filename}").format(filename=…)`). Run `uv run pybabel extract` when you add strings.
-3. **Translations:** catalogues live in `src/pyguibud/locale/<lang>/LC_MESSAGES/`. Mandatory locales: `es_ES`, `pt_PT`, `pt_BR`, `de_DE`, `it_IT`, `nl_NL`, `fr_FR`. Translators may submit `.po` files only; follow the glossary in the translation docs and keep placeholders intact.
+3. **Translations:** catalogues live in `runtime/src/pyguibud/locale/<lang>/LC_MESSAGES/`. Mandatory locales: `es_ES`, `pt_PT`, `pt_BR`, `de_DE`, `it_IT`, `nl_NL`, `fr_FR`. Translators may submit `.po` files only; follow the glossary in the translation docs and keep placeholders intact.
 4. **Idiot-proofing:** any new editing operation must go through the command stack and the validator. Invalid actions are **blocked with a translated reason**, never applied silently ([FEATURES.md](./FEATURES.md) M23–M25).
 5. **Tests:** new behaviour needs tests (pytest; hypothesis for parsers/validators). GUI tests must run headless (`pytest-xvfb` on Linux CI).
 6. **Typing and style:** ruff clean, `mypy --strict` on `pyguibud.core`.

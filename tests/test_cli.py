@@ -11,9 +11,9 @@ from pathlib import Path
 
 import pytest
 
-import pyguibud
 import pyguibud_runtime
 from pyguibud import i18n
+from pyguibud.__about__ import __version__
 from pyguibud.cli import main
 from pyguibud.credits import credit
 
@@ -36,7 +36,7 @@ def test_main_version(capsys: pytest.CaptureFixture[str]) -> None:
 
     assert exc_info.value.code == 0
     captured = capsys.readouterr()
-    assert captured.out == f"pyguibud {pyguibud.__version__}\n{credit()}\n"
+    assert captured.out == f"pyguibud {__version__}\n{credit()}\n"
 
 
 class _Launch:
@@ -106,7 +106,7 @@ def test_info_options_do_not_load_tk() -> None:
 
 def test_runtime_version_sync() -> None:
     """Guard that runtime version matches designer version."""
-    assert pyguibud_runtime.__version__ == pyguibud.__version__
+    assert pyguibud_runtime.__version__ == __version__
 
 
 def test_main_via_subprocess() -> None:
@@ -120,7 +120,7 @@ def test_main_via_subprocess() -> None:
 
     assert result.returncode == 0
     first, credit_line = result.stdout.splitlines()
-    assert first == f"pyguibud {pyguibud.__version__}" and "Luciano Arrezze" in credit_line
+    assert first == f"pyguibud {__version__}" and "Luciano Arrezze" in credit_line
 
 
 def test_list_languages(capsys: pytest.CaptureFixture[str]) -> None:

@@ -9,6 +9,8 @@ from pathlib import Path
 
 import pytest
 
+from tests._paths import DESIGNER_SRC, RUNTIME_SRC
+
 _FORBIDDEN = repr(
     (
         *("tkinter", "ttkbootstrap", "PySide6", "pyguibud.cli", "pyguibud.uic"),
@@ -70,6 +72,28 @@ def test_the_tkinter_and_qt_backends_never_import_tbwidgets() -> None:
     )
     result = _run(code)
     assert result.returncode == 0, result.stdout + result.stderr
-    backends = Path(__file__).resolve().parents[2] / "src" / "pyguibud" / "backends"
+    backends = RUNTIME_SRC / "pyguibud" / "backends"
     for name in ("tkinter.py", "pyside6.py", "_tk.py", "_qt.py", "_qtmap.py"):
         assert "_tbwidgets" not in (backends / name).read_text(encoding="utf-8"), name
+
+
+def test_the_runtime_resolves_only_under_runtime_src() -> None:
+    """ADR-016: the runtime and every module it loads come from the pyguibud-runtime portion, so
+    a runtime-only install never needs a file of the designer portion."""
+    code = (
+        "import sys, pyguibud_runtime, pyguibud.backends.ttkbootstrap, pyguibud.backends.tkinter;"
+        "import pyguibud.backends.pyside6; from pyguibud.core.registry import Registry;"
+        "Registry().load();"
+        "names = [n for n in sys.modules if n.split('.')[0] in ('pyguibud', 'pyguibud_runtime')];"
+        "print(*(n + '=' + str(getattr(sys.modules[n], '__file__', None)) for n in names), sep='|')"
+    )
+    result = _run(code)
+    assert result.returncode == 0, result.stdout + result.stderr
+    files = dict(item.split("=", 1) for item in result.stdout.strip().split("|"))
+    assert "pyguibud_runtime" in files and "pyguibud.core" in files
+    files.pop("pyguibud")  # the PEP 420 namespace package has no file
+    runtime, designer = RUNTIME_SRC.resolve(), DESIGNER_SRC.resolve()
+    for name, file in files.items():
+        path = Path(file).resolve()
+        assert path.is_relative_to(runtime), (name, file)
+        assert not path.is_relative_to(designer / "pyguibud"), (name, file)

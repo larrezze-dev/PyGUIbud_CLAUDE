@@ -1,0 +1,47 @@
+[build-system]
+requires = ["hatchling>=1.27"]
+build-backend = "hatchling.build"
+
+[project]
+name = "pyguibud-runtime"
+dynamic = ["version"]
+description = "Load PyGUIbud .ui files at run time and build them with ttkbootstrap, tkinter or PySide6."
+requires-python = ">=3.10"
+license = "MIT"
+authors = [{ name = "Luciano Arrezze" }]
+classifiers = [
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Typing :: Typed",
+]
+dependencies = [
+    # load_ui() defaults to backend="ttkbootstrap" (spec packaging D5).
+    "ttkbootstrap>=2.2,<3",
+]
+
+[project.optional-dependencies]
+pyside = ["PySide6>=6.6"]
+
+# PyGUIbud's own plugins (dogfooding). The registry treats them as built-in because this
+# distribution declares them (ADR-016, spec packaging D4).
+[project.entry-points."pyguibud.widgets"]
+core = "pyguibud.core.widgets:core_widgets"
+tb = "pyguibud.core.widgets:tb_widgets"
+
+[project.entry-points."pyguibud.backends"]
+ttkbootstrap = "pyguibud.backends.ttkbootstrap:TtkbootstrapBackend"
+tkinter = "pyguibud.backends.tkinter:TkinterBackend"
+pyside6 = "pyguibud.backends.pyside6:PySide6Backend"
+
+[tool.hatch.version]
+path = "src/pyguibud/__about__.py"
+
+[tool.hatch.build.targets.wheel]
+# The runtime portion of the `pyguibud` namespace package (no pyguibud/__init__.py) plus
+# pyguibud_runtime. Wheels ship the compiled catalogues only.
+packages = ["src/pyguibud", "src/pyguibud_runtime"]
+exclude = ["*.po", "*.pot"]
+
+[tool.hatch.build.targets.sdist]
+include = ["/src", "/pyproject.toml"]

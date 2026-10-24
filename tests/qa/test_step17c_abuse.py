@@ -74,8 +74,8 @@ def _spec(name: str, **kw: Any) -> WidgetSpec:
 
 def _source(*plugins: _EP) -> Any:
     eps = [
-        _EP("core", "pyguibud.core.widgets:core_widgets", _Dist("pyguibud"), core_widgets),
-        _EP("tb", "pyguibud.core.widgets:tb_widgets", _Dist("pyguibud"), tb_widgets),
+        _EP("core", "pyguibud.core.widgets:core_widgets", _Dist("pyguibud-runtime"), core_widgets),
+        _EP("tb", "pyguibud.core.widgets:tb_widgets", _Dist("pyguibud-runtime"), tb_widgets),
         *plugins,
     ]
 
@@ -160,7 +160,7 @@ def test_disabling_the_built_in_pyguibud_changes_nothing(monkeypatch: pytest.Mon
         assert not reg.disabled_distributions()
         assert not [d for d in reg.diagnostics() if d.code == "registry.disabled"]
         builtin = plugin_rows(reg)[0]
-        assert builtin.key == "pyguibud" and builtin.status == "builtin"
+        assert builtin.key == "pyguibud-runtime" and builtin.status == "builtin"
         assert not builtin.can_toggle
 
 
@@ -169,7 +169,7 @@ def test_odd_distribution_spellings_disable_the_same_plugin() -> None:
         ep = _EP("acme", "acme:x", _Dist(real), [_spec("acme:Swatch")])
         reg = _registry(ep, disabled=parse_disabled_plugins([stored]))
         assert reg.get("acme:Swatch") is None and ep.loads == 0
-        row = next(r for r in plugin_rows(reg) if r.key != "pyguibud")
+        row = next(r for r in plugin_rows(reg) if r.key != "pyguibud-runtime")
         assert row.status == "disabled" and row.distribution == real
 
 
@@ -213,7 +213,7 @@ def test_hostile_texts_in_the_registry_never_break_the_rows() -> None:
     message = "\ud800 lone \x00 nul ‮ bidi {0.__class__} %s " + "y" * 300_000
     bad = _EP("s", "s:x", _Dist("s‮ur{x}"), RuntimeError(message))
     reg = _registry(bad)
-    row = next(r for r in plugin_rows(reg) if r.key != "pyguibud")
+    row = next(r for r in plugin_rows(reg) if r.key != "pyguibud-runtime")
     assert row.status == "failed" and "{0.__class__}" in row.details()
     assert plugin_note(reg, safe_mode=False) == "1 plugin problem — see Help ▸ Plugins."
 
@@ -233,9 +233,9 @@ def test_qa17c_01_a_mismatched_spec_plugin_still_lands_on_its_distribution_row(
     spec = registry.get("ty:Thing")
     assert spec is not None and spec.plugin == real
     rows = {r.key: r for r in plugin_rows(registry)}
-    assert list(rows) == ["pyguibud", real]  # one row per real distribution
+    assert list(rows) == ["pyguibud-runtime", real]  # one row per real distribution
     assert rows[real].classes == ("ty:Thing",) and rows[real].can_toggle
-    assert "ty:Thing" not in rows["pyguibud"].classes
+    assert "ty:Thing" not in rows["pyguibud-runtime"].classes
     warned = [d for d in registry.diagnostics() if d.code == "registry.plugin_name_mismatch"]
     assert [(d.severity, d.params["declared"], d.distribution) for d in warned] == [
         ("warning", declared, real)
@@ -263,7 +263,7 @@ def test_qa17c_02_a_toggleable_name_survives_the_settings_round_trip(
     name: str, tmp_path: Path
 ) -> None:
     ep = _EP("z", "z:x", _Dist(name), [_spec("zq:A")])
-    row = next(r for r in plugin_rows(_registry(ep)) if r.key != "pyguibud")
+    row = next(r for r in plugin_rows(_registry(ep)) if r.key != "pyguibud-runtime")
     path = tmp_path / "settings.json"
     assert save_settings(Settings(disabled_plugins=toggled((), row.key)), path=path)
     survives = load_settings(path)[0].disabled_plugins == (row.key,)

@@ -73,7 +73,7 @@ def test_default_registry_loads_core_without_diagnostics() -> None:
     registry = default_registry()
     assert registry is default_registry()
     assert {spec.name for spec in registry.specs()} >= CORE_CLASS_NAMES
-    assert not [d for d in registry.diagnostics() if d.distribution == "pyguibud"]
+    assert not [d for d in registry.diagnostics() if d.distribution == "pyguibud-runtime"]
     reset_default_registry()
 
 

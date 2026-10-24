@@ -6,6 +6,12 @@ resolution-markers = [
     "python_full_version < '3.15'",
 ]
 
+[manifest]
+members = [
+    "pyguibud",
+    "pyguibud-runtime",
+]
+
 [[package]]
 name = "ast-serialize"
 version = "0.12.1"
@@ -748,6 +754,7 @@ wheels = [
 name = "pyguibud"
 source = { editable = "." }
 dependencies = [
+    { name = "pyguibud-runtime" },
     { name = "ttkbootstrap" },
 ]
 
@@ -762,7 +769,7 @@ dev = [
     { name = "ruff" },
 ]
 pyside = [
-    { name = "pyside6" },
+    { name = "pyguibud-runtime", extra = ["pyside"] },
 ]
 
 [package.dev-dependencies]
@@ -778,7 +785,8 @@ requires-dist = [
     { name = "hypothesis", marker = "extra == 'dev'", specifier = ">=6.100" },
     { name = "mypy", marker = "extra == 'dev'", specifier = ">=1.10" },
     { name = "pre-commit", marker = "extra == 'dev'", specifier = ">=3.7" },
-    { name = "pyside6", marker = "extra == 'pyside'", specifier = ">=6.6" },
+    { name = "pyguibud-runtime", editable = "runtime" },
+    { name = "pyguibud-runtime", extras = ["pyside"], marker = "extra == 'pyside'", editable = "runtime" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.0" },
     { name = "pytest-cov", marker = "extra == 'dev'", specifier = ">=5.0" },
     { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.6" },
@@ -792,6 +800,25 @@ dev = [
     { name = "pytest-randomly", specifier = ">=5.0.0" },
     { name = "resvg-py", specifier = ">=0.5,<0.6" },
 ]
+
+[[package]]
+name = "pyguibud-runtime"
+source = { editable = "runtime" }
+dependencies = [
+    { name = "ttkbootstrap" },
+]
+
+[package.optional-dependencies]
+pyside = [
+    { name = "pyside6" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "pyside6", marker = "extra == 'pyside'", specifier = ">=6.6" },
+    { name = "ttkbootstrap", specifier = ">=2.2,<3" },
+]
+provides-extras = ["pyside"]
 
 [[package]]
 name = "pyside6"

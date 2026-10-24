@@ -146,7 +146,9 @@ def _builtin_only() -> Registry:
     real = registry_module._metadata_entry_points
 
     def ours(group: str) -> Iterable[registry_module.EntryPointLike]:
-        return [ep for ep in real(group) if ep.dist is not None and ep.dist.name == "pyguibud"]
+        return [
+            ep for ep in real(group) if ep.dist is not None and ep.dist.name == "pyguibud-runtime"
+        ]
 
     return Registry(ours)
 

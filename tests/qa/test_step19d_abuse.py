@@ -33,6 +33,7 @@ from pyguibud.core.registry import WIDGETS_GROUP, Registry
 from pyguibud.core.validate import validate
 from pyguibud.i18n import LANGUAGES, PSEUDO_LANGUAGE, _
 from pyguibud_runtime import LoadedUi, UiError, load_ui
+from tests._paths import DESIGNER_SRC, RUNTIME_LOCALE, RUNTIME_SRC
 from tests.core.test_plugins_17a import _doc, _plugin, _source, _spec, _widget
 from tests.runtime.conftest import write_ui
 from tests.runtime.test_tb_factories import _label_text, _registry
@@ -607,7 +608,7 @@ def test_the_new_19d_messages_are_translated_with_their_placeholders() -> None:
 
 # QA-19d-02 (regression)
 def test_no_catalogue_translation_contains_a_control_character() -> None:
-    folder = ROOT / "src" / "pyguibud" / "locale"
+    folder = RUNTIME_LOCALE
     bad: list[tuple[str, str]] = []
     for mo in sorted(folder.glob("*/LC_MESSAGES/pyguibud.mo")):
         with mo.open("rb") as handle:
@@ -622,7 +623,7 @@ def test_no_catalogue_translation_contains_a_control_character() -> None:
 def test_the_canvas_card_messages_keep_their_own_translator_comments() -> None:
     from babel.messages.pofile import read_po
 
-    with (ROOT / "src" / "pyguibud" / "locale" / "pyguibud.pot").open("rb") as handle:
+    with (RUNTIME_LOCALE / "pyguibud.pot").open("rb") as handle:
         catalogue = read_po(handle)
     draw = catalogue.get("This window cannot be drawn on the canvas: {reason}")
     unexpected = catalogue.get("an unexpected error occurred; see the log")
@@ -907,7 +908,7 @@ def _fake_acme_path(tmp_path: Path) -> str:
     info.mkdir(parents=True)
     (info / "METADATA").write_text(f"Metadata-Version: 2.1\nName: {ACME}\nVersion: 0.0.1\n")
     (info / "entry_points.txt").write_text("[pyguibud.widgets]\nacme = acme_pyguibud:widgets\n")
-    return os.pathsep.join([str(site), str(ACME_SRC), str(ROOT / "src")])
+    return os.pathsep.join([str(site), str(ACME_SRC), str(DESIGNER_SRC), str(RUNTIME_SRC)])
 
 
 def _preview(work: Path, env: dict[str, str], backend: str, limit: float) -> dict[str, Any]:

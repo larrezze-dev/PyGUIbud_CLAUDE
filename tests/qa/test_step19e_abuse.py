@@ -33,9 +33,10 @@ from pyguibud.core.diagnostics import Finding
 from pyguibud.core.keys import split_mnemonic
 from pyguibud.core.text import printable
 from pyguibud.credits import AUTHOR, TOOL, credit
+from tests._paths import RUNTIME_LOCALE
 
 ROOT = Path(__file__).resolve().parents[2]
-LOCALE_DIR = ROOT / "src" / "pyguibud" / "locale"
+LOCALE_DIR = RUNTIME_LOCALE
 POT = LOCALE_DIR / "pyguibud.pot"
 BIDI = ROOT / "tests" / "data" / "hardening" / "bidi_id.ui"
 TARGETS = ("es_ES", "pt_PT", "pt_BR", "de_DE", "it_IT", "nl_NL", "fr_FR")

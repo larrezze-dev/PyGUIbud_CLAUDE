@@ -1,19 +1,19 @@
 # PyGUIbud scoreboard
 
-_Last updated: 2026-10-23 18:19:15 UTC+0200_
+_Last updated: 2026-10-24 16:59:14 UTC+0200_
 
-- **Steps done:** 20/23
-- **Current step:** 19 QA hardening ("idiot-proof") (🔄)
-- **Tests:** 6999/7000 passed (gate figures 2026-10-23, pytest not run by scorer)
+- **Steps done:** 21/23
+- **Current step:** 20 Packaging & release candidate (🧪)
+- **Tests:** 7014/7015 passed (gate figures 2026-10-24, pytest not run by scorer)
 - **Coverage:** not available
-- **Test detail:** 7000 collected, 0 failed, 0 errors, 1 skipped, 0.00 s
+- **Test detail:** 7015 collected, 0 failed, 0 errors, 1 skipped, 0.00 s
 
 ## Quality gates
 
 | Check | Result |
 | --- | --- |
-| Lint (ruff) | passed: ruff check + ruff format clean (380 files, gate 2026-10-23) |
-| Types (mypy) | passed: mypy clean on win32, linux and darwin (328 files, gate 2026-10-23) |
+| Lint (ruff) | passed: ruff check + ruff format clean (384 files, gate 2026-10-24) |
+| Types (mypy) | passed: mypy clean on win32, linux and darwin (329 files, gate 2026-10-24) |
 | i18n coverage | 830 msgids, 7 locales at 100 % (Step 19f figure, plan §4) |
 
 ## Steps
@@ -40,14 +40,14 @@ _Last updated: 2026-10-23 18:19:15 UTC+0200_
 | 16 | tkinter + PySide6 backends | BACKEND + FRONTEND | ✅ done |
 | 17 | Widget plugin API + ttkbootstrap extensions | ARCHITECT + BACKEND (opus) + FRONTEND | ✅ done |
 | 18 | Translations (7 languages) | TRANSLATOR + QA | ✅ done |
-| 19 | QA hardening ("idiot-proof") | QA + DEBUGGER | 🔄 in progress |
-| 20 | Packaging & release candidate | DEPLOYER | ⏳ pending |
+| 19 | QA hardening ("idiot-proof") | QA + DEBUGGER | ✅ done |
+| 20 | Packaging & release candidate | DEPLOYER | 🧪 awaiting UAT |
 | 21 | Documentation & launch | LAME-CULOS | ⏳ pending |
 
 ## Recent commits
 
+- `f7cf4bc  022 Step 19g: final sweep and gate`
 - `a035bb1 021`
 - `ecefd4c 020`
 - `5dd0483 019 Step 19d: plugin and backend hardening (H49–H69) v.2`
 - `06e96ab 019 Step 19d: plugin and backend hardening (H49–H69)`
-- `faf5d89 016`
