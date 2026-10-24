@@ -135,7 +135,8 @@ jobs:
           path: dist/
           if-no-files-found: error
 
-  # Install the built artefacts into clean environments, outside the checkout (spec packaging §6).
+  # Install the built artefacts into clean environments, outside the checkout (spec packaging §6,
+  # tools/verify_install.py).
   install-smoke:
     name: install-smoke (${{ matrix.os }}, py${{ matrix.python-version }})
     needs: build
@@ -166,72 +167,7 @@ jobs:
           sudo apt-get update && sudo apt-get install -y xvfb libtk8.6
           Xvfb :99 -screen 0 1280x1024x24 &
           echo "DISPLAY=:99" >> "$GITHUB_ENV"
-      - name: Version, paths and a work folder outside the checkout
-        run: |
-          ver=$(tr -d '\r' < runtime/src/pyguibud/__about__.py | sed -n 's/^__version__ = "\(.*\)"$/\1/p')
-          test -n "$ver"
-          bin=bin; if [ "$RUNNER_OS" = Windows ]; then bin=Scripts; fi
-          work="$RUNNER_TEMP/work"; mkdir -p "$work"; cp examples/hello.ui "$work/"
-          { echo "VER=$ver"; echo "BIN=$bin"; echo "WORK=$work"; echo "DIST=$(cd dist && { pwd -W 2>/dev/null || pwd; })"; } >> "$GITHUB_ENV"
-      - name: pip, designer venv
-        run: |
-          python -m venv "$RUNNER_TEMP/v"
-          py="$RUNNER_TEMP/v/$BIN/python"
-          "$py" -m pip install --find-links "$DIST" "pyguibud==$VER"
-          "$py" -m pip check
-          cd "$WORK"
-          "$RUNNER_TEMP/v/$BIN/pyguibud" --version | tee version.txt
-          grep -q "pyguibud $VER" version.txt
-          grep -q "Luciano Arrezze" version.txt
-          "$RUNNER_TEMP/v/$BIN/pyguibud-uic" --check hello.ui
-          "$RUNNER_TEMP/v/$BIN/pyguibud-uic" hello.ui
-          "$py" -I - <<'EOF'
-          import pathlib, sys, sysconfig
-          sys.path.insert(0, ".")
-          import hello_ui  # generated code depends on ttkbootstrap only (ADR-003)
-          assert not [k for k in sys.modules if k.startswith("pyguibud")], "generated code imports pyguibud"
-          import pyguibud.core, pyguibud.designer
-          site = pathlib.Path(sysconfig.get_paths()["purelib"]).resolve()
-          for module in (pyguibud.core, pyguibud.designer):
-              assert site in pathlib.Path(module.__file__).resolve().parents, module.__file__
-          from pyguibud_runtime import load_ui
-          class Handlers:  # the two handlers hello.ui binds
-              def on_greet(self):
-                  pass
-              def on_quit(self):
-                  pass
-          load_ui("hello.ui", Handlers()).destroy()
-          print("designer venv OK")
-          EOF
-      - name: pip, runtime-only venv
-        run: |
-          python -m venv "$RUNNER_TEMP/r"
-          py="$RUNNER_TEMP/r/$BIN/python"
-          "$py" -m pip install --find-links "$DIST" "pyguibud-runtime==$VER"
-          cd "$WORK"
-          "$py" -I - <<'EOF'
-          import importlib.metadata as metadata, importlib.util, pathlib, sys, sysconfig
-          import pyguibud_runtime
-          assert not {"tkinter", "ttkbootstrap"} & set(sys.modules), "import pyguibud_runtime loads a toolkit"
-          assert importlib.util.find_spec("pyguibud.designer") is None
-          try:
-              metadata.distribution("pyguibud")
-          except metadata.PackageNotFoundError:
-              pass
-          else:
-              raise AssertionError("pyguibud is installed")
-          assert not list(pathlib.Path(sysconfig.get_path("scripts")).glob("pyguibud*"))
-          class Handlers:  # the two handlers hello.ui binds
-              def on_greet(self):
-                  pass
-              def on_quit(self):
-                  pass
-          pyguibud_runtime.load_ui("hello.ui", Handlers()).destroy()
-          print("runtime-only venv OK")
-          EOF
-      - name: uv tool install and uvx
-        run: |
-          uv tool install --python "${{ matrix.python-version }}" --find-links "$DIST" "pyguibud==$VER"
-          "$(uv tool dir --bin)/pyguibud" --version
-          cd "$WORK"
-          uvx --python "${{ matrix.python-version }}" --find-links "$DIST" --from "pyguibud==$VER" pyguibud-uic --check hello.ui
+      # Version, pip designer venv (spec section 6 checks 1-7 and pip check), pip runtime-only
+      # venv, then uv tool install and uvx. One temporary folder outside the checkout.
+      - name: Install the built distributions and smoke-test them
+        run: python tools/verify_install.py --dist dist

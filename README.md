@@ -16,8 +16,9 @@ uvx --from "pyguibud==0.1.0rc1" pyguibud  # uv: run without installing
 ```
 
 The exact version is needed while only release candidates exist. Add the `[pyside]` extra for the
-PySide6 back-end. A full install guide (including installing a release candidate from TestPyPI)
-follows in `docs/install.md`.
+PySide6 back-end. See the
+[full install guide](https://github.com/larrezze-dev/PyGUIbud_CLAUDE/blob/master/docs/install.md),
+including how to install a release candidate from TestPyPI.
 
 ## Use
 ```bash
