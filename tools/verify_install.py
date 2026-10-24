@@ -15,7 +15,8 @@ The subprocess environment is cleaned (no inherited ``VIRTUAL_ENV``, ``PYTHONPAT
 temporary folder, so that no designer started here can touch the real settings or recovery data.
 The uv path keeps ``UV_TOOL_DIR`` and ``UV_TOOL_BIN_DIR`` in the temporary folder too, so
 ``uv tool install`` never changes the real tools or ``PATH``. ``UV_CACHE_DIR`` stays the user's:
-the cache is content-addressed and shared, and it keeps a second run fast and able to work offline.
+the cache is content-addressed and shared, and it keeps a second run fast. Only the uv path can
+then work offline from that cache; the pip path needs PyPI for ``ttkbootstrap`` and ``pillow``.
 
 Prints one line per check (``PASS``/``FAIL <path> <check>``), then ``OK: ...`` or
 ``FAILED: n check(s)``, and exits 0 or 1. A failed check never stops the others.
@@ -32,6 +33,8 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import time
+import zipfile
 from collections.abc import Sequence
 from pathlib import Path
 
@@ -182,6 +185,9 @@ CHECKS[sys.argv[1]](json.loads(sys.argv[2]))
 #: Environment variables that would make a clean environment less clean.
 _DROPPED = {"VIRTUAL_ENV", "PYTHONPATH", "PYTHONHOME", "UV_PROJECT_ENVIRONMENT", "CONDA_PREFIX"}
 _TAIL = 25  # lines of output shown for a failed check
+_PREFIX = "pyguibud-verify-"  # the only folders this script makes (and ever sweeps) in the temp dir
+_STALE_SECONDS = 24 * 3600
+MIN_PYTHON = (3, 10)
 
 
 def read_version() -> str:
@@ -444,13 +450,62 @@ def build(verifier: Verifier, out_dir: Path) -> bool:
     return verifier.record("build", "uv build --all-packages", code == 0, output)
 
 
+def _wheel_versions(dist: Path, name: str) -> list[str]:
+    return sorted({p.name.split("-")[1] for p in dist.glob(f"{name}-*.whl") if "-" in p.name})
+
+
 def check_artefacts(verifier: Verifier, dist: Path) -> bool:
-    """Both wheels of this version must be in ``dist``."""
-    wanted = [f"pyguibud-{verifier.version}-*.whl", f"pyguibud_runtime-{verifier.version}-*.whl"]
-    missing = [pattern for pattern in wanted if not list(dist.glob(pattern))]
-    return verifier.record(
-        "build", "both wheels present", not missing, f"missing {missing} in {dist}"
+    """Both wheels of this version must be in ``dist`` and be real zip files."""
+    name = "both wheels present"
+    if not dist.exists():
+        return verifier.record("build", name, False, f"the folder {dist} does not exist")
+    if not dist.is_dir():
+        return verifier.record("build", name, False, f"{dist} is not a folder")
+    problems: list[str] = []
+    for distribution in ("pyguibud", "pyguibud_runtime"):
+        found = list(dist.glob(f"{distribution}-{verifier.version}-*.whl"))
+        if not found:
+            versions = _wheel_versions(dist, distribution)
+            have = ", ".join(versions) if versions else "none"
+            problems.append(
+                f"no wheel of {distribution} {verifier.version} in {dist} (versions found: {have})"
+            )
+        problems.extend(
+            f"{wheel.name} is not a valid wheel (empty or not a zip file)"
+            for wheel in found
+            if not zipfile.is_zipfile(wheel)
+        )
+    return verifier.record("build", name, not problems, "\n".join(problems))
+
+
+def check_python(verifier: Verifier) -> bool:
+    """``--python`` must run and be Python 3.10 or newer (PyGUIbud's ``requires-python``)."""
+    code, output = verifier.run(
+        [verifier.python, "-c", "import sys; print('%d.%d' % sys.version_info[:2])"], timeout=60
     )
+    wanted = ".".join(map(str, MIN_PYTHON))
+    try:
+        found = tuple(int(part) for part in output.strip().splitlines()[-1].split("."))
+    except (ValueError, IndexError):
+        found = ()
+    ok = code == 0 and len(found) == 2 and found >= MIN_PYTHON
+    detail = (
+        f"{verifier.python} is Python {output.strip()}; PyGUIbud needs {wanted} or newer"
+        if code == 0 and found
+        else f"cannot use {verifier.python} as Python {wanted}+: {output.strip()}"
+    )
+    return verifier.record("python", f"interpreter is Python {wanted}+", ok, detail)
+
+
+def sweep_stale(now: float | None = None) -> None:
+    """Remove ``pyguibud-verify-*`` folders in the temp dir that are older than 24 hours."""
+    cutoff = (time.time() if now is None else now) - _STALE_SECONDS
+    try:
+        for folder in Path(tempfile.gettempdir()).glob(_PREFIX + "*"):
+            if folder.is_dir() and not folder.is_symlink() and folder.stat().st_mtime < cutoff:
+                shutil.rmtree(folder, ignore_errors=True)
+    except OSError:
+        pass  # a sweep must never stop a verification
 
 
 def parse(argv: Sequence[str] | None) -> argparse.Namespace:
@@ -476,41 +531,58 @@ def parse(argv: Sequence[str] | None) -> argparse.Namespace:
 
 
 def main(argv: Sequence[str] | None = None) -> int:
+    for stream in (sys.stdout, sys.stderr):  # a cp1252 pipe must not crash on an odd character
+        reconfigure = getattr(stream, "reconfigure", None)
+        if reconfigure is not None:
+            reconfigure(errors="replace")
     args = parse(argv)
     version = args.version or read_version()
-    work = Path(tempfile.mkdtemp(prefix="pyguibud-verify-")).resolve()
+    sweep_stale()
+    work = Path(tempfile.mkdtemp(prefix=_PREFIX)).resolve()
     try:
-        if ROOT in work.parents or work == ROOT:
-            print(f"FAILED: the temporary folder {work} lies inside the checkout")
-            return 1
-        verifier = Verifier(work, args.python, version)
-        print(f"PyGUIbud {version}; temporary folder {work}; venvs from {args.python}", flush=True)
-        copy_example(work)
-        dist: Path = Path()
-        if args.from_index:
-            ready = True  # downloaded inside pip_path, with the new venv's own pip
-        elif args.dist:
-            dist = args.dist.resolve()
-            ready = check_artefacts(verifier, dist)
-        else:
-            dist = work / "dist"
-            ready = build(verifier, dist) and check_artefacts(verifier, dist)
-        if ready:
-            verifier.dist = dist
-            verifier.pip_path(dist, bool(args.from_index))
-            if not args.skip_uv and verifier.dist.is_absolute():
-                verifier.uv_path(verifier.dist)
-        if verifier.failures:
-            print(f"FAILED: {verifier.failures} check(s) ({verifier.passes} passed)")
-            return 1
-        paths = "pip" if args.skip_uv else "pip and uv"
-        print(f"OK: {verifier.passes} checks passed on the {paths} path(s), version {version}")
-        return 0
+        return _run(args, version, work)
+    except KeyboardInterrupt:
+        print("interrupted", flush=True)
+        return 130
     finally:
         if args.keep:
             print(f"kept {work}")
         else:
             shutil.rmtree(work, ignore_errors=True)
+            if work.exists():
+                print(f"could not remove the temporary folder {work}; delete it by hand")
+
+
+def _run(args: argparse.Namespace, version: str, work: Path) -> int:
+    if ROOT in work.parents or work == ROOT:
+        print(f"FAILED: the temporary folder {work} lies inside the checkout")
+        return 1
+    verifier = Verifier(work, args.python, version)
+    print(f"PyGUIbud {version}; temporary folder {work}; venvs from {args.python}", flush=True)
+    if not check_python(verifier):
+        print(f"FAILED: {verifier.failures} check(s) ({verifier.passes} passed)")
+        return 1
+    copy_example(work)
+    dist: Path = Path()
+    if args.from_index:
+        ready = True  # downloaded inside pip_path, with the new venv's own pip
+    elif args.dist:
+        dist = args.dist.resolve()
+        ready = check_artefacts(verifier, dist)
+    else:
+        dist = work / "dist"
+        ready = build(verifier, dist) and check_artefacts(verifier, dist)
+    if ready:
+        verifier.dist = dist
+        verifier.pip_path(dist, bool(args.from_index))
+        if not args.skip_uv and verifier.dist.is_absolute():
+            verifier.uv_path(verifier.dist)
+    if verifier.failures:
+        print(f"FAILED: {verifier.failures} check(s) ({verifier.passes} passed)")
+        return 1
+    paths = "pip" if args.skip_uv else "pip and uv"
+    print(f"OK: {verifier.passes} checks passed on the {paths} path(s), version {version}")
+    return 0
 
 
 if __name__ == "__main__":

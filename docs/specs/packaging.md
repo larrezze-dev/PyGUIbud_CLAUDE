@@ -142,7 +142,7 @@ For every part: start from a green suite after the user writes "UAT 20x passed".
 - `tests/test_install.py` (marker `install`).
 - `docs/install.md` (D12).
 - Fixes for whatever the clean venvs reveal (counted against the cap).
-- A QA pass along the install paths: wrong Python (3.9), no Tk, an offline second run, `pip install pyguibud` without a version (→ "no matching distribution" while only RCs exist, documented).
+- A QA pass along the install paths: wrong Python (3.9), no Tk, an offline second run, `pip install pyguibud` without a version (→ installs the RC when it is the only candidate (PEP 440); "no matching distribution" only while the name is missing from the index in use; documented, QA-20c-01).
 - The user tags `v0.1.0rc1` and approves the publish (§5.3); TESTING then verifies from TestPyPI.
 
 **Acceptance:**
@@ -206,7 +206,7 @@ Every check runs in a temp folder outside the checkout, with absolute paths. The
 - (4) `load_ui("examples/hello.ui", handlers=<stub>)` builds the window, then destroys it without `mainloop`.
 - (5) A headless `DesignerApp` builds, opens `hello.ui` and destroys itself, with `PYGUIBUD_CONFIG_DIR`/`PYGUIBUD_STATE_DIR` in a temp folder.
 - (6) `pyguibud.core.__file__` and `pyguibud.designer.__file__` lie in the venv's site-packages, never in the checkout.
-- (7) The German catalogue shipped. Run `pyguibud.i18n.set_language("de_DE")` (the runtime does not read `PYGUIBUD_LANG`), then `load_ui` on an invalid `.ui`. `str(UiError)` must **equal** the de_DE msgstr of that finding; the script carries the expected German text as a literal. Also run `load_ui(dialog with buttons, lang="de_DE")`: the button text equals the de_DE msgstr ("Abbrechen"/"OK"; the `_texts.py:103` path).
+- (7) The German catalogue shipped. Run `pyguibud.i18n.set_language("de_DE")` (the runtime does not read `PYGUIBUD_LANG`), then `load_ui` on a dialog-only `.ui` without `master=`. `str(UiError)` must **equal** the de_DE msgstr of `runtime.no_main_window`; the script carries the expected German text as a literal. Also `Texts({}, "de_DE", None).runtime_text("_Cancel")` must equal "_Abbrechen" (the `_texts.py:103` path; the runtime builds no dialog button bar, so there is no button to read; amended in 20c). `tests/test_verify_install_literals.py` keeps the literals in step with the catalogue.
 
 **Runtime-only venv:**
 - (4) and (7) as above.
@@ -217,7 +217,7 @@ Every check runs in a temp folder outside the checkout, with absolute paths. The
 
 ## 7. RC install commands (PowerShell, `X` = e.g. `0.1.0rc1`)
 **Why exact pins:**
-- pip and uv skip pre-releases unless a specifier names one. `pyguibud==X` does, and the transitive `pyguibud-runtime==X` does too.
+- pip and uv install a pre-release only when it is the sole candidate (PEP 440) or a specifier names one. The exact pin `pyguibud==X` (and the transitive `pyguibud-runtime==X`) is still recommended: it is squat-proof and stays on the RC once a final release exists. "No matching distribution" happens when the name is not on the index in use (e.g. before the first upload), not because only RCs exist.
 - TestPyPI has only `ttkbootstrap` ≤ 1.7.2 (checked 2026-10-24). Under uv's default `first-index` strategy, `--index test.pypi` would stop there and fail. With `unsafe-best-match`, a squatted package on TestPyPI could win.
 - So the recommended (squat-proof) recipe downloads only our two wheels from TestPyPI and takes everything else from PyPI.
 
