@@ -27,8 +27,7 @@ def _check_dist() -> ModuleType:
 def test_the_runtime_ships_byte_copies_of_the_licence_files(name: str) -> None:
     # Line endings are a checkout artefact (core.autocrlf rewrites only the files it touches).
     copy, original = (
-        path.read_bytes().replace(b"\r\n", b"\n")
-        for path in (ROOT / "runtime" / name, ROOT / name)
+        path.read_bytes().replace(b"\r\n", b"\n") for path in (ROOT / "runtime" / name, ROOT / name)
     )
     assert copy == original
 
