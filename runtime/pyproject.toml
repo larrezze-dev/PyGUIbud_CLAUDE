@@ -6,19 +6,45 @@ build-backend = "hatchling.build"
 name = "pyguibud-runtime"
 dynamic = ["version"]
 description = "Load PyGUIbud .ui files at run time and build them with ttkbootstrap, tkinter or PySide6."
+readme = "README.md"
 requires-python = ">=3.10"
 license = "MIT"
+# Byte copies of the root files (tests/test_packaging_files.py).
+license-files = ["LICENSE", "NOTICE.md"]
 authors = [{ name = "Luciano Arrezze" }]
+keywords = ["gui", "ui", "runtime", "loader", "ttkbootstrap", "tkinter", "pyside6"]
 classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Natural Language :: Dutch",
+    "Natural Language :: English",
+    "Natural Language :: French",
+    "Natural Language :: German",
+    "Natural Language :: Italian",
+    "Natural Language :: Portuguese",
+    "Natural Language :: Portuguese (Brazilian)",
+    "Natural Language :: Spanish",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Libraries",
+    "Topic :: Software Development :: User Interfaces",
     "Typing :: Typed",
 ]
 dependencies = [
     # load_ui() defaults to backend="ttkbootstrap" (spec packaging D5).
     "ttkbootstrap>=2.2,<3",
 ]
+
+[project.urls]
+Homepage = "https://github.com/larrezze-dev/PyGUIbud_CLAUDE"
+Source = "https://github.com/larrezze-dev/PyGUIbud_CLAUDE"
+Issues = "https://github.com/larrezze-dev/PyGUIbud_CLAUDE/issues"
+Changelog = "https://github.com/larrezze-dev/PyGUIbud_CLAUDE/releases"
 
 [project.optional-dependencies]
 pyside = ["PySide6>=6.6"]
@@ -44,4 +70,5 @@ packages = ["src/pyguibud", "src/pyguibud_runtime"]
 exclude = ["*.po", "*.pot"]
 
 [tool.hatch.build.targets.sdist]
-include = ["/src", "/pyproject.toml"]
+# No tests (spec packaging D7).
+include = ["/src", "/README.md", "/LICENSE", "/NOTICE.md", "/pyproject.toml"]

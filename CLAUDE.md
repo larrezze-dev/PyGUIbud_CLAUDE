@@ -78,4 +78,4 @@ Todos los proyectos serán por defecto multi-o pluri-idiomas. El MCP, el código
 A ser definido por el prompt y documentos del proyecto.
 
 # Git / Github
-El usuario lo ejecuta manualmente - el agente AI NUNCA hará un commit o push, está absolutamente prohibido de hacerlo
+Realizar automaticamente commits, pushs, creación de branches, merges. Realizar de forma totalmente autónoma acciones Git y Github.

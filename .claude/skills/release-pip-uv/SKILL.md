@@ -6,18 +6,21 @@ description: PyGUIbud packaging and release procedure compatible with pip and uv
 # Packaging and release (pip + uv)
 
 ## Distributions
-- `pyguibud`: designer + CLIs (`pyguibud`, `pyguibud-uic`). Extras: `[pyside]` (PySide6), `[dev]`.
-- `pyguibud-runtime`: `load_ui()` only; depends on stdlib (+ ttkbootstrap optional extra).
-- Build backend **hatchling**; `src/` layout; version from a single source (`__about__.py` or VCS tag via hatch-vcs).
-- Include compiled `.mo` files and themes in the wheel (hatch build hook runs `pybabel compile`). Exclude `assets/brand/` sources not needed at runtime.
+- `pyguibud` is a **PEP 420 namespace** split over two distributions (ADR-016): no `pyguibud/__init__.py`, no top-level `py.typed`.
+- `pyguibud-runtime` (`runtime/`): `__about__`, `i18n`, `core/`, `backends/`, `locale/`, `pyguibud_runtime/`, all entry points. Depends on `ttkbootstrap>=2.2,<3` (hard dependency, spec packaging D5); extra `[pyside]`.
+- `pyguibud` (root): designer, preview, codegen, CLIs (`pyguibud`, `pyguibud-uic`); pins `pyguibud-runtime==X` exactly. Extras `[pyside]`, `[dev]`.
+- uv workspace (one `uv.lock`); build both with `uv build --all-packages`, then `tools/check_dist.py dist`.
+- Build backend **hatchling**; one version literal in `runtime/src/pyguibud/__about__.py`, bumped with `tools/bump_version.py`.
+- Compiled `.mo` files are committed; wheels ship `.mo` only, sdists keep `.po`/`.pot`. Exclude `assets/brand/` sources not needed at runtime.
 
 ## pyproject essentials
 `requires-python = ">=3.10"` · classifiers (OS Independent, Tk, Qt) · `license = "MIT"` + `license-files = ["LICENSE", "NOTICE.md"]` · `[project.scripts]` · `[project.entry-points."pyguibud.backends"]` / `"pyguibud.widgets"` · `[dependency-groups] dev` for uv.
 
 ## Verification matrix (all must pass before a release)
 ```bash
-uv build                                    # sdist + wheel
-uvx twine check dist/*
+uv build --all-packages                     # 2 sdists + 2 wheels (wheels built from the sdists)
+uvx twine check --strict dist/*
+uv run python tools/check_dist.py dist
 # clean venv, pip
 python -m venv /tmp/v && /tmp/v/bin/pip install dist/pyguibud-*.whl && /tmp/v/bin/pyguibud --version
 # uv

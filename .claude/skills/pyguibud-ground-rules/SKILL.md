@@ -1,12 +1,12 @@
 ---
 name: pyguibud-ground-rules
-description: Non-negotiable PyGUIbud project rules (git ban, en-GB, 8 locales, brand copying, context limits, reporting chain, document map). Use at the start of any PyGUIbud task by any agent.
+description: Non-negotiable PyGUIbud project rules (git rules, en-GB, 8 locales, brand copying, context limits, reporting chain, document map). Use at the start of any PyGUIbud task by any agent.
 ---
 
 # PyGUIbud ground rules
 
 ## Hard rules
-1. **Never `git commit`, `git push`, `git tag`, `git reset`, `git rebase` or any history-changing git command.** Read-only git (`status`, `diff`, `log`) is fine. The user commits manually. At most, *propose* a commit message.
+1. **Git (CLAUDE.md, changed by the user 2026-10-24):** only the ORCHESTRATOR runs history-changing git. It commits each step on a `step-<id>` branch, pushes it and opens a PR to `master`. **Never push a `v*` tag**, because that publishes through `release.yml`; the user tags releases. Sub-agents use read-only git only (`status`, `diff`, `log`) and never `reset`/`rebase`/`push`.
 2. **Language:** code, identifiers, comments, UI strings and docs in **British English (en-GB)**: colour, behaviour, licence (noun), initialise, serialise, centre, grey, catalogue.
 3. **Multilingual:** every user-facing string goes through `_()`. Mandatory locales besides `en_GB`: `es_ES`, `pt_PT`, `pt_BR`, `de_DE`, `it_IT`, `nl_NL`, `fr_FR`. Pseudo-locale `en_XA` is used for layout testing.
 4. **Brand:** SAPÉ identity files are **copied** into `assets/brand/`. Never reference, edit or delete the source folder `G:\Mi unidad\Trabalho\Sape\UI-Design\corporate-identity\03-corporate-image`.

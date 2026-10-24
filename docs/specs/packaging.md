@@ -271,3 +271,17 @@ py -m venv r; .\r\Scripts\python -m pip install --find-links rc pyguibud-runtime
 - **Also changed:** `CONTRIBUTING.md` (catalogue path, `uv run mypy`, the pip editable recipe now installs `./runtime` first). The `.pot` location comments still name the old paths until the next extract (the catalogue test compares msgids only).
 - **Budget:** `src/**/*.py` + `runtime/src/**/*.py`: +20 / −24 (net −4; the deleted `__init__.py` is −11). Start numstat for 20b: run the same comparison against HEAD after the user commits 20a.
 - **Venv note:** an empty `pyguibud-0.1.0.dev0.dist-info` (two 0-byte `.tmp` files from 2026-10-17) survived `uv sync` and made `metadata.version("pyguibud")` return `None`; it was removed by hand (R5).
+
+### 20b (2026-10-24, ORCHESTRATOR)
+- **Metadata (D7):** both projects have `readme`, `[project.urls]` (Homepage/Source/Issues/Changelog → `larrezze-dev/PyGUIbud_CLAUDE`), `Development Status :: 4 - Beta`, 8 × `Natural Language ::` and the 3.10–3.13 classifiers. The runtime adds keywords, `license-files` and byte copies of `LICENSE`/`NOTICE.md`. All 42 classifiers were checked against `trove-classifiers`. The READMEs are minimal, use absolute links only (PyPI) and end with the credit line.
+- **Carried from 20a:** the runtime wheel now ships `licenses/LICENSE` + `licenses/NOTICE.md`. The root sdist adds `/runtime/src/pyguibud/locale` (the tests read the catalogues there), but no other runtime code. The runtime sdist is `src`, README, LICENSE, NOTICE and pyproject, with no tests.
+- **`tools/check_dist.py`:** checks the wheel trees against the two source roots (minus caches and `.po`/`.pot`), plus overlap, the namespace `__init__`/`py.typed`, designer code in the runtime, 8 `.mo`, the XSD, `py.typed`, licence files, Markdown README + credit in METADATA, both exact runtime pins and the entry-point placement (`pyguibud.*` groups only in the runtime; console scripts only in `pyguibud`). It also checks the sdists (tests / no tests, `.po` sources, locale).
+- **`ci.yml`:** triggers changed `main` → `master`, and `workflow_dispatch` added. `build` = `uv build --all-packages` + `twine check --strict` + `check_dist` + the artefact. `install-smoke` (ubuntu/windows × 3.10/3.13, bash, Xvfb on Linux):
+  - the pip designer venv runs §6 checks (1), (2), (3), (4) and (6) plus `pip check`;
+  - the runtime-only venv runs (4) and the runtime-only checks;
+  - then `uv tool install` + `uvx … pyguibud-uic --check`.
+  - **Deferred to 20c (`verify_install.py`):** checks (5), the headless `DesignerApp`, and (7), the German catalogue literals. The job will then call the script.
+- **`release.yml`:** as §5.2; the build job outputs `version`/`prerelease`, and `publish-pypi` runs only when `prerelease == 'false'`.
+- **Tests:** `tests/test_packaging_files.py` covers the licence byte copies, the README credit and absolute links, the metadata keys and the workflow invariants. `actionlint` (through `uvx --from actionlint-py`) is clean on both workflows.
+- **Budget:** 0 / 60 net `src/**/*.py` + `runtime/src/**/*.py` lines (only TOML, tools, tests, workflows and docs changed). Start numstat for 20c: 0 against the 20b commit.
+- **Git (user, 2026-10-24):** CLAUDE.md now allows autonomous git. 20b is committed on branch `step-20b`, pushed, and proposed as a PR to `master`. No `v*` tag is ever pushed by an agent, because a tag publishes.

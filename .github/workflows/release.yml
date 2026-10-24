@@ -1,0 +1,83 @@
+name: Release
+
+# Pushing a tag v<version> builds both distributions and publishes them through OIDC trusted
+# publishing (spec packaging §5.2, ADR-016): every version goes to TestPyPI; final versions
+# (no a/b/rc/.dev segment) then go to PyPI after the required reviewer approves the `pypi`
+# environment. The repository holds no tokens or secrets.
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: build
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      prerelease: ${{ steps.version.outputs.prerelease }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v10.2.0
+      - name: The tag names the version
+        id: version
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          ver=$(sed -n 's/^__version__ = "\(.*\)"$/\1/p' runtime/src/pyguibud/__about__.py)
+          if [ "$TAG" != "v$ver" ]; then
+            echo "::error::tag $TAG does not match __version__ $ver (runtime/src/pyguibud/__about__.py)"
+            exit 1
+          fi
+          prerelease=false
+          if printf '%s' "$ver" | grep -Eq '(a|b|rc|\.dev)[0-9]+'; then prerelease=true; fi
+          { echo "version=$ver"; echo "prerelease=$prerelease"; } >> "$GITHUB_OUTPUT"
+      - run: uv build --all-packages
+      - run: uvx twine check --strict dist/*
+      - run: python3 tools/check_dist.py dist
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+          if-no-files-found: error
+
+  publish-testpypi:
+    name: publish to TestPyPI
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: testpypi
+      url: https://test.pypi.org/project/pyguibud/${{ needs.build.outputs.version }}/
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist
+      - uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          repository-url: https://test.pypi.org/legacy/
+
+  publish-pypi:
+    name: publish to PyPI
+    needs: [build, publish-testpypi]
+    if: needs.build.outputs.prerelease == 'false'
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/project/pyguibud/${{ needs.build.outputs.version }}/
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist
+      - uses: pypa/gh-action-pypi-publish@release/v1
