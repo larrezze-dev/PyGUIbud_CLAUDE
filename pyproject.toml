@@ -181,12 +181,13 @@ testpaths = ["tests"]
 # looks channels up by raw HANDLE value, so a file Tk opens later that reuses one of those values
 # fails with an empty TclError (QA-10-13, Tcl 8.6 win/tclWinChan.c OpenFileChannel).
 # -p no:randomly keeps the default order deterministic; `-p randomly --randomly-seed=N` shuffles.
-addopts = "-ra --strict-markers --strict-config --capture=sys -p no:randomly"
+addopts = "-ra --strict-markers --strict-config --capture=sys -p no:randomly -m \"not install\""
 markers = [
     "gui: needs a Tk display",
     "qt: needs PySide6 (run offscreen)",
     "slow: slow tests (clean virtual environments)",
     "budget: a timing budget (skipped under coverage tracing)",
+    "install: builds and installs the distributions in clean venvs (run tools/verify_install.py)",
 ]
 
 [tool.coverage.run]

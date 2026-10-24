@@ -14,6 +14,9 @@ pip install "pyguibud-runtime==0.1.0rc1"
 pip install "pyguibud-runtime[pyside]==0.1.0rc1"   # adds the PySide6 back-end
 ```
 
+More options (uv, TestPyPI, troubleshooting) are in the
+[install guide](https://github.com/larrezze-dev/PyGUIbud_CLAUDE/blob/master/docs/install.md).
+
 ## Use
 ```python
 from pyguibud_runtime import load_ui
