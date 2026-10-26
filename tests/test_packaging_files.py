@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import importlib.util
 import re
+import shutil
+import subprocess
 from pathlib import Path
 from types import ModuleType
 
@@ -30,6 +32,27 @@ def test_the_runtime_ships_byte_copies_of_the_licence_files(name: str) -> None:
         path.read_bytes().replace(b"\r\n", b"\n") for path in (ROOT / "runtime" / name, ROOT / name)
     )
     assert copy == original
+
+
+#: Tool outputs that ``--check`` compares byte for byte with a fresh build (LF line endings).
+GENERATED = ["src/pyguibud/designer/themes/sape.json", "src/pyguibud/designer/icons/icons.json"]
+
+
+@pytest.mark.skipif(
+    shutil.which("git") is None or not (ROOT / ".git").exists(), reason="not a git checkout"
+)
+@pytest.mark.parametrize("path", GENERATED)
+def test_generated_files_keep_lf_in_an_autocrlf_checkout(path: str) -> None:
+    # Regression (CI, Step 20b.1): the Windows runner checks out with core.autocrlf=true, which
+    # turned sape.json into CRLF, so `tools/gen_themes.py --check` reported it out of date.
+    result = subprocess.run(
+        ["git", "check-attr", "eol", "--", path],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    assert result.stdout.strip() == f"{path}: eol: lf"
 
 
 @pytest.mark.parametrize("readme", ["README.md", "runtime/README.md"])

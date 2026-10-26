@@ -10,6 +10,7 @@ import faulthandler
 import functools
 import gettext
 import os
+import re
 import subprocess
 import sys
 from collections.abc import Generator, Iterator
@@ -118,6 +119,12 @@ def reset_geometry(root: Any, size: str = ROOT_SIZE) -> None:
     mapped shrinks to 200 x 200, and a designer built on such a withdrawn root never leaves
     ``update_idletasks`` (its panes keep reconfiguring; H03).
     """
+    # Tk caps a window at ``wm maxsize``, by default the screen: a 1024 x 768 CI runner kept the
+    # root smaller than ROOT_SIZE, narrowing the canvas the drag tests aim at (Step 20b.1).
+    match = re.match(r"(\d+)x(\d+)", size)
+    if match is not None:
+        width, height = root.wm_maxsize()
+        root.wm_maxsize(max(width, int(match[1])), max(height, int(match[2])))
     root.deiconify()
     root.geometry(size)
     root.update_idletasks()

@@ -146,7 +146,10 @@ def _widget(widget: Any) -> dict[str, Any]:
 
 
 def _descendants(widget: Any) -> int:
-    return sum(1 + _descendants(child) for child in widget.winfo_children())
+    # Python 3.13's winfo_children() maps Tk's menubar clone (".top.#top#menu") back to the
+    # menu itself, so a Toplevel's menubar is listed twice there (CI 20b.1); count each once.
+    children = {str(child): child for child in widget.winfo_children()}
+    return sum(1 + _descendants(child) for child in children.values())
 
 
 def _scope(ui: Any, prefix: str = "") -> dict[str, Any]:

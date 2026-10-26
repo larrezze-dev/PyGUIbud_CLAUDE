@@ -339,7 +339,7 @@ def test_qa17a_01_evidence_ttkbootstrap_dateentry_rejects_what_r89_lets_through(
     """The real toolkit behaviour behind QA-17a-01 (passes while the toolkit behaves so)."""
     script = textwrap.dedent(
         """
-        import json, ttkbootstrap as tb
+        import json, re, ttkbootstrap as tb
         app = tb.App(); app.withdraw(); out = {}
         for fmt in ["", "hello", "%d", "%%%A", "%Y-%m-%d-%d"]:
             try:
@@ -349,7 +349,9 @@ def test_qa17a_01_evidence_ttkbootstrap_dateentry_rejects_what_r89_lets_through(
             try:
                 entry._coerce_date(entry.entry.get()); out[fmt] = "ok"
             except Exception as exc:
-                out[fmt] = "parse:" + type(exc).__name__
+                # re.error is called re.PatternError from Python 3.13 (the same class)
+                name = "re.error" if isinstance(exc, re.error) else type(exc).__name__
+                out[fmt] = "parse:" + name
         app.destroy(); print(json.dumps(out))
         """
     )
@@ -364,7 +366,7 @@ def test_qa17a_01_evidence_ttkbootstrap_dateentry_rejects_what_r89_lets_through(
     assert result.returncode == 0, result.stderr[-800:]
     out = json.loads(result.stdout.strip().splitlines()[-1])
     assert out[""] == out["hello"] == out["%d"] == out["%%%A"] == "ctor:ValueError"
-    assert out["%Y-%m-%d-%d"] == "parse:error"  # re.error escapes DateEntry's except clause
+    assert out["%Y-%m-%d-%d"] == "parse:re.error"  # re.error escapes DateEntry's except clause
 
 
 @pytest.mark.parametrize(

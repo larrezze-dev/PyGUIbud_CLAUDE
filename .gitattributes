@@ -7,3 +7,8 @@ tests/data/*.txt text eol=lf
 # Code generator golden files and generated example
 *.golden text eol=lf
 examples/hello_ui.py text eol=lf
+
+# Generator outputs checked byte for byte by `tools/gen_themes.py --check` and
+# `tools/gen_icons.py --check`; an autocrlf checkout would otherwise turn them CRLF
+src/pyguibud/designer/themes/sape.json text eol=lf
+src/pyguibud/designer/icons/icons.json text eol=lf

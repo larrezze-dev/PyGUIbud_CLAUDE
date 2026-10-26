@@ -25,6 +25,18 @@ _MENU = (
     '<action id="act" handler="h_action_0"><prop name="text">_Go</prop></action>'
     "</menu></menubar>"
 )
+#: Small sizes for the tall classes: at their defaults the window asks for 1216 px, so on a
+#: 1024 x 768 screen (a GitHub Windows runner) Tk caps it, pack unmaps the last widgets, and
+#: ``focus_force`` on an unmapped Treeview leaves the focus (and its <Return>) on the Listbox.
+_SMALL = {
+    "Text": {"width": "20", "height": "3"},
+    "Listbox": {"height": "3"},
+    "Treeview": {"height": "3"},
+    "Canvas": {"width": "120", "height": "40"},
+}
+#: The usable client area of a 1024 x 768 screen (less the title and menu bars), enforced
+#: everywhere so that a large local screen exercises what CI sees.
+_SCREEN = (1024, 700)
 
 
 class Calls(Counter[str]):
@@ -55,6 +67,9 @@ def _matrix_ui() -> tuple[str, list[tuple[str, str]]]:
             continue
         events = [*spec.events, *(("key:Ctrl+K",) if "focus_in" in spec.events else ())]
         wid = spec.name.lower()
+        props = "".join(
+            f'<prop name="{k}">{v}</prop>' for k, v in sorted(_SMALL.get(spec.name, {}).items())
+        )
         tags = "".join(f'<event name="{e}" handler="h_{wid}_{i}"/>' for i, e in enumerate(events))
         pairs += [(spec.name, e) for e in events]
         inner = ""
@@ -66,7 +81,7 @@ def _matrix_ui() -> tuple[str, list[tuple[str, str]]]:
             )
         if spec.name in ("Frame", "LabelFrame", "ScrolledFrame"):
             inner = '<layout type="pack"/>'
-        body.append(f'<widget class="{spec.name}" id="{wid}">{tags}{inner}{_P}</widget>')
+        body.append(f'<widget class="{spec.name}" id="{wid}">{props}{tags}{inner}{_P}</widget>')
     pairs.append(("Action", "command"))
     windows = f'<window id="main" kind="main">{_MENU}<layout type="pack"/>{"".join(body)}</window>'
     return windows, pairs
@@ -138,9 +153,12 @@ def _build(
     path = write_ui(tmp_path / "m.ui", windows)
     ui = load_ui(path, calls.handlers(names), backend=backend, master=tk_root)
     loaded.append(ui)
+    ui.main.wm_maxsize(*_SCREEN)
     ui.main.deiconify()
     ui.main.update()
     assert not calls  # building fires nothing
+    hidden = [c for c, _ in pairs if c != "Action" and not getattr(ui, c.lower()).winfo_viewable()]
+    assert not hidden, f"unmapped widgets cannot take the focus: {sorted(set(hidden))}"
     return ui, calls, pairs
 
 

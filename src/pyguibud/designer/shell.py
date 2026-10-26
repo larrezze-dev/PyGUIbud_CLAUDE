@@ -43,7 +43,14 @@ from pyguibud.designer.present.status import findings_summary, selection_path
 from pyguibud.designer.render_plan import CANVAS_TEXT_LIMIT
 from pyguibud.designer.session import DesignerSession
 from pyguibud.designer.theme import ThemeSpec
-from pyguibud.designer.theme_tk import FONT_CAPTION, GHOST_STYLE, STYLE_DIVIDER, scaled, space
+from pyguibud.designer.theme_tk import (
+    FONT_CAPTION,
+    GHOST_STYLE,
+    STYLE_DIVIDER,
+    menu_end,
+    scaled,
+    space,
+)
 from pyguibud.i18n import _, ngettext
 
 __all__ = ["MESSAGE_MS", "Shell"]
@@ -304,7 +311,7 @@ class Shell:
         inserts = [i for i in items if isinstance(i, ActionDef)]
         groups = (inserts, [a for n in _TREE_MENU if (a := self.registry.get(n)) is not None])
         for group in (g for g in groups if g):
-            if menu.index("end") is not None:
+            if menu_end(menu) is not None:
                 menu.add_separator()
             for action in group:
                 self._add_action(menu, action)
@@ -321,7 +328,7 @@ class Shell:
     @staticmethod
     def _unique_access_keys(menu: tkinter.Menu) -> None:
         """Give the merged tree menu one access key per entry (after building or retranslating)."""
-        last = menu.index("end")
+        last = menu_end(menu)
         indices = [i for i in range(0 if last is None else last + 1) if menu.type(i) != "separator"]
         entries = [
             (str(menu.entrycget(i, "label")), int(menu.entrycget(i, "underline"))) for i in indices

@@ -48,8 +48,15 @@ def _image(widget: Any, read: Any, *args: Any) -> list[int] | None:  # noqa: ANN
     return [int(widget.tk.call("image", kind, name)) for kind in ("width", "height")]
 
 
+def _menu_end(menu: Any) -> int | None:  # noqa: ANN401 - a tkinter.Menu
+    """The last entry's index, None when empty: Tk 9 answers "" there, which Python 3.10's
+    ``Menu.index`` cannot read (CPython GH-103685; the designer's ``theme_tk.menu_end``)."""
+    value = menu.tk.call(str(menu), "index", "end")
+    return None if value in ("", "none") else int(menu.tk.getint(value))
+
+
 def _menu(menu: Any) -> list[dict[str, Any]]:  # noqa: ANN401 - a tkinter.Menu
-    last = menu.index("end")
+    last = _menu_end(menu)
     entries: list[dict[str, Any]] = []
     for index in range(0 if last is None else last + 1):
         entry: dict[str, Any] = {"type": str(menu.type(index))}
@@ -206,7 +213,7 @@ def _mnemonic(value: Any) -> int | None:  # noqa: ANN401 - a Tcl value
 
 
 def _portable_menu(menu: Any) -> list[dict[str, Any]]:  # noqa: ANN401 - a tkinter.Menu
-    last = menu.index("end")
+    last = _menu_end(menu)
     items: list[dict[str, Any]] = []
     for index in range(0 if last is None else last + 1):
         kind = str(menu.type(index))

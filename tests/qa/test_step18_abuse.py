@@ -345,7 +345,8 @@ def test_exotic_damage_to_a_catalogue_falls_back_to_english(
     elif damage == "unknown charset":
         _rewrite_header(mo, b"charset=utf-8", b"charset=xxx-9")
     else:
-        _rewrite_header(mo, b"plural=(n != 1)", b"plural=(n!=! 1)")
+        # Not "(n!=! 1)": that is valid C, n != (!1), and gettext parses it from Python 3.13.
+        _rewrite_header(mo, b"plural=(n != 1)", b"plural=(n!=* 1)")
     i18n.set_language("de_DE", force=True)
     assert i18n._("_Open…") == "_Open…"
     assert i18n.ngettext(*_PLURAL, 3) == _PLURAL[1]
