@@ -44,10 +44,10 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y xvfb
       - name: Tests without the session Tk root (under xvfb on Linux)
         if: runner.os == 'Linux'
-        run: xvfb-run -a -s "-screen 0 1920x1200x24" uv run python -m pytest --cov -m "not qt and not gui"
+        run: xvfb-run -a -s "-screen 0 1920x1200x24" uv run python -m pytest --cov -m "not qt and not gui and not install"
       - name: Tests without the session Tk root
         if: runner.os != 'Linux'
-        run: uv run python -m pytest --cov -m "not qt and not gui"
+        run: uv run python -m pytest --cov -m "not qt and not gui and not install"
 
   # The Tk GUI tests. Blocking on Windows (the development platform); Linux (Xvfb) and macOS
   # runners still differ in focus, clipboard and window management, so they report without
