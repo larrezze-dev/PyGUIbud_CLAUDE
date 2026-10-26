@@ -285,3 +285,31 @@ py -m venv r; .\r\Scripts\python -m pip install --find-links rc pyguibud-runtime
 - **Tests:** `tests/test_packaging_files.py` covers the licence byte copies, the README credit and absolute links, the metadata keys and the workflow invariants. `actionlint` (through `uvx --from actionlint-py`) is clean on both workflows.
 - **Budget:** 0 / 60 net `src/**/*.py` + `runtime/src/**/*.py` lines (only TOML, tools, tests, workflows and docs changed). Start numstat for 20c: 0 against the 20b commit.
 - **Git (user, 2026-10-24):** CLAUDE.md now allows autonomous git. 20b is committed on branch `step-20b` and pushed; the user opens the PR to `master` (`gh` is not installed). No `v*` tag is ever pushed by an agent, because a tag publishes.
+
+### 20b.1 "CI green" (2026-10-26, ORCHESTRATOR + DEBUGGER; user ruling: blocking non-GUI everywhere, blocking GUI on Windows)
+- **Why:** the first CI runs ever (the old trigger was `main`). Billing blocked the private repo; the user made it public. The first full run showed that the GUI suite had only ever been proven on the developer's Windows desktop.
+- **CI layout (`ci.yml`):**
+  - `UV_PYTHON_PREFERENCE: only-managed`, because the runner's system Python 3.12 has no tkinter.
+  - `test`: 3 OS × py3.10–3.13, with lint, mypy and `-m "not qt and not gui"`. Blocking.
+  - `gui`: `-m "gui and not qt"`. Blocking on Windows × 4 Pythons; non-blocking on ubuntu 3.10 (Tk 9), ubuntu 3.12 and macOS 3.12.
+  - `qt`: blocking on ubuntu (now under xvfb) and Windows; non-blocking on macOS.
+  - Xvfb runs a 1920x1200x24 screen.
+  - `tests/conftest.py` auto-marks every test that uses `tk_root` as `gui`.
+- **Product fixes (net +80 `src` lines, runtime 0):**
+  - **Tk 9 + Python 3.10:** `Menu.index("end")` of an empty menu raised, so the designer did not start on uv's Linux/macOS CPython 3.10. Fixed with `theme_tk.menu_end`/`clear_menu`.
+  - **Tk 9:** an unset `underline` reads `""`, which crashed the preview describe. Fixed with `theme_tk.underline_of`; Progressbar now has no portable text.
+  - **Python 3.10:** a NUL truncates Text/clipboard, so Help ▸ Plugins now shows it as U+2400.
+  - **POSIX:** a Windows-absolute image/include src is never rebased (`files.is_absolute_anywhere`).
+  - **Dialogs:** a dialog pushed to the right edge now counts the Windows frame border (`screen.border_width`).
+- **Test robustness:**
+  - `reset_geometry` raises `wm maxsize` for small runner screens.
+  - The event matrix fits 1024x700.
+  - `.gitattributes` keeps `sape.json`/`icons.json` LF.
+  - 3.13 changes handled: argparse deprecation msgids, the gettext plural rule, `re.PatternError`, the `winfo_children` menubar clone.
+  - The export 10k test is now a `budget` test, so it is skipped under `--cov` and checked locally only.
+- **Backlog "CI GUI parity" (after v1, non-blocking jobs):**
+  - the ubuntu gui job dies with X `BadAlloc` in `test_qa14b1_abuse::test_q5_held_size_keys…`;
+  - about 100 macOS gui failures (focus, clipboard, Ctrl/Cmd in Qt);
+  - `tests/preview/test_child.py::test_closed_stdin…` errors on POSIX;
+  - a huge plugin traceback row takes ≈ 5 s to select.
+- **Gate:** CI run 5 (`d2dca13`) is green on every blocking job. Local full suite: 7047 passed, 2 failed (placement tests whose fake root lacked `winfo_x`), fixed in `030`; the affected files pass (74). mypy ×3 + ruff clean.
