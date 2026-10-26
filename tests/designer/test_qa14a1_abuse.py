@@ -291,6 +291,7 @@ def test_dialog_is_centred_over_a_window_left_of_the_primary_monitor(
     # may have a single monitor, and the window below is fake).
     monkeypatch.setattr(screen, "work_area", lambda _root: (3840, 1080, -1920, 0))
     monkeypatch.setattr(screen, "title_height", lambda _root: 0)  # no frame on the fake
+    monkeypatch.setattr(screen, "border_width", lambda _root: 0)
     dialog = message_dialog(designer_root, lambda: "QA")
     placed: list[str] = []
     try:

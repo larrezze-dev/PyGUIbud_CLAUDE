@@ -290,6 +290,7 @@ def test_a_dialog_stays_on_a_single_monitor_desktop(
 ) -> None:
     monkeypatch.setattr(screen, "work_area", lambda _root: (1920, 1080, 0, 0))  # the fake's monitor
     monkeypatch.setattr(screen, "title_height", lambda _root: 0)  # no frame on the fake
+    monkeypatch.setattr(screen, "border_width", lambda _root: 0)
     dialog = message_dialog(designer_root, lambda: "QA")
     placed: list[str] = []
     try:
