@@ -7,7 +7,7 @@ import logging
 import sys
 import tkinter
 
-__all__ = ["desktop_bounds", "title_height", "work_area"]
+__all__ = ["border_width", "desktop_bounds", "title_height", "work_area"]
 
 _log = logging.getLogger(__name__)
 
@@ -56,6 +56,13 @@ def work_area(root: tkinter.Misc) -> tuple[int, int, int, int]:
         except (AttributeError, OSError, ctypes.ArgumentError, tkinter.TclError):
             _log.debug("The work area could not be read", exc_info=True)
     return desktop_bounds(root)
+
+
+def border_width(root: tkinter.Misc) -> int:
+    """The frame border the window manager puts left and right of ``root`` (Windows; else 0,
+    as for :func:`title_height`)."""
+    win32 = sys.platform == "win32"
+    return max(0, min(root.winfo_rootx() - root.winfo_x(), 50)) if win32 else 0
 
 
 def title_height(root: tkinter.Misc) -> int:

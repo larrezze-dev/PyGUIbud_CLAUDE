@@ -26,6 +26,7 @@ from pyguibud.designer.dialogs import (
     shortcuts,
     text,
 )
+from pyguibud.designer.theme_tk import underline_of
 
 ALL_LANGUAGES = (*i18n.LANGUAGES, i18n.PSEUDO_LANGUAGE)
 
@@ -79,7 +80,7 @@ def test_tree_context_menu_has_unique_access_keys(shell: Any, lang: str) -> None
         if menu.type(index) == "separator":
             continue
         label = str(menu.entrycget(index, "label"))
-        underline = int(menu.entrycget(index, "underline"))
+        underline = underline_of(menu.entrycget(index, "underline"))
         assert 0 <= underline < len(label), (lang, label, underline)
         letters.append(label[underline].casefold())
     assert len(letters) >= 5

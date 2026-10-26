@@ -22,6 +22,7 @@ from pyguibud.designer.app import DesignerApp
 from pyguibud.designer.canvas.overlay import SELECTION_CAP
 from pyguibud.designer.editing import new_node, new_variable
 from pyguibud.designer.shell import _flush_first, unique_mnemonics
+from pyguibud.designer.theme_tk import underline_of
 from tests.conftest import reset_geometry
 from tests.designer.test_structure_ui import (
     _dialog,
@@ -593,7 +594,7 @@ def test_qa03_the_tree_menu_has_one_access_key_per_entry_in_every_locale(
                     continue
                 label, underline = (
                     menu.entrycget(index, "label"),
-                    int(menu.entrycget(index, "underline")),
+                    underline_of(menu.entrycget(index, "underline")),
                 )
                 if 0 <= underline < len(label):
                     keys.append(label[underline].lower())

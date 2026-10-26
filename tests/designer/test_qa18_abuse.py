@@ -24,6 +24,7 @@ import pytest
 
 import pyguibud_runtime._texts as runtime_texts
 from pyguibud import i18n
+from pyguibud.designer.theme_tk import underline_of
 from tests.conftest import reset_geometry
 
 pytestmark = pytest.mark.gui
@@ -260,7 +261,7 @@ def _menu_entries(menu: Any, path: str = "") -> list[tuple[str, str, str]]:
         if kind in ("separator", "tearoff"):
             continue
         label = str(menu.entrycget(index, "label"))
-        underline = int(menu.entrycget(index, "underline"))
+        underline = underline_of(menu.entrycget(index, "underline"))
         key = label[underline].casefold() if 0 <= underline < len(label) else ""
         entries.append((path, label, key))
         if kind == "cascade":

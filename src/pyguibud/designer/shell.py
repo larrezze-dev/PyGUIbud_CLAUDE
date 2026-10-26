@@ -50,6 +50,7 @@ from pyguibud.designer.theme_tk import (
     menu_end,
     scaled,
     space,
+    underline_of,
 )
 from pyguibud.i18n import _, ngettext
 
@@ -331,7 +332,8 @@ class Shell:
         last = menu_end(menu)
         indices = [i for i in range(0 if last is None else last + 1) if menu.type(i) != "separator"]
         entries = [
-            (str(menu.entrycget(i, "label")), int(menu.entrycget(i, "underline"))) for i in indices
+            (str(menu.entrycget(i, "label")), underline_of(menu.entrycget(i, "underline")))
+            for i in indices
         ]
         for index, underline in zip(indices, unique_mnemonics(entries), strict=True):
             menu.entryconfigure(index, underline=underline)

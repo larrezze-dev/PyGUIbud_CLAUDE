@@ -66,6 +66,7 @@ __all__ = [
     "scaled",
     "scaling_factor",
     "space",
+    "underline_of",
     "use_theme",
 ]
 
@@ -211,6 +212,13 @@ def menu_end(menu: tkinter.Menu) -> int | None:
     start (CI 20b.1)."""
     value = menu.tk.call(str(menu), "index", "end")
     return None if value in ("", "none") else int(menu.tk.getint(value))
+
+
+def underline_of(value: object) -> int:
+    """A read ``underline`` option as an index, -1 for none: Tk 9 answers "" when it is unset,
+    where Tk 8.6 answered -1 (``int("")`` broke on Linux and macOS, CI 20b.1)."""
+    text = str(value).strip()
+    return int(text) if text.isdigit() else -1
 
 
 def clear_menu(menu: tkinter.Menu) -> None:

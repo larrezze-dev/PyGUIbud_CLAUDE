@@ -139,7 +139,7 @@ class ModalDialog:
         taskbar) less the title bar, so its whole frame fits (H85, QA-19f-03)."""
         width, height = self.window.wm_maxsize()
         area_width, area_height, _left, _top = screen.work_area(self.root)
-        return (min(int(width), area_width),
+        return (min(int(width), area_width - 2 * screen.border_width(self.root)),
                 min(int(height), area_height) - screen.title_height(self.root))  # fmt: skip
 
     def fit(self) -> None:
@@ -225,7 +225,9 @@ class ModalDialog:
         """Move the frame to ``left, top``, kept with its title bar and buttons on the work area
         of the monitor of ``owner`` (default: the main window), above the taskbar (QA-19f-03)."""
         width, height = self.work_area()  # the size fit() gave the dialog, plus its title bar
-        width = min(self.window.winfo_reqwidth(), width)
+        # The frame is the client plus its borders: clamping the client width alone left the
+        # right border and 8 px of a right-hand dialog off the screen (CI 20b.1).
+        width = min(self.window.winfo_reqwidth(), width) + 2 * screen.border_width(self.root)
         height = min(self.window.winfo_reqheight(), height) + screen.title_height(self.root)
         area_width, area_height, area_left, area_top = screen.work_area(owner or self.root)
         left = max(area_left, min(left, area_left + area_width - width))
