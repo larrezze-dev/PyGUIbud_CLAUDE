@@ -69,6 +69,14 @@ def under_coverage(config: pytest.Config) -> bool:
     return bool(config.getoption("cov_source", None)) or sys.gettrace() is not None
 
 
+def pytest_collection_modifyitems(items: list[pytest.Item]) -> None:
+    # Every test on the session Tk root is a GUI test, marked or not: CI runs `-m "not gui"`
+    # as the blocking cross-platform job (Step 20b.1).
+    for item in items:
+        if "tk_root" in getattr(item, "fixturenames", ()):
+            item.add_marker(pytest.mark.gui)
+
+
 def pytest_runtest_setup(item: pytest.Item) -> None:
     if {"capfd", "capfdbinary"} & set(getattr(item, "fixturenames", ())):
         # fd-level capture closes the OS handles Tcl wrapped as stdout/stderr when the session
