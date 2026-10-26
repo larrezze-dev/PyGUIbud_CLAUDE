@@ -14,10 +14,16 @@ concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  # uv's own CPython builds ship tkinter; a runner's system Python may not (Step 20b.1).
+  UV_PYTHON_PREFERENCE: only-managed
+
 jobs:
+  # Blocking on every platform: lint, types and every test that needs no Tk root (Step 20b.1).
   test:
     name: test (${{ matrix.os }}, py${{ matrix.python-version }})
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 40
     strategy:
       fail-fast: false
       matrix:
@@ -33,21 +39,58 @@ jobs:
       - run: uv run ruff check .
       - run: uv run ruff format --check .
       - run: uv run mypy
-      - name: Install xvfb (virtual display for the GUI tests)
+      - name: Install xvfb (some tests start a Tk process)
         if: runner.os == 'Linux'
         run: sudo apt-get update && sudo apt-get install -y xvfb
-      - name: Tests (under xvfb on Linux)
+      - name: Tests without the session Tk root (under xvfb on Linux)
         if: runner.os == 'Linux'
-        run: xvfb-run -a uv run python -m pytest --cov -m "not qt"
-      - name: Tests
+        run: xvfb-run -a -s "-screen 0 1920x1200x24" uv run python -m pytest --cov -m "not qt and not gui"
+      - name: Tests without the session Tk root
         if: runner.os != 'Linux'
-        run: uv run python -m pytest --cov -m "not qt"
+        run: uv run python -m pytest --cov -m "not qt and not gui"
+
+  # The Tk GUI tests. Blocking on Windows (the development platform); Linux (Xvfb) and macOS
+  # runners still differ in focus, clipboard and window management, so they report without
+  # blocking until the "CI GUI parity" backlog item is done (Step 20b.1).
+  gui:
+    name: gui (${{ matrix.os }}, py${{ matrix.python-version }})${{ matrix.blocking && '' || ' [non-blocking]' }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    continue-on-error: ${{ !matrix.blocking }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest]
+        python-version: ["3.10", "3.11", "3.12", "3.13"]
+        blocking: [true]
+        include:
+          - { os: ubuntu-latest, python-version: "3.12", blocking: false }
+          - { os: macos-latest, python-version: "3.12", blocking: false }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v10.2.0
+        with:
+          python-version: ${{ matrix.python-version }}
+          enable-cache: true
+      - run: uv sync --locked
+      - name: Install xvfb
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y xvfb
+      - name: GUI tests (under xvfb on Linux)
+        if: runner.os == 'Linux'
+        run: xvfb-run -a -s "-screen 0 1920x1200x24" uv run python -m pytest -m "gui and not qt"
+      - name: GUI tests
+        if: runner.os != 'Linux'
+        run: uv run python -m pytest -m "gui and not qt"
 
   # PySide6 backend (spec backends.md D19): its own job and process, so Tk and
   # Qt never share one process (macOS). mypy here checks against the real stubs.
+  # macOS maps Ctrl and Cmd differently in Qt; non-blocking until the parity backlog item.
   qt:
-    name: qt (${{ matrix.os }}, py3.12)
+    name: qt (${{ matrix.os }}, py3.12)${{ matrix.os == 'macos-latest' && ' [non-blocking]' || '' }}
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    continue-on-error: ${{ matrix.os == 'macos-latest' }}
     strategy:
       fail-fast: false
       matrix:
