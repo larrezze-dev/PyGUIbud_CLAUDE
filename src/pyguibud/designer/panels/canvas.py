@@ -42,6 +42,7 @@ from pyguibud.designer.theme_tk import (
     STYLE_STRIP,
     STYLE_TITLE_LABEL,
     STYLE_TITLEBAR,
+    menu_end,
     scaled,
     space,
 )
@@ -650,7 +651,7 @@ class CanvasPanel(PanelBase):
             stage.strip.grid_remove()
             return
         stage.chrome[id(model)] = stage.strip
-        last = bar.index("end")
+        last = menu_end(bar)
         menus, count = model.children, 0 if last is None else last + 1
         for index in range(count):
             label = ttk.Label(

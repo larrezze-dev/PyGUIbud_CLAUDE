@@ -41,6 +41,10 @@ def _withdraw_after(designer_root: Any) -> Iterator[None]:
 
 def _open(app: DesignerApp, root: Any) -> None:  # noqa: F811
     """The fixture document on a mapped root (no focus is taken from other windows)."""
+    # Tk caps a window at ``wm maxsize``, by default the screen: on a 1024 x 768 CI runner
+    # the Text's corner handle then lay past the canvas tab, where a release cancels (20b.1).
+    width, height = root.wm_maxsize()
+    root.wm_maxsize(max(width, 1400), max(height, 900))
     root.geometry("1400x900")
     root.deiconify()
     app.session.open_document(read_ui(DATA), path=None)

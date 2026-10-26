@@ -506,12 +506,14 @@ class PreviewController:
         """The postcommand of Preview > Theme: "Document theme" and the reported names."""
         import tkinter
 
+        from pyguibud.designer.theme_tk import clear_menu
+
         if self._var is None:
             self._var = tkinter.StringVar(menu)
         self._var.set(self.theme or "")
         ready = self.state.phase == "running" and self.toolkit() == DEFAULT_BACKEND
         state = "normal" if ready else "disabled"
-        menu.delete(0, "end")
+        clear_menu(menu)
         for old in menu.winfo_children():  # the group cascades of the last post (QA-19f-04)
             old.destroy()
 

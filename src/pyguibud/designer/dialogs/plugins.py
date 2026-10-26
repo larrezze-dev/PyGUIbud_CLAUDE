@@ -42,6 +42,12 @@ _M_CLOSE = N_("C_lose")
 _POLL_MS = 1000  # live factory failures bump ``registry.revision``
 
 
+def _tk_safe(text: str) -> str:
+    """``text`` with each NUL shown as the symbol for null: under Python 3.10, _tkinter ends a
+    Text insert and the clipboard at U+0000, which hid a hostile name's details (CI 20b.1)."""
+    return text.replace("\x00", "\N{SYMBOL FOR NULL}")
+
+
 class PluginsDialog(ModalDialog):
     """The plugin list, a read-only details box, Copy details, the toggle and Close."""
 
@@ -137,7 +143,7 @@ class PluginsDialog(ModalDialog):
         row = self.selected()
         self.details.configure(state="normal")
         self.details.delete("1.0", "end")
-        self.details.insert("1.0", row.details() if row is not None else "")
+        self.details.insert("1.0", _tk_safe(row.details()) if row is not None else "")
         self.details.configure(state="disabled")
         wanted = row is not None and row.key in self.settings.disabled_plugins
         self.access_keys = [(self.copy_button, _M_COPY),
@@ -152,7 +158,7 @@ class PluginsDialog(ModalDialog):
         """Copy details: the selected distribution's messages and tracebacks."""
         row = self.selected()
         if row is not None:
-            self._copy(f"{row.distribution}\n\n{row.details()}")
+            self._copy(_tk_safe(f"{row.distribution}\n\n{row.details()}"))
 
     def toggle(self) -> None:
         """Disable or enable the selected plugin from the next start (written at once)."""

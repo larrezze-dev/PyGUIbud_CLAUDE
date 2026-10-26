@@ -12,6 +12,7 @@ import pytest
 from pyguibud import _argparse, cli, i18n, uic
 from pyguibud.credits import credit
 from pyguibud.preview import _parser as preview_parser
+from tests._paths import DESIGNER_SRC
 
 NBSP = chr(0xA0)
 
@@ -35,6 +36,14 @@ _UNREACHABLE = {
     "cannot have multiple subparser arguments",
     "subcommands",
     "%r is not callable",
+}
+# Python 3.13 warns only about actions and sub-commands declared with ``deprecated=True``, which
+# no pyguibud parser uses (test_no_parser_declares_a_deprecated_action).
+_DEPRECATION = {
+    "%(prog)s: warning: %(message)s\n",
+    "argument '%(argument_name)s' is deprecated",
+    "command '%(parser_name)s' is deprecated",
+    "option '%(option)s' is deprecated",
 }
 
 
@@ -60,8 +69,16 @@ def _argparse_msgids() -> set[str]:
 
 def test_every_reachable_argparse_msgid_is_marked() -> None:
     marked = set(_argparse._ARGPARSE_MSGIDS) | {"expected %s arguments"}
-    missing = _argparse_msgids() - marked - _UNREACHABLE
+    missing = _argparse_msgids() - marked - _UNREACHABLE - _DEPRECATION
     assert not missing, sorted(missing)
+
+
+def test_no_parser_declares_a_deprecated_action() -> None:
+    """Keeps the deprecation warnings of Python 3.13's argparse unreachable (see _DEPRECATION)."""
+    for path in sorted(DESIGNER_SRC.rglob("*.py")):
+        for node in ast.walk(ast.parse(path.read_text(encoding="utf-8"))):
+            if isinstance(node, ast.Call):
+                assert all(k.arg != "deprecated" for k in node.keywords), (path, node.lineno)
 
 
 def test_binding_is_restored_after_help_error_and_success(

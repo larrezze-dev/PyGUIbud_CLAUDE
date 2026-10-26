@@ -54,7 +54,7 @@ from pyguibud.designer.editing import (
     unique_id,
     window_delete_refusal,
 )
-from pyguibud.designer.files import rebase_paths
+from pyguibud.designer.files import is_absolute_anywhere, rebase_paths
 from pyguibud.designer.present import inserted
 from pyguibud.i18n import N_, _, ngettext
 
@@ -327,7 +327,7 @@ def _read_clip(
 
 def _resolved(src: str, base: Path | None) -> str:
     """A string identity of an image path (no file-system access: it may be a network path)."""
-    if base is not None and not os.path.isabs(src):
+    if base is not None and not is_absolute_anywhere(src):
         src = os.path.join(base, src)
     return os.path.normcase(os.path.normpath(src))
 
@@ -346,10 +346,14 @@ def _rebase(clip: Document, base: Path | None) -> None:
     if old is None:
         return
     for key, image in clip.resources.items():
-        if image.src and not os.path.isabs(image.src):
+        if image.src and not is_absolute_anywhere(image.src):
             clip.resources[key] = replace(image, src=_absolute(old, image.src))
     for node in clip.walk():
-        if isinstance(node, Include) and node.src not in ("", "#") and not os.path.isabs(node.src):
+        if (
+            isinstance(node, Include)
+            and node.src not in ("", "#")
+            and not is_absolute_anywhere(node.src)
+        ):
             node.src = _absolute(old, node.src)
 
 

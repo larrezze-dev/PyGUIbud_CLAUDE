@@ -53,7 +53,7 @@ jobs:
   # runners still differ in focus, clipboard and window management, so they report without
   # blocking until the "CI GUI parity" backlog item is done (Step 20b.1).
   gui:
-    name: gui (${{ matrix.os }}, py${{ matrix.python-version }})${{ matrix.blocking && '' || ' [non-blocking]' }}
+    name: gui (${{ matrix.os }}, py${{ matrix.python-version }})${{ !matrix.blocking && ' [non-blocking]' || '' }}
     runs-on: ${{ matrix.os }}
     timeout-minutes: 60
     continue-on-error: ${{ !matrix.blocking }}
@@ -65,6 +65,8 @@ jobs:
         blocking: [true]
         include:
           - { os: ubuntu-latest, python-version: "3.12", blocking: false }
+          # uv's CPython 3.10 for Linux/macOS ships Tk 9 with Python 3.10's tkinter (Step 20b.1).
+          - { os: ubuntu-latest, python-version: "3.10", blocking: false }
           - { os: macos-latest, python-version: "3.12", blocking: false }
     steps:
       - uses: actions/checkout@v4
@@ -105,10 +107,15 @@ jobs:
           enable-cache: true
       - run: uv sync --locked --extra pyside
       - run: uv run mypy
-      - name: Install the Qt runtime libraries
+      - name: Install the Qt runtime libraries and xvfb (some qt tests also build a Tk window)
         if: runner.os == 'Linux'
-        run: sudo apt-get update && sudo apt-get install -y libegl1 libgl1 libxkbcommon0 libfontconfig1 libdbus-1-3
-      - run: uv run python -m pytest -m qt
+        run: sudo apt-get update && sudo apt-get install -y libegl1 libgl1 libxkbcommon0 libfontconfig1 libdbus-1-3 xvfb
+      - name: Qt tests (under xvfb on Linux)
+        if: runner.os == 'Linux'
+        run: xvfb-run -a uv run python -m pytest -m qt
+      - name: Qt tests
+        if: runner.os != 'Linux'
+        run: uv run python -m pytest -m qt
 
   # Both distributions, built through their sdists (spec packaging §5.1, R6).
   build:

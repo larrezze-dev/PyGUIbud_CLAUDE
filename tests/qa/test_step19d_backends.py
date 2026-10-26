@@ -24,6 +24,7 @@ import pytest
 
 from pyguibud.core.registry import Registry
 from pyguibud_runtime import LoadedUi, UiError, load_ui
+from tests.conftest import display_problem
 from tests.runtime.conftest import clean_i18n, write_ui  # noqa: F401 - autouse: i18n, registry
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -218,6 +219,10 @@ B9_SCRIPT = textwrap.dedent(
 @pytest.mark.qt
 def test_b9_the_mixed_toolkit_warning_is_logged_once_for_two_qt_builds() -> None:
     pytest.importorskip("PySide6")
+    # The script also builds a tkinter window: the qt job runs Qt offscreen, with no X server
+    # on Linux (CI 20b.1), like the other Tk-and-Qt tests of tests/qt.
+    if (reason := display_problem()) is not None:
+        pytest.skip(f"needs a Tk display: {reason}")
     done = subprocess.run(
         [sys.executable, "-c", B9_SCRIPT],
         cwd=ROOT,

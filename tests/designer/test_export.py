@@ -18,6 +18,7 @@ from pyguibud.core.model import Document, GridCell, Layout, Widget, Window
 from pyguibud.designer import export as ex
 from pyguibud.designer.files import M_NETWORK, FileStamp
 from pyguibud.designer.settings import MAX_EXPORTS, Settings, parse_settings, remember_export
+from tests.conftest import BUDGET_FACTOR
 
 ROOT = Path(__file__).resolve().parents[2]
 EXAMPLES = ROOT / "examples"
@@ -300,7 +301,10 @@ def test_exports_survive_a_settings_round_trip(tmp_path: Path) -> None:
     assert load_settings(path)[0].exports == {"key": "out.py"}
 
 
+# A timing budget (spec P10: 1.5 s) like the others: skipped under coverage (H06), with the
+# shared slack (H10). CI runners under --cov took 1.65-2.99 s for 0.7 s on the desktop.
 @pytest.mark.slow
+@pytest.mark.budget
 def test_export_of_ten_thousand_widgets_is_fast(tmp_path: Path) -> None:
     document = Document()
     window = Window(id="main", layout=Layout(type="grid"))
@@ -317,7 +321,7 @@ def test_export_of_ten_thousand_widgets_is_fast(tmp_path: Path) -> None:
     outcome = _export(path, "big_ui.py")
     elapsed = time.perf_counter() - started
     assert outcome.failure is None
-    assert elapsed <= 1.5, elapsed
+    assert elapsed <= 1.5 * BUDGET_FACTOR, elapsed
 
 
 def test_refusals_never_name_command_line_options(ui: Path) -> None:

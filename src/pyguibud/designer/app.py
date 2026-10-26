@@ -558,7 +558,7 @@ class DesignerApp:
         menu = self._recent_menu
         if menu is None:
             return
-        menu.delete(0, "end")
+        self._theme_tk.clear_menu(menu)
         entries = self.recent.entries
         for number, path in enumerate(entries, 1):
             mark = f"_{number}" if number < 10 else "1_0"

@@ -452,3 +452,14 @@ def test_the_designer_lists_use_their_own_selection_style(shell: DesignerApp) ->
         assert panel.tree is not None and str(panel.tree.cget("style")) == "Designer.Treeview"
     style = ttk.Style()
     assert style.map("Designer.Treeview", "background")  # the solid selected row
+
+
+def test_reset_geometry_honours_root_size_on_a_small_screen(designer_root: Any) -> None:
+    # Step 20b.1 (CI): Tk caps a window at ``wm maxsize`` (the screen) on a 1024 x 768 runner.
+    designer_root.wm_maxsize(1024, 729)
+    reset_geometry(designer_root)
+    designer_root.deiconify()
+    designer_root.update_idletasks()
+    size = (designer_root.winfo_width(), designer_root.winfo_height())
+    reset_geometry(designer_root)
+    assert size == (1280, 800)

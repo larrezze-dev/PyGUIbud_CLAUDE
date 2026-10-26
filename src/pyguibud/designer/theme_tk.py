@@ -60,7 +60,9 @@ __all__ = [
     "apply_designer_styles",
     "apply_fonts",
     "apply_theme",
+    "clear_menu",
     "install_themes",
+    "menu_end",
     "scaled",
     "scaling_factor",
     "space",
@@ -199,6 +201,23 @@ def apply_fonts(root: tkinter.Misc, spec: ThemeSpec) -> None:
         Fonts.set_global_family(sans, mono_family=mono)
     elif mono is not None:
         tkfont.nametofont("TkFixedFont", root=root).configure(family=mono)
+
+
+def menu_end(menu: tkinter.Menu) -> int | None:
+    """The index of the last entry of ``menu``; None when it is empty.
+
+    Tk 9 answers "" for an empty menu, which ``Menu.index`` of Python 3.10 cannot read
+    (CPython GH-103685): with uv's Python 3.10 on Linux and macOS (Tk 9) the designer did not
+    start (CI 20b.1)."""
+    value = menu.tk.call(str(menu), "index", "end")
+    return None if value in ("", "none") else int(menu.tk.getint(value))
+
+
+def clear_menu(menu: tkinter.Menu) -> None:
+    """Delete every entry; an empty menu stays as it is (``Menu.delete`` reads ``index`` too,
+    see :func:`menu_end`)."""
+    if menu_end(menu) is not None:
+        menu.delete(0, "end")
 
 
 def scaling_factor(root: tkinter.Misc) -> float:

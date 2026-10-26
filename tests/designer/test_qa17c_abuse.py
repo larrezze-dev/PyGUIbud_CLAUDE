@@ -30,12 +30,16 @@ from tests.designer.test_plugins_17c import _EP, _Dist, _doc, _raising, _registr
 pytestmark = pytest.mark.gui
 
 _HOSTILE = "\ud800 lone \x00 nul ‮ bidi {brace \\ back \t tab " + "y" * 600_000
+#: The "b" failure overflows the 10-line details box on every Python, whatever the length of the
+#: traceback (3.11+ adds ``^^^^`` lines). The 600,000-character "a" row takes seconds to lay out.
+_LONG = "\n".join(f"line {number} of a long failure" for number in range(1, 41))
+_LONG_DIST = "nul\x00dist"
 
 
 def _hostile_registry() -> Registry:
     return _registry(
         _EP("a", "a:x", _Dist("s‮ur{x}"), RuntimeError(_HOSTILE)),
-        _EP("b", "b:x", _Dist("nul\x00dist"), RuntimeError("short")),
+        _EP("b", "b:x", _Dist(_LONG_DIST), RuntimeError(_LONG)),
         _EP("c", "c:x", _Dist("ok-dist"), [_spec("zz:Swatch")]),
     )
 
@@ -426,9 +430,8 @@ def test_qa17c_07_the_status_column_shows_the_whole_next_start_status(app: Any, 
 def test_a_long_traceback_scrolls_with_the_keyboard(app: Any) -> None:
     dialog = _open(app)
     dialog.window.update()
-    row = next(
-        i for i, r in enumerate(dialog.rows) if r.status == "failed" and r.key != "pyguibud-runtime"
-    )
+    row = next(i for i, r in enumerate(dialog.rows) if r.key == _LONG_DIST)
+    assert dialog.rows[row].status == "failed"
     dialog.tree.selection_set(str(row))
     dialog._show()
     dialog.details.focus_set()
@@ -447,11 +450,32 @@ def test_qa17c_08_the_details_box_has_a_scrollbar(app: Any) -> None:
         bars = [w for w in dialog.details.master.winfo_children()
                 if w.winfo_class() in {"TScrollbar", "Scrollbar"}]  # fmt: skip
         assert len(bars) == 1
-        row = next(i for i, r in enumerate(dialog.rows) if r.status == "failed")
+        row = next(i for i, r in enumerate(dialog.rows) if r.key == _LONG_DIST)
+        assert dialog.rows[row].status == "failed"
         dialog.tree.selection_set(str(row))
         dialog._show()
         dialog.window.update()
-        assert bars[0].get()[1] < 1.0  # the huge traceback: the bar shows there is more
+        assert bars[0].get()[1] < 1.0  # the long failure: the bar shows there is more
+    finally:
+        dialog.close()
+
+
+def test_a_nul_in_a_name_hides_none_of_the_details_or_the_copy(app: Any) -> None:
+    """Regression (CI 20b.1): under Python 3.10, _tkinter ended the Text insert and the clipboard
+    at the NUL of ``nul\\x00dist``, so the box showed only "The entry point 'b' from 'nul"."""
+    dialog = _open(app)
+    try:
+        copied: list[str] = []
+        dialog._copy = copied.append
+        row = next(i for i, r in enumerate(dialog.rows) if r.key == _LONG_DIST)
+        dialog.tree.selection_set(str(row))
+        dialog._show()
+        dialog.copy()
+        shown = dialog.details.get("1.0", "end-1c")
+        for text in (shown, *copied):
+            assert "\x00" not in text and "'nul\N{SYMBOL FOR NULL}dist'" in text
+            assert "line 40 of a long failure" in text and "Traceback" in text
+        assert len(copied) == 1 and copied[0].startswith("nul\N{SYMBOL FOR NULL}dist\n\n")
     finally:
         dialog.close()
 

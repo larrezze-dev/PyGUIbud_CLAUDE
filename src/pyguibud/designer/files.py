@@ -17,7 +17,7 @@ import stat
 import time
 from collections.abc import Iterable
 from dataclasses import dataclass
-from pathlib import Path
+from pathlib import Path, PurePosixPath, PureWindowsPath
 
 from pyguibud.core import (
     MAX_UI_BYTES,
@@ -48,6 +48,7 @@ __all__ = [
     "FileStamp",
     "RecentFiles",
     "SavePlan",
+    "is_absolute_anywhere",
     "open_document",
     "path_key",
     "read_only_reason",
@@ -354,10 +355,18 @@ def _includes(document: Document, path: Path | None, target: Path) -> bool:
     return False
 
 
+def is_absolute_anywhere(src: str) -> bool:
+    """True if ``src`` is absolute on POSIX or on Windows, as the validator's ``absolute_path``
+    warning reads it: a ``.ui`` saved on Windows keeps ``C:/x.png`` absolute on Linux."""
+    return PurePosixPath(src).is_absolute() or bool(PureWindowsPath(src).anchor)
+
+
 def _rebased(src: str, old_base: Path | None, new_base: Path) -> str:
     """``src`` re-expressed relative to ``new_base``, or ``src`` when it must stay as it is."""
     if not src or src == "#" or is_network_or_device_path(src):
         return src
+    if not os.path.isabs(src) and is_absolute_anywhere(src):
+        return src  # absolute on another system: never joined to a folder of this one
     if os.path.isabs(src):
         absolute = os.path.normpath(src)
         try:

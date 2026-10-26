@@ -6,8 +6,11 @@ Written from spec properties-save-load 7, 8.2, 14 and 17; they add to (never rep
 
 from __future__ import annotations
 
+import os
+import posixpath
 import time
-from pathlib import Path
+from pathlib import Path, PurePosixPath
+from types import SimpleNamespace
 from typing import Any
 
 import pytest
@@ -46,6 +49,9 @@ NO_ELEMENTS = "The clipboard holds no PyGUIbud elements."
 HEAD = '<pyguibud-ui schema_version="1.0" xmlns="urn:pyguibud:ui:1">'
 CLIP_HEAD = HEAD[:-1] + ' xmlns:clip="urn:pyguibud:clipboard:1" clip:mode="{mode}">'
 ORIGIN_A = Path("C:/proj/a/form.ui")
+#: The ``clip:origin`` that ``copy_text`` stores for ORIGIN_A: on POSIX the Windows path is
+#: relative, so it lies under the working folder there (CI 20b.1, ubuntu and macOS).
+ORIGIN_A_STORED = os.path.abspath(ORIGIN_A).replace(os.sep, "/")
 
 
 def _ui(body: str) -> str:
@@ -599,6 +605,20 @@ def test_an_absolute_src_is_never_rebased() -> None:
     assert target.resources["logo"].src == "C:/shared/logo.png"
 
 
+@pytest.mark.parametrize("src", ["C:/shared/logo.png", r"C:\shared\logo.png", "/shared/logo.png"])
+def test_an_absolute_src_of_any_system_is_never_rebased_on_posix(
+    src: str, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Regression (CI 20b.1): on Linux and macOS ``os.path.isabs("C:/shared/logo.png")`` is
+    false, so a .ui saved on Windows was rebased to ``../a/C:/shared/logo.png``."""
+    from pyguibud.designer import files
+
+    monkeypatch.setattr(files, "os", SimpleNamespace(path=posixpath, sep="/"))
+    old, new = PurePosixPath("/proj/a"), PurePosixPath("/proj/b")
+    assert files._rebased(src, old, new) == src  # type: ignore[arg-type]
+    assert files._rebased("icons/logo.png", old, new) == "../a/icons/logo.png"  # type: ignore[arg-type]
+
+
 def test_the_same_image_by_resolved_path_is_reused_not_duplicated() -> None:
     source, _s = load(IMAGES)
     text = copied(source, "lbl", origin=ORIGIN_A)
@@ -627,14 +647,15 @@ def test_an_external_include_src_is_rebased_with_the_images() -> None:
     assert isinstance(inc, Include) and inc.src == "../a/parts/panel.ui"
     untitled, ustack = load(IMAGE_TARGET)
     (inc2,) = paste_ok(ustack, node(untitled, "t"), copied(source, "ext", origin=ORIGIN_A)).nodes
-    assert isinstance(inc2, Include) and Path(inc2.src) == Path("C:/proj/a/parts/panel.ui")
+    assert isinstance(inc2, Include)
+    assert Path(inc2.src) == Path(os.path.abspath(ORIGIN_A.parent / "parts" / "panel.ui"))
 
 
 def test_a_network_origin_is_never_used_to_rebase() -> None:
     source, _s = load(IMAGES)
-    text = copied(source, "lbl", origin=ORIGIN_A).replace(
-        "C:/proj/a/form.ui", "//server/share/f.ui"
-    )
+    text = copied(source, "lbl", origin=ORIGIN_A)
+    assert f'"{ORIGIN_A_STORED}"' in text
+    text = text.replace(ORIGIN_A_STORED, "//server/share/f.ui")
     target, stack = load(IMAGE_TARGET)
     paste_ok(stack, node(target, "t"), text, base=Path("C:/proj/b"))
     assert target.resources["logo"].src == "icons/logo.png"
