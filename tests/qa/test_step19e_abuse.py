@@ -33,6 +33,7 @@ from pyguibud.core.diagnostics import Finding
 from pyguibud.core.keys import split_mnemonic
 from pyguibud.core.text import printable
 from pyguibud.credits import AUTHOR, TOOL, credit
+from pyguibud.designer.theme_tk import underline_of
 from tests._paths import RUNTIME_LOCALE
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -756,7 +757,10 @@ def _entries(menu: Any) -> list[tuple[str, int]]:
     for index in range(0 if end is None else int(end) + 1):
         if menu.type(index) in ("command", "cascade", "radiobutton", "checkbutton"):
             rows.append(
-                (str(menu.entrycget(index, "label")), int(menu.entrycget(index, "underline")))
+                (
+                    str(menu.entrycget(index, "label")),
+                    underline_of(menu.entrycget(index, "underline")),
+                )
             )
     return rows
 

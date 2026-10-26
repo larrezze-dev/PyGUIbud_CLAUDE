@@ -32,6 +32,7 @@ from pyguibud.designer.standard_actions import (
     ShellCallbacks,
     register_standard_actions,
 )
+from pyguibud.designer.theme_tk import underline_of
 from tests.designer.conftest import best_of
 
 EXAMPLES = Path(__file__).resolve().parents[2] / "examples"
@@ -327,7 +328,7 @@ def _live_access_keys(menu: Any, path: str = "") -> dict[str, list[tuple[str, st
         if kind in ("separator", "tearoff"):
             continue
         label = str(menu.entrycget(index, "label"))
-        underline = int(menu.entrycget(index, "underline"))
+        underline = underline_of(menu.entrycget(index, "underline"))
         if 0 <= underline < len(label):
             found[path].append((label, label[underline].casefold()))
         if kind == "cascade":

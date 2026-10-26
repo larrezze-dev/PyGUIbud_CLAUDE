@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import sys
+from typing import Any
 
 import pytest
 
@@ -66,3 +67,24 @@ def test_b1_a_missing_pyside6_is_backend_unavailable_with_the_install_hint(
         host_for("pyside6")
     assert caught.value.code == "runtime.backend_unavailable"
     assert 'pip install "pyguibud[pyside]"' in str(caught.value)
+
+
+def test_a_progressbar_has_no_portable_text_even_where_tk_9_gives_it_one(tk_root: Any) -> None:
+    """Regression (CI 20b.1, Linux Tk 9): ttk::progressbar gained ``-text`` in Tk 9, so the
+    tkinter fallback of a Meter reported ``text: ""`` where ttkbootstrap and Qt report none."""
+    from tkinter import ttk
+
+    from pyguibud.preview._describe import _portable_widget
+
+    class Tk9Progressbar(ttk.Progressbar):
+        def cget(self, key: str) -> object:
+            return "" if key in ("text", "underline") else super().cget(key)
+
+    bar = Tk9Progressbar(tk_root)
+    try:
+        bar.pack()
+        info = _portable_widget(bar, {}, {})
+        assert info["class"] == "Progressbar"
+        assert "text" not in info and "mnemonic" not in info
+    finally:
+        bar.destroy()

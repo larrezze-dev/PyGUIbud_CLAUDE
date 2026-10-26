@@ -27,6 +27,7 @@ from pyguibud import i18n
 from pyguibud.core.model import Widget, Window
 from pyguibud.core.text import printable
 from pyguibud.designer.dialogs.base import ModalDialog
+from pyguibud.designer.theme_tk import underline_of
 from tests.conftest import reset_geometry
 from tests.designer.test_qa18_abuse import ALL_LANGUAGES, HELLO, _designer, _settle, _switch
 from tests.designer.test_sweep_19f import DIALOGS, _buttons, _descendants, _open
@@ -378,7 +379,7 @@ def test_theme_menu_groups_have_unique_access_keys_in_every_language(
     keys = []
     for index in range(int(menu.index("end")) + 1):
         if menu.type(index) in ("cascade", "radiobutton", "command"):
-            underline = int(menu.entrycget(index, "underline"))
+            underline = underline_of(menu.entrycget(index, "underline"))
             if underline >= 0:
                 keys.append(str(menu.entrycget(index, "label"))[underline].lower())
     assert len(keys) == 3 and len(set(keys)) == 3, keys
@@ -446,6 +447,30 @@ def test_a_dialog_opened_over_an_8k_window_lands_on_the_screen(
         dialog.close()
     finally:
         root.minsize(*minimum)
+        reset_geometry(root)
+    assert errors == []
+
+
+@pytest.mark.parametrize("name", ["shortcuts", "export", "about", "plugins"])
+def test_a_dialog_pushed_against_the_right_edge_keeps_its_borders_on_the_work_area(
+    app: Any, errors: list[str], name: str, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Regression (CI 20b.1, a 1024 px runner): the clamp used the client width, so the right
+    border and 8 px of the Plugins dialog lay past the screen (383 + 649 > 1024)."""
+    from pyguibud.designer import screen
+
+    monkeypatch.setattr(screen, "work_area", lambda _root: (1024, 728, 0, 0))
+    root = app.root
+    try:
+        root.geometry("1280x800+600+0")  # its centre is far right of the 1024 px work area
+        _settle(root)
+        dialog = _open(app, name)
+        window = dialog.window
+        border = screen.border_width(root)
+        assert window.winfo_x() >= 0
+        assert window.winfo_rootx() + window.winfo_width() + border <= 1024
+        dialog.close()
+    finally:
         reset_geometry(root)
     assert errors == []
 

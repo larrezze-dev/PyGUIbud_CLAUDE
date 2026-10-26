@@ -1,4 +1,5 @@
-"""Regression (CI 20b.1): Tk 9 answers "" for ``index end`` of an empty menu.
+"""Regressions (CI 20b.1): Tk 9 answers "" for ``index end`` of an empty menu and for an unset
+``underline``.
 
 uv's Python 3.10 for Linux and macOS ships Tk 9.0, and Python 3.10's ``Menu.index`` (and so
 ``Menu.delete``) only knows Tk 8.6's "none" (CPython GH-103685): ``int("")`` raised
@@ -12,8 +13,8 @@ from typing import Any
 
 import pytest
 
-from pyguibud.designer.theme_tk import clear_menu, menu_end
-from pyguibud.preview._describe import _menu_end
+from pyguibud.designer.theme_tk import clear_menu, menu_end, underline_of
+from pyguibud.preview._describe import _menu_end, _mnemonic
 
 
 class _Tcl:
@@ -67,3 +68,44 @@ def test_a_filled_menu_reports_and_clears_its_entries() -> None:
     assert menu_end(menu) == _menu_end(menu) == 2
     clear_menu(menu)
     assert menu.deleted == [(0, "end")]
+
+
+# ------------------------------------------------------------------ an unset ``underline``
+#: Regression (CI 20b.1, qt job under xvfb): Tk 9 answers "" for an unset ``underline`` where
+#: Tk 8.6 answered -1, so ``int(...)`` crashed the preview child (``_describe._mnemonic``) and
+#: would crash the tree menu's access keys and the canvas menubar strip.
+@pytest.mark.parametrize(
+    ("value", "index"),
+    [("", -1), (" ", -1), (None, -1), ("-1", -1), (-1, -1), ("0", 0), (3, 3), ("12", 12)],
+)
+def test_an_unset_underline_reads_as_none(value: object, index: int) -> None:
+    assert underline_of(value) == index
+    assert _mnemonic(value) == (index if index >= 0 else None)
+
+
+class _Entries:
+    """A filled menu under Tk 9: entries made without ``underline`` answer ""."""
+
+    def __init__(self, entries: list[tuple[str, object]]) -> None:
+        self.tk = _Tcl(str(len(entries) - 1))
+        self.entries = [{"label": label, "underline": underline} for label, underline in entries]
+
+    def __str__(self) -> str:
+        return ".menu"
+
+    def type(self, index: int) -> str:
+        return "command"
+
+    def entrycget(self, index: int, option: str) -> object:
+        return self.entries[index][option]
+
+    def entryconfigure(self, index: int, **options: object) -> None:
+        self.entries[index].update(options)
+
+
+def test_the_tree_menu_access_keys_survive_entries_without_an_underline() -> None:
+    from pyguibud.designer.shell import Shell
+
+    menu: Any = _Entries([("Cut", 0), ("Copy", ""), ("Paste", "")])
+    Shell._unique_access_keys(menu)
+    assert [e["underline"] for e in menu.entries] == [0, 1, 0]  # C, o, P

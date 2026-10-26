@@ -166,7 +166,9 @@ _CORE = {
     "TSeparator": "Separator",
     "TScrollbar": "Scrollbar",
 }  # the rest (Text, Listbox, Treeview, Canvas) keep their Tk class name
-_NO_TEXT = {"Entry", "Combobox", "Spinbox"}  # their ``text`` is Tk's abbreviated textvariable
+#: Their ``text`` is Tk's abbreviated textvariable; Tk 9 gives ttk::progressbar a ``text`` that
+#: the core Progressbar (and a Meter, its tkinter fallback) does not have (CI 20b.1).
+_NO_TEXT = {"Entry", "Combobox", "Spinbox", "Progressbar"}
 #: Qt key names (``QKeySequence`` PortableText) -> chord key names.
 _QT_KEYS = {
     **{"Esc": "Escape", "Del": "Delete", "Ins": "Insert", "PgUp": "PageUp", "PgDown": "PageDown"},
@@ -209,7 +211,10 @@ def _flat(scope: Any, prefix: str = "") -> dict[str, Any]:  # noqa: ANN401 - a U
 
 
 def _mnemonic(value: Any) -> int | None:  # noqa: ANN401 - a Tcl value
-    return int(value) if value is not None and int(value) >= 0 else None
+    """The underlined index, None when there is none: Tk 9 answers "" for an unset
+    ``underline`` where Tk 8.6 answered -1 (CI 20b.1)."""
+    text = "" if value is None else str(value).strip()
+    return int(text) if text.isdigit() else None
 
 
 def _portable_menu(menu: Any) -> list[dict[str, Any]]:  # noqa: ANN401 - a tkinter.Menu

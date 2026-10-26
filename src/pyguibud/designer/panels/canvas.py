@@ -45,6 +45,7 @@ from pyguibud.designer.theme_tk import (
     menu_end,
     scaled,
     space,
+    underline_of,
 )
 from pyguibud.i18n import N_, _, ngettext
 
@@ -658,7 +659,7 @@ class CanvasPanel(PanelBase):
                 stage.strip,
                 style=STYLE_STRIP,
                 text=bar.entrycget(index, "label"),
-                underline=int(bar.entrycget(index, "underline")),
+                underline=underline_of(bar.entrycget(index, "underline")),
             )
             label.grid(row=0, column=index)
             node: object = menus[index] if index < len(menus) else model
