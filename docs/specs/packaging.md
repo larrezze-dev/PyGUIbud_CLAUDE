@@ -194,6 +194,8 @@ For every part: start from a green suite after the user writes "UAT 20x passed".
 1. **GitHub** ▸ Settings ▸ Environments: create `testpypi` and `pypi`. On `pypi`, set Required reviewers = you, and Deployment tags = `v*`.
 2. **test.pypi.org** ▸ Account ▸ Publishing ▸ "Add a new pending publisher" twice, for the projects `pyguibud` and `pyguibud-runtime`. Each one gets owner `<GitHub owner>`, repository `<repo name>`, workflow `release.yml` and environment `testpypi`.
 3. **pypi.org**: the same two pending publishers, with environment `pypi`.
+
+   **The environment field must be filled in on both publishers (as built, rc1, 2026-10-27).** If one is left blank (shown as "(Any)"), it becomes a separate publisher. The token exchange then picks the more specific one, so every upload of the other project fails. The first run fails with 400 "Non-user identities cannot create new projects"; later runs fail with 403 "OIDC scoped token is not valid for project". Fix: on that project's Publishing page, remove the publisher and add it again with the environment, then re-run the failed job (no new tag needed).
 4. **Publishing an RC:** `git tag v0.1.0rc1`, `git push origin v0.1.0rc1`. Watch the workflow; the TestPyPI job runs without approval. A retry needs `tools/bump_version.py 0.1.0rc2`, a commit, and a new tag.
 
 ## 6. Smoke checks (shared by CI, `verify_install.py` and the UAT)
