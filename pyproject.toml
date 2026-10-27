@@ -38,7 +38,7 @@ classifiers = [
 ]
 dependencies = [
     # Exact pin: one version for both distributions (spec packaging D6; tools/bump_version.py).
-    "pyguibud-runtime==0.1.0rc1",
+    "pyguibud-runtime==0.1.0",
     # The designer imports ttkbootstrap directly, not only through the runtime.
     "ttkbootstrap>=2.2,<3",
 ]
@@ -50,7 +50,7 @@ Issues = "https://github.com/larrezze-dev/PyGUIbud_CLAUDE/issues"
 Changelog = "https://github.com/larrezze-dev/PyGUIbud_CLAUDE/releases"
 
 [project.optional-dependencies]
-pyside = ["pyguibud-runtime[pyside]==0.1.0rc1"]
+pyside = ["pyguibud-runtime[pyside]==0.1.0"]
 dev = [
     "pytest>=8.0",
     "pytest-cov>=5.0",

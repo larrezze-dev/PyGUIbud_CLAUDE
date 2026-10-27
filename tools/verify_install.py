@@ -5,6 +5,7 @@ Spec packaging section 6 (shared by CI, this script and the UAT), decision D11. 
     uv run python tools/verify_install.py                      # build both dists, pip + uv paths
     python tools/verify_install.py --dist dist                 # use dists that are already built
     python tools/verify_install.py --from-index testpypi --version 0.1.0rc1
+    python tools/verify_install.py --from-index pypi --version 0.1.0
 
 Everything happens in one temporary folder outside the checkout: virtual environments, the copy
 of ``examples/hello.ui`` and the checks' scratch files. Checks run with the environment's own
@@ -41,7 +42,11 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 ABOUT = ROOT / "runtime" / "src" / "pyguibud" / "__about__.py"
 EXAMPLES = ROOT / "examples"
-TESTPYPI_SIMPLE = "https://test.pypi.org/simple/"
+#: ``--from-index`` choices: the simple index URL and the name shown in the check line.
+INDEXES = {
+    "testpypi": ("https://test.pypi.org/simple/", "TestPyPI"),
+    "pypi": ("https://pypi.org/simple/", "PyPI"),
+}
 CREDIT_NAME = "Luciano Arrezze"
 
 #: Expected German texts, held here as literals on purpose (spec section 6 check 7). They must
@@ -351,23 +356,24 @@ class Verifier:
         self.probe(path, python, "no_scripts")
         self.probe(path, python, "no_toolkit_on_import")
 
-    def pip_path(self, dist: Path, index: bool) -> None:
+    def pip_path(self, dist: Path, index: str | None) -> None:
         version = self.version
         designer = self.work / "venv-designer"
         python = self.make_venv("pip/designer", designer)
         if python is not None:
             if index:  # the pip download half of the spec section 7 recipe
+                url, name = INDEXES[index]
                 dist = self.work / "rc"
                 dist.mkdir()
                 code, output = self.run(
                     [
                         *(python, "-m", "pip", "download", "--no-deps", "--only-binary=:all:"),
-                        *("-d", dist, "-i", TESTPYPI_SIMPLE),
+                        *("-d", dist, "-i", url),
                         f"pyguibud=={version}",
                         f"pyguibud-runtime=={version}",
                     ]
                 )
-                if not self.record("pip/designer", "download from TestPyPI", code == 0, output):
+                if not self.record("pip/designer", f"download from {name}", code == 0, output):
                     return
             self.dist = dist
             if self.pip_install("pip/designer", python, dist, f"pyguibud=={version}"):
@@ -513,8 +519,8 @@ def parse(argv: Sequence[str] | None) -> argparse.Namespace:
     parser.add_argument("--dist", type=Path, help="use these built artefacts, skip building")
     parser.add_argument(
         "--from-index",
-        choices=["testpypi"],
-        help="download only our two wheels from TestPyPI (everything else comes from PyPI)",
+        choices=sorted(INDEXES),
+        help="download only our two wheels from this index (everything else comes from PyPI)",
     )
     parser.add_argument("--version", help="version to install (default: the __about__ literal)")
     parser.add_argument(
@@ -574,7 +580,7 @@ def _run(args: argparse.Namespace, version: str, work: Path) -> int:
         ready = build(verifier, dist) and check_artefacts(verifier, dist)
     if ready:
         verifier.dist = dist
-        verifier.pip_path(dist, bool(args.from_index))
+        verifier.pip_path(dist, args.from_index)
         if not args.skip_uv and verifier.dist.is_absolute():
             verifier.uv_path(verifier.dist)
     if verifier.failures:

@@ -77,7 +77,7 @@ def _fake_wheels(folder: Path, version: str) -> Path:
     [
         ["--version", "9.9.9"],  # --version without --from-index
         ["--dist", "dist", "--from-index", "testpypi"],
-        ["--from-index", "pypi"],  # only testpypi is offered
+        ["--from-index", "example.org"],  # only testpypi and pypi are offered
         ["--bogus"],
     ],
 )
