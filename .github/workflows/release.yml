@@ -64,6 +64,7 @@ jobs:
       - uses: pypa/gh-action-pypi-publish@release/v1
         with:
           repository-url: https://test.pypi.org/legacy/
+          skip-existing: true  # a re-run after a partial upload continues (v0.1.0 lesson)
 
   publish-pypi:
     name: publish to PyPI
@@ -81,3 +82,5 @@ jobs:
           name: dist
           path: dist
       - uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          skip-existing: true  # a re-run after a partial upload continues (v0.1.0 lesson)

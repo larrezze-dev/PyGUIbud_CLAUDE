@@ -1,6 +1,6 @@
 # GitHub Release v0.1.0
 
-**DRAFT — not posted.**
+**Posted 2026-10-27** (https://github.com/larrezze-dev/PyGUIbud_CLAUDE/releases/tag/v0.1.0, with the 4 distribution files).
 
 - Tag: `v0.1.0` (the user tags; no agent pushes tags)
 - Title: `PyGUIbud 0.1.0`
