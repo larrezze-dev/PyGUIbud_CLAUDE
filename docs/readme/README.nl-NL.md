@@ -13,7 +13,7 @@ Een drag-and-drop-GUI-ontwerper voor **ttkbootstrap** (met tkinter- en PySide6-b
 draagbare `.ui`-bestanden opslaat. Laad een `.ui`-bestand tijdens de uitvoering met
 `pyguibud-runtime`, of zet het met `pyguibud-uic` om in een gewone Python-module.
 
-<!-- demo GIF (Step 21b): drag → save → run -->
+![Demo: een label en een knop worden vanuit het palet naar een nieuw hoofdvenster gesleept, de knop krijgt een tekst en de handler on_hello, het formulier wordt opgeslagen als hello.ui en uitgevoerd, en een klik op de knop verandert het label](https://raw.githubusercontent.com/larrezze-dev/PyGUIbud_CLAUDE/master/docs/images/demo.gif)
 
 ## Installatie
 Python 3.10–3.13. Installeer onder Linux eerst Tk (`sudo apt install python3-tk`).
