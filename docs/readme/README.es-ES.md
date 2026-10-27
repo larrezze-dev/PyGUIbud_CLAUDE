@@ -13,7 +13,7 @@ Un diseñador de GUI de arrastrar y soltar para **ttkbootstrap** (con back-ends 
 que guarda archivos `.ui` portables. Carga un archivo `.ui` en tiempo de ejecución con
 `pyguibud-runtime`, o conviértelo en un módulo de Python normal con `pyguibud-uic`.
 
-<!-- demo GIF (Step 21b): drag → save → run -->
+![Demostración: se arrastran una etiqueta y un botón desde la paleta a una nueva ventana principal, el botón recibe un texto y el manejador on_hello, el formulario se guarda como hello.ui y se ejecuta, y al pulsar el botón cambia la etiqueta](https://raw.githubusercontent.com/larrezze-dev/PyGUIbud_CLAUDE/master/docs/images/demo.gif)
 
 ## Instalación
 Python 3.10–3.13. En Linux, instala antes Tk (`sudo apt install python3-tk`).

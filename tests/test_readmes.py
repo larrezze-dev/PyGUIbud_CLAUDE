@@ -12,6 +12,9 @@ from tests._paths import ROOT, RUNTIME_LOCALE
 
 REPO = "https://github.com/larrezze-dev/PyGUIbud_CLAUDE/blob/master"
 LOCALES = ["es_ES", "pt_PT", "pt_BR", "de_DE", "it_IT", "nl_NL", "fr_FR"]
+DEMO_GIF = (
+    "https://raw.githubusercontent.com/larrezze-dev/PyGUIbud_CLAUDE/master/docs/images/demo.gif"
+)
 CREDIT_MSGID = "Created by {author} and programmed with the support of {tool}"
 
 
@@ -38,3 +41,11 @@ def test_each_translation_carries_its_credit_and_only_absolute_links(locale: str
     assert re.findall(r"\]\((?!https://)([^)]*)\)", text) == []
     # Every translation links back to the English original.
     assert f"]({REPO}/README.md)" in text
+
+
+@pytest.mark.parametrize("readme", ["README.md", *(_readme(locale) for locale in LOCALES)])
+def test_each_readme_shows_the_demo_gif_with_alt_text(readme: str) -> None:
+    # Step 21b: a raw URL, so the GIF also renders on PyPI; tools/record_demo.py makes the file.
+    assert (ROOT / "docs" / "images" / "demo.gif").is_file()
+    text = (ROOT / readme).read_text(encoding="utf-8")
+    assert re.search(rf"!\[[^\]]{{40,}}\]\({re.escape(DEMO_GIF)}\)", text)

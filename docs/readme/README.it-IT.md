@@ -13,7 +13,7 @@ Un designer di GUI drag-and-drop per **ttkbootstrap** (con back-end tkinter e Py
 file `.ui` portabili. Carica un file `.ui` a runtime con `pyguibud-runtime`, oppure trasformalo in
 un semplice modulo Python con `pyguibud-uic`.
 
-<!-- demo GIF (Step 21b): drag → save → run -->
+![Demo: un'etichetta e un pulsante vengono trascinati dalla tavolozza in una nuova finestra principale, il pulsante riceve un testo e il gestore on_hello, il modulo viene salvato come hello.ui ed eseguito, e cliccando il pulsante l'etichetta cambia](https://raw.githubusercontent.com/larrezze-dev/PyGUIbud_CLAUDE/master/docs/images/demo.gif)
 
 ## Installazione
 Python 3.10–3.13. Su Linux, installa prima Tk (`sudo apt install python3-tk`).

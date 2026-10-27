@@ -13,7 +13,7 @@ Un concepteur d'interfaces graphiques par glisser-déposer pour **ttkbootstrap**
 tkinter et PySide6) qui enregistre des fichiers `.ui` portables. Chargez un fichier `.ui` à
 l'exécution avec `pyguibud-runtime`, ou transformez-le en simple module Python avec `pyguibud-uic`.
 
-<!-- demo GIF (Step 21b): drag → save → run -->
+![Démonstration : une étiquette et un bouton sont glissés depuis la palette vers une nouvelle fenêtre principale, le bouton reçoit un texte et le gestionnaire on_hello, le formulaire est enregistré sous hello.ui puis exécuté, et un clic sur le bouton modifie l'étiquette](https://raw.githubusercontent.com/larrezze-dev/PyGUIbud_CLAUDE/master/docs/images/demo.gif)
 
 ## Installation
 Python 3.10–3.13. Sous Linux, installez d'abord Tk (`sudo apt install python3-tk`).
