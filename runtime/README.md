@@ -4,14 +4,12 @@ The run-time half of [PyGUIbud](https://github.com/larrezze-dev/PyGUIbud_CLAUDE)
 `.ui` files saved by the PyGUIbud designer and builds them with **ttkbootstrap** (default),
 **tkinter** or **PySide6**. Applications need only this package, not the designer.
 
-> **Status:** release candidate (`0.1.0rc1`), published on TestPyPI only.
-
 ## Install
 Python 3.10–3.13. On Linux, install Tk first (`sudo apt install python3-tk`).
 
 ```bash
-pip install "pyguibud-runtime==0.1.0rc1"
-pip install "pyguibud-runtime[pyside]==0.1.0rc1"   # adds the PySide6 back-end
+pip install pyguibud-runtime
+pip install "pyguibud-runtime[pyside]"   # adds the PySide6 back-end
 ```
 
 More options (uv, TestPyPI, troubleshooting) are in the

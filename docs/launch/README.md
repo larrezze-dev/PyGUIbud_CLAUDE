@@ -11,7 +11,7 @@ them. Rules below were checked on 2026-10-27; re-read each channel's rules on th
 | Channel | File | Limits and rules (source) | When to post | Status |
 | --- | --- | --- | --- | --- |
 | GitHub Release `v0.1.0` | [github-release.md](github-release.md) | Markdown body; the GIF needs the `?raw=true` URL form to render | Right after the tag publishes to PyPI | draft |
-| Python Discourse | [python-discourse.md](python-discourse.md) | No project-announcement category exists; moderators declined one; self-promotion removed; AI-generated posts banned. **Recommendation: do not post.** | Not applicable | draft (recommend skipping) |
+| Python Discourse | [python-discourse.md](python-discourse.md) | No project-announcement category exists; moderators declined one; self-promotion removed; AI-generated posts banned. **Recommendation: do not post.** | Not applicable | skipped (user decision 2026-10-27) |
 | Reddit r/Python | [reddit-python.md](reddit-python.md) | "Showcase" flair and the three template sections; live rules could not be fetched, so check the sidebar | Day 1 or 2, weekday, once the GIF renders | draft |
 | Hacker News | [show-hn.md](show-hn.md) | Title starts "Show HN: "; must be tryable; no upvote requests; **no AI-generated or AI-edited comments** | After the release is stable; weekday | draft |
 | LinkedIn, Mastodon, Bluesky, X | [social.md](social.md) | 1300 / 500 / 300 / 280 characters | Day 1, after the GitHub Release | draft |
